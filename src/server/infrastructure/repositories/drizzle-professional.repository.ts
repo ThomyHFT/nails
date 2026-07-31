@@ -1,0 +1,37 @@
+import { eq } from "drizzle-orm";
+import { db } from "@/server/infrastructure/db/client";
+import { professionals } from "@/server/infrastructure/db/schema/users";
+import type { Professional } from "@/server/domain/professional/professional.entity";
+import type { ProfessionalRepository } from "@/server/domain/professional/professional-repository.port";
+
+function toDomain(row: typeof professionals.$inferSelect): Professional {
+  return {
+    id: row.id,
+    slug: row.slug,
+    ownerUserId: row.ownerUserId,
+    businessName: row.businessName,
+    bio: row.bio,
+    phone: row.phone,
+    instagramHandle: row.instagramHandle,
+    timezone: row.timezone,
+    active: row.active,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export class DrizzleProfessionalRepository implements ProfessionalRepository {
+  async findBySlug(slug: string): Promise<Professional | null> {
+    const [row] = await db.select().from(professionals).where(eq(professionals.slug, slug)).limit(1);
+    return row ? toDomain(row) : null;
+  }
+
+  async findByOwnerUserId(ownerUserId: string): Promise<Professional | null> {
+    const [row] = await db
+      .select()
+      .from(professionals)
+      .where(eq(professionals.ownerUserId, ownerUserId))
+      .limit(1);
+    return row ? toDomain(row) : null;
+  }
+}
