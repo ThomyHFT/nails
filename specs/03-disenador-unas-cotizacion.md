@@ -1,6 +1,6 @@
 # SPEC 03 — Diseñador de uñas y cotización por elementos
 
-> **Estado:** Draft
+> **Estado:** approved
 > **Depende de:** SPEC 01, SPEC 02
 > **Fecha:** 2026-07-31
 > **Objetivo:** Permitir que la clienta diseñe sus uñas dentro del flujo de reserva, con cotización automática del precio y el tiempo extra a partir del catálogo de elementos que la profesional administra.
@@ -44,31 +44,31 @@ Cambios sobre el esquema del SPEC 01. No se agregan tablas nuevas.
 
 **`element_category`** — agrega un valor al enum:
 
-| Valor        | Nota                                                        |
-| ------------ | ----------------------------------------------------------- |
-| `color`      | Nuevo. Esmaltes que la profesional tiene disponibles        |
-| `finish`     | Ya existía                                                  |
-| `decoration` | Ya existía                                                  |
-| `technique`  | Ya existía, empieza a usarse en este spec                   |
+| Valor        | Nota                                                 |
+| ------------ | ---------------------------------------------------- |
+| `color`      | Nuevo. Esmaltes que la profesional tiene disponibles |
+| `finish`     | Ya existía                                           |
+| `decoration` | Ya existía                                           |
+| `technique`  | Ya existía, empieza a usarse en este spec            |
 
 **`design_elements`** — agrega columna:
 
-| Columna     | Tipo        | Nota                                                                              |
-| ----------- | ----------- | --------------------------------------------------------------------------------- |
-| `color_hex` | text, nulo  | Formato `#RRGGBB`. Obligatorio cuando `category = 'color'`, nulo en el resto       |
+| Columna     | Tipo       | Nota                                                                         |
+| ----------- | ---------- | ---------------------------------------------------------------------------- |
+| `color_hex` | text, nulo | Formato `#RRGGBB`. Obligatorio cuando `category = 'color'`, nulo en el resto |
 
 La obligatoriedad de `color_hex` para la categoría `color` se valida en la capa de aplicación, no con un `CHECK`. El esquema deja la columna nula para las otras tres categorías.
 
 **`designs`** — no cambia de forma. Cambia lo que se escribe:
 
-| Columna               | Valor en este spec                                                        |
-| --------------------- | ------------------------------------------------------------------------- |
-| `source`              | Siempre `client`                                                          |
-| `name`                | Siempre `null` (solo se usa en plantillas, fuera de alcance)              |
-| `client_user_id`      | Siempre la clienta que reserva, nunca nulo                                |
-| `reference_image_url` | Siempre `null` (la subida es de otro spec)                                |
-| `extra_price_clp`     | Resultado de la cotización, congelado al reservar                          |
-| `extra_minutes`       | Resultado de la cotización, congelado al reservar                          |
+| Columna               | Valor en este spec                                           |
+| --------------------- | ------------------------------------------------------------ |
+| `source`              | Siempre `client`                                             |
+| `name`                | Siempre `null` (solo se usa en plantillas, fuera de alcance) |
+| `client_user_id`      | Siempre la clienta que reserva, nunca nulo                   |
+| `reference_image_url` | Siempre `null` (la subida es de otro spec)                   |
+| `extra_price_clp`     | Resultado de la cotización, congelado al reservar            |
+| `extra_minutes`       | Resultado de la cotización, congelado al reservar            |
 
 **`bookings`** — no cambia de forma. Empieza a escribir `design_id`, que hasta el SPEC 02 quedaba `null`.
 
@@ -85,15 +85,15 @@ El campo `payload` de `designs` cambia de forma. La versión 1 documentada en el
 type NailDesignPayload = {
   version: 2;
   shape: 'almond' | 'coffin' | 'square' | 'round' | 'stiletto';
-  technique: string | null;  // design_elements.code, categoría 'technique'
+  technique: string | null; // design_elements.code, categoría 'technique'
   // Exactamente 10 entradas.
   // Índices 0–4: mano izquierda, del pulgar al meñique.
   // Índices 5–9: mano derecha, del pulgar al meñique.
   nails: {
-    baseColorCode: string;   // design_elements.code, categoría 'color'
-    baseColorHex: string;    // '#RRGGBB', copiado del catálogo al guardar
-    finish: string;          // design_elements.code, categoría 'finish'
-    decorations: string[];   // design_elements.code, categoría 'decoration'
+    baseColorCode: string; // design_elements.code, categoría 'color'
+    baseColorHex: string; // '#RRGGBB', copiado del catálogo al guardar
+    finish: string; // design_elements.code, categoría 'finish'
+    decorations: string[]; // design_elements.code, categoría 'decoration'
   }[];
 };
 ```
@@ -112,10 +112,7 @@ Función pura, sin acceso a base de datos:
 ```ts
 type DesignQuote = { extraPriceClp: number; extraMinutes: number };
 
-function calculateDesignQuote(
-  payload: NailDesignPayload,
-  catalog: DesignElement[],
-): DesignQuote;
+function calculateDesignQuote(payload: NailDesignPayload, catalog: DesignElement[]): DesignQuote;
 ```
 
 Reglas de suma:
@@ -287,11 +284,11 @@ Cada paso deja el proyecto en estado ejecutable y es commiteable por sí solo.
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-| --- | --- |
-| La clienta ve un día con cupo en la vista previa, diseña, y al sumar los minutos extra ese día ya no tiene ningún slot. | La vista previa avisa que el horario final depende del diseño. Si después de diseñar el día elegido queda sin slots, el mensaje dice cuántos minutos suma el diseño y ofrece volver a editarlo o elegir otro día. |
-| La profesional desactiva un elemento o le cambia el precio mientras la clienta tiene el diseñador abierto. La cotización mostrada deja de ser válida. | El `POST` de la reserva recotiza el payload contra el catálogo vigente. Si el total no coincide con el que envió el cliente, responde 409 con el total nuevo y no crea la reserva. |
-| Cobrar los deltas por uña puede dar totales sorpresivamente altos: diez decoraciones a $1.500 son $15.000 sobre el precio de la variante. | El diseñador muestra el desglose y el total en vivo, no solo al final. La clienta ve el número subir mientras decide. |
-| `db.batch()` sirve para dos inserts con el uuid conocido de antemano, pero no para una transacción con lógica intermedia. Un spec futuro que la necesite se topa con el límite del driver `neon-http`. | El límite queda documentado acá. Si aparece ese caso, se evalúa migrar a `neon-serverless` con `Pool` en ese momento, no antes. |
-| El SVG de diez uñas en pantalla de teléfono deja áreas de toque muy chicas. | Cada uña tiene un área de toque mínima de 44 px independiente de su tamaño visual. Se verifica en el viewport mobile antes de cerrar el paso 9. |
-| El SPEC 01 documenta `NailDesignPayload` versión 1 con `length`. Alguien que lea solo ese spec escribe la forma vieja. | El tipo vive en un único archivo, `src/server/domain/design/nail-design-payload.ts`, y es la única fuente de verdad. El SPEC 01 queda como registro histórico. |
+| Riesgo                                                                                                                                                                                                 | Mitigación                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| La clienta ve un día con cupo en la vista previa, diseña, y al sumar los minutos extra ese día ya no tiene ningún slot.                                                                                | La vista previa avisa que el horario final depende del diseño. Si después de diseñar el día elegido queda sin slots, el mensaje dice cuántos minutos suma el diseño y ofrece volver a editarlo o elegir otro día. |
+| La profesional desactiva un elemento o le cambia el precio mientras la clienta tiene el diseñador abierto. La cotización mostrada deja de ser válida.                                                  | El `POST` de la reserva recotiza el payload contra el catálogo vigente. Si el total no coincide con el que envió el cliente, responde 409 con el total nuevo y no crea la reserva.                                |
+| Cobrar los deltas por uña puede dar totales sorpresivamente altos: diez decoraciones a $1.500 son $15.000 sobre el precio de la variante.                                                              | El diseñador muestra el desglose y el total en vivo, no solo al final. La clienta ve el número subir mientras decide.                                                                                             |
+| `db.batch()` sirve para dos inserts con el uuid conocido de antemano, pero no para una transacción con lógica intermedia. Un spec futuro que la necesite se topa con el límite del driver `neon-http`. | El límite queda documentado acá. Si aparece ese caso, se evalúa migrar a `neon-serverless` con `Pool` en ese momento, no antes.                                                                                   |
+| El SVG de diez uñas en pantalla de teléfono deja áreas de toque muy chicas.                                                                                                                            | Cada uña tiene un área de toque mínima de 44 px independiente de su tamaño visual. Se verifica en el viewport mobile antes de cerrar el paso 9.                                                                   |
+| El SPEC 01 documenta `NailDesignPayload` versión 1 con `length`. Alguien que lea solo ese spec escribe la forma vieja.                                                                                 | El tipo vive en un único archivo, `src/server/domain/design/nail-design-payload.ts`, y es la única fuente de verdad. El SPEC 01 queda como registro histórico.                                                    |
