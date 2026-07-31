@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
 import { designSourceEnum, elementCategoryEnum } from "@/server/infrastructure/db/schema/enums";
 import { professionals, users } from "@/server/infrastructure/db/schema/users";
 
@@ -15,6 +16,7 @@ export const designElements = pgTable(
     category: elementCategoryEnum("category").notNull(),
     code: text("code").notNull(),
     label: text("label").notNull(),
+    colorHex: text("color_hex"),
     priceDeltaClp: integer("price_delta_clp").notNull().default(0),
     extraMinutes: integer("extra_minutes").notNull().default(0),
     sortOrder: integer("sort_order").notNull().default(0),
@@ -22,20 +24,6 @@ export const designElements = pgTable(
   },
   (table) => [uniqueIndex("design_elements_professional_id_code_idx").on(table.professionalId, table.code)],
 );
-
-export type NailDesignPayload = {
-  version: 1;
-  shape: "almond" | "coffin" | "square" | "round" | "stiletto";
-  length: "short" | "medium" | "long";
-  // Exactamente 10 entradas.
-  // Índices 0–4: mano izquierda, del pulgar al meñique.
-  // Índices 5–9: mano derecha, del pulgar al meñique.
-  nails: {
-    baseColorHex: string;
-    finish: string;
-    decorations: string[];
-  }[];
-};
 
 export const designs = pgTable("designs", {
   id: uuid("id")

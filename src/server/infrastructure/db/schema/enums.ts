@@ -7,6 +7,7 @@ export const nailLengthEnum = pgEnum("nail_length", ["short", "medium", "long", 
 export const exceptionKindEnum = pgEnum("exception_kind", ["blocked", "extra"]);
 
 export const elementCategoryEnum = pgEnum("element_category", [
+  "color",
   "finish",
   "decoration",
   "technique",
