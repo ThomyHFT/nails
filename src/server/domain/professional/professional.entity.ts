@@ -8,6 +8,7 @@ export interface Professional {
   instagramHandle: string | null;
   timezone: string;
   active: boolean;
+  bufferMinutes: number;
   createdAt: Date;
   updatedAt: Date;
 }

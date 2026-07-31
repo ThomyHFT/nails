@@ -13,6 +13,7 @@ describe("Professional entity shape", () => {
       instagramHandle: null,
       timezone: "America/Santiago",
       active: true,
+      bufferMinutes: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

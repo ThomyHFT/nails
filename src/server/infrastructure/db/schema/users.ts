@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { userRoleEnum } from "@/server/infrastructure/db/schema/enums";
 
 export const users = pgTable("users", {
@@ -31,6 +31,7 @@ export const professionals = pgTable("professionals", {
   instagramHandle: text("instagram_handle"),
   timezone: text("timezone").notNull().default("America/Santiago"),
   active: boolean("active").notNull().default(true),
+  bufferMinutes: integer("buffer_minutes").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

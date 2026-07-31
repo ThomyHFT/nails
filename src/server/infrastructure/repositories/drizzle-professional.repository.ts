@@ -15,6 +15,7 @@ function toDomain(row: typeof professionals.$inferSelect): Professional {
     instagramHandle: row.instagramHandle,
     timezone: row.timezone,
     active: row.active,
+    bufferMinutes: row.bufferMinutes,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -33,5 +34,14 @@ export class DrizzleProfessionalRepository implements ProfessionalRepository {
       .where(eq(professionals.ownerUserId, ownerUserId))
       .limit(1);
     return row ? toDomain(row) : null;
+  }
+
+  async updateBufferMinutes(professionalId: string, bufferMinutes: number): Promise<Professional> {
+    const [row] = await db
+      .update(professionals)
+      .set({ bufferMinutes, updatedAt: new Date() })
+      .where(eq(professionals.id, professionalId))
+      .returning();
+    return toDomain(row);
   }
 }
