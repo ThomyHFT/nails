@@ -1,4 +1,4 @@
-import { requireProfessional } from "@/server/interface/guards";
+import { requireTenantOwner } from "@/server/interface/guards";
 
 export default async function AdminLayout({
   children,
@@ -8,7 +8,7 @@ export default async function AdminLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  await requireProfessional(slug);
+  await requireTenantOwner(slug);
 
   return (
     <div className="flex min-h-screen">
