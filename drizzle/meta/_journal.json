@@ -15,6 +15,13 @@
       "when": 1785532127058,
       "tag": "0001_brainy_photon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785532204327,
+      "tag": "0002_breezy_stryfe",
+      "breakpoints": true
     }
   ]
 }
