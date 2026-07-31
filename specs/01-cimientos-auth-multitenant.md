@@ -1,6 +1,6 @@
 # SPEC 01 — Cimientos: multi-tenant, esquema y autenticación
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** —
 > **Fecha:** 2026-07-31
 > **Objetivo:** Levantar la base del proyecto — Next.js, esquema completo en Postgres y autenticación con roles aislada por tenant — sobre la que se construyen los specs 02, 03 y 04.
@@ -386,54 +386,54 @@ Cada paso deja el proyecto en estado ejecutable y es commiteable por sí solo.
 
 ### Proyecto
 
-- [ ] `npm run dev` levanta la aplicación sin errores en la consola del servidor ni del navegador.
-- [ ] `npm run build` compila sin errores de TypeScript ni de ESLint.
-- [ ] Arrancar la aplicación sin `DATABASE_URL` definida falla con un mensaje que nombra la variable faltante.
+- [x] `npm run dev` levanta la aplicación sin errores en la consola del servidor ni del navegador.
+- [x] `npm run build` compila sin errores de TypeScript ni de ESLint.
+- [x] Arrancar la aplicación sin `DATABASE_URL` definida falla con un mensaje que nombra la variable faltante.
 
 ### Esquema
 
-- [ ] `npm run db:migrate` aplica todas las migraciones sobre una base vacía sin errores.
-- [ ] Existen las once tablas: `users`, `professionals`, `services`, `service_variants`, `availability_rules`, `availability_exceptions`, `design_elements`, `designs`, `bookings`, `portfolio_items`, `reviews`.
-- [ ] No existen las tablas `accounts` ni `sessions`.
-- [ ] Insertar dos filas en `users` con el mismo email es rechazado por la base de datos.
-- [ ] Insertar dos filas en `service_variants` con el mismo par `(service_id, nail_length)` es rechazado por la base de datos.
-- [ ] Insertar dos filas en `design_elements` con el mismo par `(professional_id, code)` es rechazado por la base de datos.
-- [ ] Insertar una fila en `reviews` con `rating = 6` es rechazado por la base de datos.
+- [x] `npm run db:migrate` aplica todas las migraciones sobre una base vacía sin errores.
+- [x] Existen las once tablas: `users`, `professionals`, `services`, `service_variants`, `availability_rules`, `availability_exceptions`, `design_elements`, `designs`, `bookings`, `portfolio_items`, `reviews`.
+- [x] No existen las tablas `accounts` ni `sessions`.
+- [x] Insertar dos filas en `users` con el mismo email es rechazado por la base de datos.
+- [x] Insertar dos filas en `service_variants` con el mismo par `(service_id, nail_length)` es rechazado por la base de datos.
+- [x] Insertar dos filas en `design_elements` con el mismo par `(professional_id, code)` es rechazado por la base de datos.
+- [x] Insertar una fila en `reviews` con `rating = 6` es rechazado por la base de datos.
 
 ### Seed
 
-- [ ] `npm run db:seed` ejecutado dos veces seguidas termina sin error y deja la misma cantidad de filas en todas las tablas.
-- [ ] Tras el seed existe un tenant con slug, un usuario con rol `professional` asociado a él, al menos tres servicios con sus variantes, y al menos seis `design_elements`.
+- [x] `npm run db:seed` ejecutado dos veces seguidas termina sin error y deja la misma cantidad de filas en todas las tablas.
+- [x] Tras el seed existe un tenant con slug, un usuario con rol `professional` asociado a él, al menos tres servicios con sus variantes, y al menos seis `design_elements`.
 
 ### Registro y autenticación
 
-- [ ] Registrar una clienta con un email nuevo crea una fila en `users` con `role = 'client'`.
-- [ ] El valor guardado en `password_hash` no coincide con la contraseña en texto plano.
-- [ ] Registrar con un email ya existente muestra un error en pantalla y no crea una segunda fila.
-- [ ] Registrarse con el email en mayúsculas y luego iniciar sesión con el mismo email en minúsculas funciona.
-- [ ] Iniciar sesión con credenciales correctas deja una cookie de sesión marcada `httpOnly`.
-- [ ] Iniciar sesión con contraseña incorrecta muestra un error y no deja cookie de sesión.
-- [ ] Cerrar sesión elimina la cookie y `/[slug]/cuenta` vuelve a redirigir al login.
+- [x] Registrar una clienta con un email nuevo crea una fila en `users` con `role = 'client'`.
+- [x] El valor guardado en `password_hash` no coincide con la contraseña en texto plano.
+- [x] Registrar con un email ya existente muestra un error en pantalla y no crea una segunda fila.
+- [x] Registrarse con el email en mayúsculas y luego iniciar sesión con el mismo email en minúsculas funciona.
+- [x] Iniciar sesión con credenciales correctas deja una cookie de sesión marcada `httpOnly`.
+- [x] Iniciar sesión con contraseña incorrecta muestra un error y no deja cookie de sesión.
+- [x] Cerrar sesión elimina la cookie y `/[slug]/cuenta` vuelve a redirigir al login.
 
 ### Ruteo multi-tenant
 
-- [ ] `/[slug]` con el slug del seed muestra el `business_name` del tenant.
-- [ ] Un slug inexistente devuelve 404.
-- [ ] Un slug cuyo tenant tiene `active = false` devuelve 404.
+- [x] `/[slug]` con el slug del seed muestra el `business_name` del tenant.
+- [x] Un slug inexistente devuelve 404.
+- [x] Un slug cuyo tenant tiene `active = false` devuelve 404.
 
 ### Permisos
 
-- [ ] `/[slug]/cuenta` sin sesión redirige a `/[slug]/login`.
-- [ ] `/[slug]/cuenta` con sesión muestra el email de la clienta autenticada, no el de otra.
-- [ ] `/[slug]/admin` sin sesión redirige a `/[slug]/login`.
-- [ ] `/[slug]/admin` con sesión de rol `client` es rechazado.
-- [ ] `/[slug]/admin` con sesión de la profesional dueña del tenant muestra el shell de navegación.
-- [ ] Una profesional autenticada que abre el `/admin` de un slug que no le pertenece es rechazada.
+- [x] `/[slug]/cuenta` sin sesión redirige a `/[slug]/login`.
+- [x] `/[slug]/cuenta` con sesión muestra el email de la clienta autenticada, no el de otra.
+- [x] `/[slug]/admin` sin sesión redirige a `/[slug]/login`.
+- [x] `/[slug]/admin` con sesión de rol `client` es rechazado.
+- [x] `/[slug]/admin` con sesión de la profesional dueña del tenant muestra el shell de navegación.
+- [x] Una profesional autenticada que abre el `/admin` de un slug que no le pertenece es rechazada.
 
 ### Tests y deploy
 
-- [ ] `npm test` pasa en verde e incluye tests de normalización de email, de hash y verificación de contraseña, de `requireProfessional` y de `requireTenantOwner`.
-- [ ] La URL pública de Vercel sirve `/[slug]` y permite iniciar sesión con el usuario del seed.
+- [x] `npm test` pasa en verde e incluye tests de normalización de email, de hash y verificación de contraseña, de `requireProfessional` y de `requireTenantOwner`.
+- [x] La URL pública de Vercel sirve `/[slug]` y permite iniciar sesión con el usuario del seed.
 
 ---
 
