@@ -12,7 +12,8 @@ export async function middleware(request: NextRequest) {
   }
 
   const slug = match[1];
-  const token = await getToken({ req: request, secret: env.AUTH_SECRET });
+  const secureCookie = request.nextUrl.protocol === "https:";
+  const token = await getToken({ req: request, secret: env.AUTH_SECRET, secureCookie });
 
   if (!token) {
     return NextResponse.redirect(new URL(`/${slug}/login`, request.url));
