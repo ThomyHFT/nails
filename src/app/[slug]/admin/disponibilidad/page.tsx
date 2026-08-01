@@ -153,7 +153,9 @@ export default function DisponibilidadPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
-      <h1 className="text-2xl font-semibold">Disponibilidad</h1>
+      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
+        Disponibilidad
+      </h1>
 
       {!currentMonthHasRules && (
         <p className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm">
@@ -228,7 +230,8 @@ export default function DisponibilidadPage() {
             <select
               value={exceptionKind}
               onChange={(e) => setExceptionKind(e.target.value as "blocked" | "extra")}
-              className="rounded-md border px-2 py-1 text-sm"
+              className="px-2 py-1 text-sm"
+              style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
             >
               <option value="blocked">Bloquear día</option>
               <option value="extra">Horario extra</option>

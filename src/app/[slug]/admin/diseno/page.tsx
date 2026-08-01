@@ -110,9 +110,15 @@ export default function DisenoPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
-      <h1 className="text-2xl font-semibold">Catálogo de diseño</h1>
+      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
+        Catálogo de diseño
+      </h1>
 
-      <form onSubmit={createElement} className="flex flex-col gap-3 rounded-md border p-4">
+      <form
+        onSubmit={createElement}
+        className="flex flex-col gap-3 p-4"
+        style={{ background: "var(--card)", color: "var(--card-foreground)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
+      >
         <h2 className="text-lg font-medium">Nuevo elemento</h2>
 
         <div className="flex items-center gap-3">
@@ -121,7 +127,8 @@ export default function DisenoPage() {
             id="element-category"
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value as ElementCategory })}
-            className="rounded-md border px-2 py-1 text-sm"
+            className="px-2 py-1 text-sm"
+            style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
           >
             {CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>
