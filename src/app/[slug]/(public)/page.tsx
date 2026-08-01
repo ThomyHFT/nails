@@ -3,9 +3,17 @@ import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import { GetTenantBrandingUseCase } from "@/server/application/branding/get-tenant-branding.use-case";
+import { ListPortfolioUseCase } from "@/server/application/portfolio/list-portfolio.use-case";
+import { ListServicesUseCase } from "@/server/application/service/list-services.use-case";
+import { priceFromClp } from "@/server/domain/service/price-from";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
+import { DrizzlePortfolioRepository } from "@/server/infrastructure/repositories/drizzle-portfolio.repository";
+import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
 import { SafeImage } from "@/app/[slug]/(public)/SafeImage";
+
+const FEATURED_SERVICES_LIMIT = 4;
+const PORTFOLIO_PREVIEW_LIMIT = 6;
 
 function normalizePhoneForWhatsApp(phone: string): string {
   return phone.replace(/[^0-9]/g, "");
@@ -26,11 +34,18 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
 
   const branding = await new GetTenantBrandingUseCase(new DrizzleBrandingRepository()).execute(professional.id);
 
-  // Los contenedores de servicios destacados y portafolio quedan sin datos:
-  // el catálogo público con contenido real es del spec siguiente. Con arrays
-  // vacíos, ninguna sección se renderiza (ver render condicional más abajo).
-  const featuredServices: { id: string; name: string; priceClp: number }[] = [];
-  const portfolioItems: { id: string; imageUrl: string }[] = [];
+  const allServices = await new ListServicesUseCase(new DrizzleServicesRepository()).execute(professional.id);
+  const featuredServices = allServices
+    .filter((s) => s.active)
+    .map((s) => ({ id: s.id, name: s.name, priceFrom: priceFromClp(s.variants) }))
+    .filter((s): s is { id: string; name: string; priceFrom: number } => s.priceFrom !== null)
+    .slice(0, FEATURED_SERVICES_LIMIT);
+
+  const portfolioItems = (
+    await new ListPortfolioUseCase(new DrizzlePortfolioRepository()).execute(professional.id, {
+      onlyPublished: true,
+    })
+  ).slice(0, PORTFOLIO_PREVIEW_LIMIT);
 
   return (
     <div className="flex flex-col">
@@ -74,9 +89,26 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
           </h2>
           <ul className="flex flex-col gap-2">
             {featuredServices.map((service) => (
-              <li key={service.id}>{service.name}</li>
+              <li
+                key={service.id}
+                className="flex items-center justify-between gap-3 p-3 text-sm"
+                style={{
+                  background: "var(--card)",
+                  color: "var(--card-foreground)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius)",
+                }}
+              >
+                <span>{service.name}</span>
+                <span style={{ color: "var(--muted-foreground)" }}>
+                  Desde ${service.priceFrom.toLocaleString("es-CL")}
+                </span>
+              </li>
             ))}
           </ul>
+          <Link href={`/${slug}/servicios`} className="w-fit text-sm font-medium" style={{ color: "var(--primary)" }}>
+            Ver catálogo completo →
+          </Link>
         </section>
       )}
 
