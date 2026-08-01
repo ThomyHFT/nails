@@ -35,25 +35,44 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-      <h1 className="text-2xl font-semibold">Mi cuenta</h1>
-      <p>
+      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
+        Mi cuenta
+      </h1>
+      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
         Sesión iniciada como <strong>{session.user.email}</strong>
       </p>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Mis reservas</h2>
-        {bookings.length === 0 && <p className="text-sm text-muted-foreground">Todavía no tienes reservas.</p>}
+        <h2 className="text-lg font-medium" style={{ fontFamily: "var(--tenant-font-heading)" }}>
+          Mis reservas
+        </h2>
+        {bookings.length === 0 && (
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+            Todavía no tienes reservas.
+          </p>
+        )}
         <ul className="flex flex-col gap-3">
           {bookings.map((booking) => {
             const variant = variantById.get(booking.serviceVariantId);
             return (
-              <li key={booking.id} className="flex items-center justify-between gap-4 rounded-md border p-3">
+              <li
+                key={booking.id}
+                className="flex items-center justify-between gap-4 p-3"
+                style={{
+                  background: "var(--card)",
+                  color: "var(--card-foreground)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius)",
+                }}
+              >
                 <div className="flex flex-col gap-1 text-sm">
                   <span className="font-medium">
                     {variant ? `${variant.serviceName} (${variant.nailLength})` : booking.serviceVariantId}
                   </span>
                   <span>{formatDateTime(booking.startsAt)}</span>
-                  <span className="capitalize">{booking.status.replace("_", " ")}</span>
+                  <span className="capitalize" style={{ color: "var(--muted-foreground)" }}>
+                    {booking.status.replace("_", " ")}
+                  </span>
                 </div>
                 {CANCELLABLE_STATUSES.has(booking.status) && <CancelBookingButton bookingId={booking.id} />}
               </li>
