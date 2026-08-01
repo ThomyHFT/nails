@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarClock, LayoutDashboard, Palette, Sparkles, Tag } from "lucide-react";
+import { CalendarClock, Images, LayoutDashboard, Palette, Sparkles, Tag } from "lucide-react";
 
 export function AdminSidebar({ slug }: { slug: string }) {
   const pathname = usePathname();
@@ -14,6 +14,7 @@ export function AdminSidebar({ slug }: { slug: string }) {
     { href: `${base}/disponibilidad`, label: "Disponibilidad", icon: CalendarClock, exact: false },
     { href: `${base}/servicios`, label: "Servicios", icon: Tag, exact: false },
     { href: `${base}/diseno`, label: "Catálogo de diseño", icon: Sparkles, exact: false },
+    { href: `${base}/portafolio`, label: "Portafolio", icon: Images, exact: false },
     { href: `${base}/marca`, label: "Marca", icon: Palette, exact: false },
   ];
 
