@@ -52,9 +52,10 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [02](specs/02-disponibilidad-reserva.md) | Disponibilidad mensual, slots, reserva, confirmación, strikes | Implemented |
 | [03](specs/03-disenador-unas-cotizacion.md) | Diseñador de uñas, catálogo `design_elements`, cotización | Implemented |
 | [04](specs/04-personalizacion-marca-tenant.md) | Personalización de marca por tenant (`tenant_branding`, arquetipos, theming) y rediseño visual completo | Implemented |
-| 05 (sin redactar) | Catálogo de precios público, portafolio, reviews | — |
+| [05](specs/05-catalogo-portafolio-imagenes.md) | CRUD de servicios, subida de imágenes con Vercel Blob, portafolio, catálogo público | Draft |
+| 06 (sin redactar) | Reviews: moderación, publicación y vista pública | — |
 
-Sin redactar todavía, mencionado en specs anteriores como diferido: subida de imágenes (diseños, portafolio y reviews la necesitan; se resuelve una vez en su propio spec) y notificaciones por email con Resend.
+Sin redactar todavía, mencionado en specs anteriores como diferido: notificaciones por email con Resend. La subida de imágenes se resuelve en el SPEC 05 con Vercel Blob; `designs.reference_image_url` queda pendiente de enchufar esa infraestructura al flujo de reserva.
 
 El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` y `designs` solo tienen filas de seed, y `portfolio_items` y `reviews` están vacías.
 
