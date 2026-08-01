@@ -47,6 +47,35 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Escalera tonal — ver bloque `:root, .tenant-brand` más abajo. */
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-primary-tint: var(--primary-tint);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-accent-tint: var(--accent-tint);
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-on-success-tint: var(--on-success-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-on-warning-tint: var(--on-warning-tint);
+  --color-destructive-tint: var(--destructive-tint);
+
+  --radius-card: var(--brand-radius-card);
+  --radius-band: var(--brand-radius-band);
+  --radius-pill: var(--brand-radius-pill);
+
+  --shadow-e1: var(--brand-elevation-1);
+  --shadow-e2: var(--brand-elevation-2);
+  --shadow-e3: var(--brand-elevation-3);
+
+  --ease-brand: var(--brand-ease);
 }
 
 :root {
@@ -118,6 +147,142 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* ---------------------------------------------------------------------------
+ * Capa de marca — derivada, no configurable
+ *
+ * El SPEC 04 le da a cada tenant un puñado de colores base (background,
+ * primary, border…). Stitch, en cambio, compone con una *escalera tonal*: cinco
+ * superficies cada vez más teñidas hacia la marca, que es lo que produce las
+ * bandas de sección, los chips y la elevación sin sombras pesadas.
+ *
+ * En vez de guardar veinte colores más por tenant, la escalera se deriva con
+ * `color-mix` mezclando `--background` con `--primary`. Sale gratis en tres
+ * sentidos: respeta el color propio de cada tenant, funciona igual en modo
+ * oscuro (donde primary es claro y la mezcla aclara en vez de oscurecer), y no
+ * toca ni el esquema ni el dominio.
+ *
+ * El selector incluye `:root` y `.tenant-brand` a propósito: las custom
+ * properties se sustituyen en el elemento donde se declaran, así que la
+ * escalera tiene que declararse en el mismo elemento que define `--background`
+ * o se congelaría con los valores del root.
+ * ------------------------------------------------------------------------- */
+:root,
+.tenant-brand {
+  /* El tinte de la escalera es mayormente `--foreground` con un toque de
+   * `--primary`. Mezclar directo contra primary funcionaba con la paleta nude
+   * de Stitch, pero un tenant con un primary saturado (el morado de Karla)
+   * convertía las bandas y el pie en bloques de color. El foreground es casi
+   * neutro en los cuatro arquetipos, así que domina la mezcla y el primary
+   * solo aporta la temperatura de la marca. */
+  --surface-shade: color-mix(in oklab, var(--foreground) 82%, var(--primary));
+  --surface-1: color-mix(in oklab, var(--background) 97%, var(--surface-shade));
+  --surface-2: color-mix(in oklab, var(--background) 94%, var(--surface-shade));
+  --surface-3: color-mix(in oklab, var(--background) 91%, var(--surface-shade));
+  --surface-4: color-mix(in oklab, var(--background) 88%, var(--surface-shade));
+
+  --outline: color-mix(in oklab, var(--border) 75%, var(--foreground));
+  --outline-variant: color-mix(in oklab, var(--border) 55%, transparent);
+
+  --primary-tint: color-mix(in oklab, var(--primary) 12%, var(--background));
+  --primary-hover: color-mix(in oklab, var(--primary) 86%, var(--background));
+  --primary-container: color-mix(in oklab, var(--primary) 80%, var(--background));
+  --on-primary-container: var(--primary-foreground);
+  --accent-tint: color-mix(in oklab, var(--accent) 18%, var(--background));
+
+  /* Semánticos de estado: no dependen del tenant, una reserva confirmada es
+   * verde en las cuatro marcas. Se tiñen levemente hacia el fondo para no
+   * pelearse con la paleta. */
+  --success: #2e7d5b;
+  --success-tint: color-mix(in oklab, #2e7d5b 14%, var(--background));
+  --on-success-tint: color-mix(in oklab, #2e7d5b 75%, var(--foreground));
+  --warning: #a86a12;
+  --warning-tint: color-mix(in oklab, #a86a12 14%, var(--background));
+  --on-warning-tint: color-mix(in oklab, #a86a12 75%, var(--foreground));
+  --destructive-tint: color-mix(in oklab, var(--destructive) 12%, var(--background));
+
+  /* Formas. `--radius` es el dial del arquetipo (0 en Editorial, 1.5rem en
+   * Pastel); todo lo demás se escala desde ahí para que Editorial quede recto y
+   * Pastel burbujeante sin ramas condicionales. El `min()` evita que Pastel
+   * derive en una banda de 4.5rem. */
+  --brand-radius-card: min(calc(var(--radius) * 1.5), 1.5rem);
+  --brand-radius-band: min(calc(var(--radius) * 3), 2rem);
+  --brand-radius-pill: calc(var(--radius) * 200);
+
+  /* Elevación: oclusión ambiental suave, nunca drop shadow duro. */
+  --brand-elevation-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 16px -10px rgb(0 0 0 / 0.1);
+  --brand-elevation-2: 0 2px 4px rgb(0 0 0 / 0.04), 0 12px 28px -12px rgb(0 0 0 / 0.14);
+  --brand-elevation-3: 0 24px 48px -20px rgb(0 0 0 / 0.22);
+
+  --brand-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ---------------------------------------------------------------------------
+ * Escala tipográfica
+ *
+ * Stitch define seis roles fijos (display-lg 48px / 32px móvil, headline-md,
+ * body-lg, body-md, label-sm). Acá viven como clases con `clamp()` para no
+ * duplicar cada tamaño en su breakpoint. Los títulos usan la familia de
+ * heading del tenant; el cuerpo, la de body.
+ * ------------------------------------------------------------------------- */
+@layer components {
+  .t-display {
+    font-family: var(--tenant-font-heading);
+    font-size: clamp(2rem, 1.35rem + 2.8vw, 3rem);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+
+  .t-headline {
+    font-family: var(--tenant-font-heading);
+    font-size: clamp(1.375rem, 1.2rem + 0.9vw, 1.75rem);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .t-title {
+    font-family: var(--tenant-font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .t-body-lg {
+    font-family: var(--tenant-font-body);
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+
+  .t-body {
+    font-family: var(--tenant-font-body);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .t-caption {
+    font-family: var(--tenant-font-body);
+    font-size: 0.875rem;
+    line-height: 1.45;
+  }
+
+  /* El sello Stitch: microtexto en versalitas para botones, overlines y chips. */
+  .t-label {
+    font-family: var(--tenant-font-body);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Cifras en CLP: peso alto y cero tabular para que no bailen entre filas. */
+  .t-price {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
 }
 
 @layer base {
