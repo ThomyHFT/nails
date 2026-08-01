@@ -51,7 +51,8 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [01](specs/01-cimientos-auth-multitenant.md) | Esquema completo (11 tablas), auth, multi-tenant, guards | Implemented |
 | [02](specs/02-disponibilidad-reserva.md) | Disponibilidad mensual, slots, reserva, confirmación, strikes | Implemented |
 | [03](specs/03-disenador-unas-cotizacion.md) | Diseñador de uñas, catálogo `design_elements`, cotización | Implemented |
-| 04 (sin redactar) | Catálogo de precios público, portafolio, reviews | — |
+| [04](specs/04-personalizacion-marca-tenant.md) | Personalización de marca por tenant (`tenant_branding`, arquetipos, theming) y rediseño visual completo | Implemented |
+| 05 (sin redactar) | Catálogo de precios público, portafolio, reviews | — |
 
 Sin redactar todavía, mencionado en specs anteriores como diferido: subida de imágenes (diseños, portafolio y reviews la necesitan; se resuelve una vez en su propio spec) y notificaciones por email con Resend.
 

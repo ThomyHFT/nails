@@ -1,6 +1,6 @@
 # SPEC 04 — Personalización de marca por tenant y rediseño visual
 
-> **Estado:** Approved
+> **Estado:** Implemented
 > **Depende de:** SPEC 01, SPEC 02, SPEC 03
 > **Fecha:** 2026-07-31
 > **Objetivo:** Permitir que cada profesional defina la identidad visual de su micrositio —arquetipo, color primario, tipografía, logo y portada— y rediseñar todas las pantallas de la app para que consuman esos tokens.
