@@ -10,10 +10,12 @@ const MAX_BYTES = 8 * 1024 * 1024;
 export function ImageUploader({
   pathPrefix,
   currentUrl,
+  clientPayload,
   onUploaded,
 }: {
   pathPrefix: string;
   currentUrl?: string | null;
+  clientPayload?: string;
   onUploaded: (url: string) => void;
 }) {
   const inputId = useId();
@@ -42,6 +44,7 @@ export function ImageUploader({
       const blob = await upload(`${pathPrefix}/${file.name}`, file, {
         access: "public",
         handleUploadUrl: "/api/upload",
+        clientPayload,
       });
       setPreview(blob.url);
       onUploaded(blob.url);

@@ -5,6 +5,10 @@ import { db } from "@/server/infrastructure/db/client";
 import { professionals, users } from "@/server/infrastructure/db/schema/users";
 import { services, serviceVariants } from "@/server/infrastructure/db/schema/services";
 import { designElements } from "@/server/infrastructure/db/schema/designs";
+import { bookings } from "@/server/infrastructure/db/schema/bookings";
+import { reviews } from "@/server/infrastructure/db/schema/content";
+
+const SEED_CLIENT_EMAIL = "clienta@misunas.cl";
 
 const SEED_SLUG = "karla";
 const SEED_EMAIL = "profesional@misunas.cl";
@@ -54,15 +58,18 @@ async function main() {
     ])
     .returning();
 
-  await db.insert(serviceVariants).values([
-    { serviceId: manicure.id, nailLength: "short", priceClp: 12000, durationMinutes: 45 },
-    { serviceId: manicure.id, nailLength: "medium", priceClp: 15000, durationMinutes: 60 },
-    { serviceId: manicure.id, nailLength: "long", priceClp: 18000, durationMinutes: 75 },
-    { serviceId: acrilicas.id, nailLength: "short", priceClp: 20000, durationMinutes: 90 },
-    { serviceId: acrilicas.id, nailLength: "medium", priceClp: 25000, durationMinutes: 105 },
-    { serviceId: acrilicas.id, nailLength: "long", priceClp: 30000, durationMinutes: 120 },
-    { serviceId: retiro.id, nailLength: "single", priceClp: 5000, durationMinutes: 20 },
-  ]);
+  const insertedVariants = await db
+    .insert(serviceVariants)
+    .values([
+      { serviceId: manicure.id, nailLength: "short", priceClp: 12000, durationMinutes: 45 },
+      { serviceId: manicure.id, nailLength: "medium", priceClp: 15000, durationMinutes: 60 },
+      { serviceId: manicure.id, nailLength: "long", priceClp: 18000, durationMinutes: 75 },
+      { serviceId: acrilicas.id, nailLength: "short", priceClp: 20000, durationMinutes: 90 },
+      { serviceId: acrilicas.id, nailLength: "medium", priceClp: 25000, durationMinutes: 105 },
+      { serviceId: acrilicas.id, nailLength: "long", priceClp: 30000, durationMinutes: 120 },
+      { serviceId: retiro.id, nailLength: "single", priceClp: 5000, durationMinutes: 20 },
+    ])
+    .returning();
 
   await db.insert(designElements).values([
     { professionalId: professional.id, category: "finish", code: "matte", label: "Mate", sortOrder: 0 },
@@ -104,8 +111,88 @@ async function main() {
     },
   ]);
 
+  const manicureShort = insertedVariants.find((v) => v.serviceId === manicure.id && v.nailLength === "short")!;
+
+  const [client] = await db
+    .insert(users)
+    .values({
+      email: SEED_CLIENT_EMAIL,
+      passwordHash,
+      name: "Camila Rodríguez",
+      role: "client",
+    })
+    .returning();
+
+  const insertedBookings = await db
+    .insert(bookings)
+    .values([
+      {
+        professionalId: professional.id,
+        clientUserId: client.id,
+        serviceVariantId: manicureShort.id,
+        startsAt: new Date("2026-07-01T14:00:00Z"),
+        endsAt: new Date("2026-07-01T14:45:00Z"),
+        status: "completed",
+        priceClp: manicureShort.priceClp,
+        durationMinutes: manicureShort.durationMinutes,
+      },
+      {
+        professionalId: professional.id,
+        clientUserId: client.id,
+        serviceVariantId: manicureShort.id,
+        startsAt: new Date("2026-07-08T14:00:00Z"),
+        endsAt: new Date("2026-07-08T14:45:00Z"),
+        status: "completed",
+        priceClp: manicureShort.priceClp,
+        durationMinutes: manicureShort.durationMinutes,
+      },
+      {
+        professionalId: professional.id,
+        clientUserId: client.id,
+        serviceVariantId: manicureShort.id,
+        startsAt: new Date("2026-07-15T14:00:00Z"),
+        endsAt: new Date("2026-07-15T14:45:00Z"),
+        status: "completed",
+        priceClp: manicureShort.priceClp,
+        durationMinutes: manicureShort.durationMinutes,
+      },
+    ])
+    .returning();
+
+  const now = new Date();
+  await db.insert(reviews).values([
+    {
+      professionalId: professional.id,
+      bookingId: insertedBookings[0].id,
+      clientUserId: client.id,
+      rating: 5,
+      body: "Quedé encantada con el resultado, muy prolija y puntual.",
+      status: "approved",
+      moderatedAt: now,
+      authorInstagram: "camila.rdz",
+    },
+    {
+      professionalId: professional.id,
+      bookingId: insertedBookings[1].id,
+      clientUserId: client.id,
+      rating: 4,
+      body: "Buena atención, el diseño duró varias semanas sin descascararse.",
+      status: "approved",
+      moderatedAt: now,
+    },
+    {
+      professionalId: professional.id,
+      bookingId: insertedBookings[2].id,
+      clientUserId: client.id,
+      rating: 5,
+      body: "Recién reservé de nuevo, esperando que la moderen.",
+      status: "pending",
+    },
+  ]);
+
   console.log(`Seed completo. Tenant "${SEED_SLUG}" creado.`);
   console.log(`Login profesional: ${SEED_EMAIL} / ${SEED_PASSWORD}`);
+  console.log(`Login clienta: ${SEED_CLIENT_EMAIL} / ${SEED_PASSWORD}`);
 }
 
 main()

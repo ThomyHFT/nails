@@ -44,6 +44,7 @@ export const reviews = pgTable(
     status: reviewStatusEnum("status").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     moderatedAt: timestamp("moderated_at", { withTimezone: true }),
+    authorInstagram: text("author_instagram"),
   },
   (table) => [check("reviews_rating_between_1_and_5", sql`${table.rating} BETWEEN 1 AND 5`)],
 );
