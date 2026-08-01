@@ -26,3 +26,18 @@ export const bookingStatusEnum = pgEnum("booking_status", [
 export const actorEnum = pgEnum("actor", ["client", "professional"]);
 
 export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved", "rejected"]);
+
+export const brandArchetypeEnum = pgEnum("brand_archetype", [
+  "minimal_nude",
+  "glam",
+  "editorial",
+  "pastel_soft",
+]);
+
+export const brandFontPairEnum = pgEnum("brand_font_pair", [
+  "playfair_jakarta",
+  "cormorant_inter",
+  "dmserif_outfit",
+  "jakarta_solo",
+  "fraunces_nunito",
+]);
