@@ -114,7 +114,11 @@ export function SectionHeading({
     <div
       className={cn(
         "flex gap-4",
-        centered ? "flex-col items-center text-center" : "flex-row items-end justify-between",
+        centered
+          ? "flex-col items-center text-center"
+          : // En móvil apila: con `flex-row` el titular se comprimía a tres
+            // líneas para dejarle sitio a la acción de la derecha.
+            "flex-col items-start sm:flex-row sm:items-end sm:justify-between",
         className,
       )}
     >

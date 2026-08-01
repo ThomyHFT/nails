@@ -67,8 +67,9 @@ export function RatingSummary({
   return (
     <span className={cn("inline-flex items-center gap-3", className)}>
       <RatingStars rating={Math.round(average)} size={size} />
-      <span className="t-price">{average.toFixed(1)}</span>
-      <Caption>
+      {/* Coma decimal: en Chile "4.5" se lee como cuatro mil quinientos. */}
+      <span className="t-price">{average.toFixed(1).replace(".", ",")}</span>
+      <Caption className="whitespace-nowrap">
         {count} {count === 1 ? "opinión" : "opiniones"}
       </Caption>
     </span>

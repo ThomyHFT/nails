@@ -14,6 +14,103 @@ const SEED_SLUG = "karla";
 const SEED_EMAIL = "profesional@misunas.cl";
 const SEED_PASSWORD = "cambiame123";
 
+/**
+ * Reservas completadas y sus opiniones. Se resuelve todo desde la base en vez
+ * de recibir lo insertado más arriba, para que sirva igual sobre un tenant
+ * recién creado que sobre uno que ya existía.
+ */
+async function seedReviews(professionalId: string) {
+  const [anyReview] = await db
+    .select({ id: reviews.id })
+    .from(reviews)
+    .where(eq(reviews.professionalId, professionalId))
+    .limit(1);
+
+  if (anyReview) {
+    console.log("Opiniones ya sembradas.");
+    return;
+  }
+
+  // La clienta puede no existir: las bases sembradas antes del SPEC 02 no la
+  // tienen. Se crea acá en vez de abortar, que es lo que hace este bloque
+  // utilizable como relleno.
+  let [client] = await db.select().from(users).where(eq(users.email, SEED_CLIENT_EMAIL)).limit(1);
+  if (!client) {
+    [client] = await db
+      .insert(users)
+      .values({
+        email: SEED_CLIENT_EMAIL,
+        passwordHash: await bcrypt.hash(SEED_PASSWORD, 12),
+        name: "Camila Rodríguez",
+        role: "client",
+      })
+      .returning();
+    console.log(`Clienta ${SEED_CLIENT_EMAIL} creada.`);
+  }
+
+  const [variant] = await db
+    .select({ id: serviceVariants.id, priceClp: serviceVariants.priceClp, durationMinutes: serviceVariants.durationMinutes })
+    .from(serviceVariants)
+    .innerJoin(services, eq(serviceVariants.serviceId, services.id))
+    .where(eq(services.professionalId, professionalId))
+    .limit(1);
+
+  if (!variant) {
+    console.log("El tenant no tiene variantes de servicio. Opiniones omitidas.");
+    return;
+  }
+
+  const days = ["2026-07-01", "2026-07-08", "2026-07-15"];
+  const insertedBookings = await db
+    .insert(bookings)
+    .values(
+      days.map((day) => ({
+        professionalId,
+        clientUserId: client.id,
+        serviceVariantId: variant.id,
+        startsAt: new Date(`${day}T14:00:00Z`),
+        endsAt: new Date(`${day}T14:45:00Z`),
+        status: "completed" as const,
+        priceClp: variant.priceClp,
+        durationMinutes: variant.durationMinutes,
+      })),
+    )
+    .returning();
+
+  const now = new Date();
+  await db.insert(reviews).values([
+    {
+      professionalId,
+      bookingId: insertedBookings[0].id,
+      clientUserId: client.id,
+      rating: 5,
+      body: "Quedé encantada con el resultado, muy prolija y puntual.",
+      status: "approved",
+      moderatedAt: now,
+      authorInstagram: "camila.rdz",
+    },
+    {
+      professionalId,
+      bookingId: insertedBookings[1].id,
+      clientUserId: client.id,
+      rating: 4,
+      body: "Buena atención, el diseño duró varias semanas sin descascararse.",
+      status: "approved",
+      moderatedAt: now,
+    },
+    {
+      professionalId,
+      bookingId: insertedBookings[2].id,
+      clientUserId: client.id,
+      rating: 5,
+      body: "Recién reservé de nuevo, esperando que la moderen.",
+      status: "pending",
+    },
+  ]);
+
+  console.log("Opiniones sembradas: 2 aprobadas y 1 pendiente.");
+}
+
 async function main() {
   const [existing] = await db
     .select()
@@ -22,7 +119,13 @@ async function main() {
     .limit(1);
 
   if (existing) {
-    console.log(`Ya existe el tenant "${SEED_SLUG}". Seed omitido, nada duplicado.`);
+    // Idempotente no es lo mismo que todo-o-nada. El guard cortaba acá, así
+    // que cualquier bloque agregado después de la primera siembra —las reviews
+    // del SPEC 06, por ejemplo— quedaba inalcanzable sobre una base ya
+    // sembrada. Cada bloque nuevo se chequea por su cuenta y rellena lo que
+    // falte.
+    console.log(`Ya existe el tenant "${SEED_SLUG}". Rellenando lo que falte.`);
+    await seedReviews(existing.id);
     return;
   }
 
@@ -58,7 +161,7 @@ async function main() {
     ])
     .returning();
 
-  const insertedVariants = await db
+  await db
     .insert(serviceVariants)
     .values([
       { serviceId: manicure.id, nailLength: "short", priceClp: 12000, durationMinutes: 45 },
@@ -111,84 +214,14 @@ async function main() {
     },
   ]);
 
-  const manicureShort = insertedVariants.find((v) => v.serviceId === manicure.id && v.nailLength === "short")!;
+  await db.insert(users).values({
+    email: SEED_CLIENT_EMAIL,
+    passwordHash,
+    name: "Camila Rodríguez",
+    role: "client",
+  });
 
-  const [client] = await db
-    .insert(users)
-    .values({
-      email: SEED_CLIENT_EMAIL,
-      passwordHash,
-      name: "Camila Rodríguez",
-      role: "client",
-    })
-    .returning();
-
-  const insertedBookings = await db
-    .insert(bookings)
-    .values([
-      {
-        professionalId: professional.id,
-        clientUserId: client.id,
-        serviceVariantId: manicureShort.id,
-        startsAt: new Date("2026-07-01T14:00:00Z"),
-        endsAt: new Date("2026-07-01T14:45:00Z"),
-        status: "completed",
-        priceClp: manicureShort.priceClp,
-        durationMinutes: manicureShort.durationMinutes,
-      },
-      {
-        professionalId: professional.id,
-        clientUserId: client.id,
-        serviceVariantId: manicureShort.id,
-        startsAt: new Date("2026-07-08T14:00:00Z"),
-        endsAt: new Date("2026-07-08T14:45:00Z"),
-        status: "completed",
-        priceClp: manicureShort.priceClp,
-        durationMinutes: manicureShort.durationMinutes,
-      },
-      {
-        professionalId: professional.id,
-        clientUserId: client.id,
-        serviceVariantId: manicureShort.id,
-        startsAt: new Date("2026-07-15T14:00:00Z"),
-        endsAt: new Date("2026-07-15T14:45:00Z"),
-        status: "completed",
-        priceClp: manicureShort.priceClp,
-        durationMinutes: manicureShort.durationMinutes,
-      },
-    ])
-    .returning();
-
-  const now = new Date();
-  await db.insert(reviews).values([
-    {
-      professionalId: professional.id,
-      bookingId: insertedBookings[0].id,
-      clientUserId: client.id,
-      rating: 5,
-      body: "Quedé encantada con el resultado, muy prolija y puntual.",
-      status: "approved",
-      moderatedAt: now,
-      authorInstagram: "camila.rdz",
-    },
-    {
-      professionalId: professional.id,
-      bookingId: insertedBookings[1].id,
-      clientUserId: client.id,
-      rating: 4,
-      body: "Buena atención, el diseño duró varias semanas sin descascararse.",
-      status: "approved",
-      moderatedAt: now,
-    },
-    {
-      professionalId: professional.id,
-      bookingId: insertedBookings[2].id,
-      clientUserId: client.id,
-      rating: 5,
-      body: "Recién reservé de nuevo, esperando que la moderen.",
-      status: "pending",
-    },
-  ]);
+  await seedReviews(professional.id);
 
   console.log(`Seed completo. Tenant "${SEED_SLUG}" creado.`);
   console.log(`Login profesional: ${SEED_EMAIL} / ${SEED_PASSWORD}`);
