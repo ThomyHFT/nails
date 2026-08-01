@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AuthCard, ActionLink, BrandButton, Caption, TextField } from "@/components/brand";
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -40,51 +38,46 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-16">
-      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-        Crear cuenta
-      </h1>
+    <AuthCard
+      title="Crear cuenta"
+      description="Con tu cuenta reservas hora, sigues el estado de tus citas y dejas tu opinión."
+      footer={<ActionLink href={`/${params.slug}/login`}>Ya tengo cuenta</ActionLink>}
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <TextField
+          label="Nombre"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoComplete="name"
+          required
+        />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="name">Nombre</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
+        <TextField
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          required
+        />
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
+        <TextField
+          label="Contraseña"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
+          hint="Mínimo 8 caracteres."
+          required
+          minLength={8}
+        />
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="password">Contraseña</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-          />
-        </div>
+        {error && <Caption className="text-destructive">{error}</Caption>}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
-        </Button>
+        <BrandButton type="submit" size="lg" fullWidth disabled={isSubmitting}>
+          {isSubmitting ? "Creando cuenta…" : "Crear cuenta"}
+        </BrandButton>
       </form>
-    </div>
+    </AuthCard>
   );
 }

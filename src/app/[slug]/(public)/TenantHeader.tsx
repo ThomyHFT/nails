@@ -1,5 +1,7 @@
-import Link from "next/link";
-import { SafeImage } from "@/app/[slug]/(public)/SafeImage";
+"use client";
+
+import { usePathname } from "next/navigation";
+import { AppHeader } from "@/components/brand";
 
 export function TenantHeader({
   slug,
@@ -10,21 +12,15 @@ export function TenantHeader({
   businessName: string;
   logoUrl: string | null;
 }) {
-  return (
-    <header className="flex items-center gap-3 border-b border-border px-4 py-3">
-      <Link href={`/${slug}`} className="flex items-center gap-2.5">
-        {logoUrl ? (
-          <SafeImage
-            src={logoUrl}
-            alt={businessName}
-            className="size-8 rounded-full object-cover"
-            style={{ border: "1px solid var(--border)" }}
-          />
-        ) : null}
-        <span className="text-base font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-          {businessName}
-        </span>
-      </Link>
-    </header>
-  );
+  const pathname = usePathname();
+
+  // La navegación de escritorio lleva a los mismos destinos que la barra
+  // inferior de móvil: son una anatomía distinta del mismo mapa, no dos mapas.
+  const items = [
+    { href: `/${slug}`, label: "Inicio", active: pathname === `/${slug}` },
+    { href: `/${slug}/servicios`, label: "Servicios", active: pathname?.startsWith(`/${slug}/servicios`) ?? false },
+    { href: `/${slug}/opiniones`, label: "Opiniones", active: pathname?.startsWith(`/${slug}/opiniones`) ?? false },
+  ];
+
+  return <AppHeader homeHref={`/${slug}`} businessName={businessName} logoUrl={logoUrl} items={items} />;
 }

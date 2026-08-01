@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AuthCard, BrandButton, Caption, TextField } from "@/components/brand";
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
@@ -39,50 +37,41 @@ export default function LoginPage() {
 
   if (session) {
     return (
-      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-16">
-        <p className="text-lg">
-          Sesión iniciada como <strong>{session.user.email}</strong>
-        </p>
-        <Button onClick={() => signOut({ redirect: false })}>Cerrar sesión</Button>
-      </div>
+      <AuthCard title="Ya iniciaste sesión" description={`Estás dentro como ${session.user.email}.`}>
+        <BrandButton size="lg" fullWidth variant="outline" onClick={() => signOut({ redirect: false })}>
+          Cerrar sesión
+        </BrandButton>
+      </AuthCard>
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-16">
-      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-        Iniciar sesión
-      </h1>
+    <AuthCard title="Iniciar sesión" description="Entra para ver tus reservas y dejar tu opinión.">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <TextField
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          required
+        />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
+        <TextField
+          label="Contraseña"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          required
+        />
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="password">Contraseña</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        {error && <Caption className="text-destructive">{error}</Caption>}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Ingresando..." : "Ingresar"}
-        </Button>
+        <BrandButton type="submit" size="lg" fullWidth disabled={isSubmitting}>
+          {isSubmitting ? "Ingresando…" : "Ingresar"}
+        </BrandButton>
       </form>
-    </div>
+    </AuthCard>
   );
 }

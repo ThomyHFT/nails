@@ -5,6 +5,8 @@ import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositor
 import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
 import { TenantHeader } from "@/app/[slug]/(public)/TenantHeader";
 import { BottomNav } from "@/app/[slug]/(public)/BottomNav";
+import { SiteFooter } from "@/components/brand";
+import { instagramUrl } from "@/app/[slug]/(public)/links";
 
 export default async function PublicLayout({
   children,
@@ -26,6 +28,16 @@ export default async function PublicLayout({
     <div className="flex min-h-screen flex-col">
       <TenantHeader slug={slug} businessName={professional.businessName} logoUrl={branding?.logoUrl ?? null} />
       <main className="flex-1">{children}</main>
+      <SiteFooter
+        businessName={professional.businessName}
+        links={[
+          { label: "Servicios", href: `/${slug}/servicios` },
+          { label: "Opiniones", href: `/${slug}/opiniones` },
+          ...(professional.instagramHandle
+            ? [{ label: "Instagram", href: instagramUrl(professional.instagramHandle), external: true }]
+            : []),
+        ]}
+      />
       <BottomNav slug={slug} />
     </div>
   );

@@ -4,6 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { calculateDesignQuote, type DesignQuote } from "@/server/domain/design/calculate-design-quote";
 import type { DesignElement } from "@/server/domain/design/design-element.entity";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
+import {
+  BrandButton,
+  Caption,
+  Chip,
+  InfoNote,
+  OptionCard,
+  Overline,
+  Panel,
+  SelectChip,
+  Swatch,
+} from "@/components/brand";
 
 type NailShape = "almond" | "coffin" | "square" | "round" | "stiletto";
 
@@ -19,12 +30,12 @@ export interface NailDesignerResult {
   quote: DesignQuote;
 }
 
-const SHAPES: { value: NailShape; label: string }[] = [
-  { value: "almond", label: "Almendra" },
-  { value: "coffin", label: "Ataúd" },
-  { value: "square", label: "Cuadrada" },
-  { value: "round", label: "Redonda" },
-  { value: "stiletto", label: "Stiletto" },
+const SHAPES: { value: NailShape; label: string; radius: string }[] = [
+  { value: "almond", label: "Almendra", radius: "45% 45% 6px 6px" },
+  { value: "coffin", label: "Ataúd", radius: "30% 30% 10px 10px" },
+  { value: "square", label: "Cuadrada", radius: "6px 6px 3px 3px" },
+  { value: "round", label: "Redonda", radius: "50% 50% 8px 8px" },
+  { value: "stiletto", label: "Stiletto", radius: "50% 50% 2px 2px / 70% 70% 2px 2px" },
 ];
 
 // Índices 0–4: mano izquierda, del pulgar al meñique. Índices 5–9: mano derecha, del pulgar al meñique.
@@ -76,7 +87,9 @@ function Hand({
 
         return (
           <g key={nailIndex} transform={`translate(${x}, ${120 - height})`}>
-            <rect x={4} y={16} width={26} height={height - 16} rx={13} className="fill-muted" />
+            {/* Los colores salen de los tokens del tenant: la mano tenía gris
+                hardcodeado y se veía ajena en los arquetipos Glam y Pastel. */}
+            <rect x={4} y={16} width={26} height={height - 16} rx={13} fill="var(--surface-3)" />
             {/* Área de toque ampliada para cumplir 44px mínimo en mobile */}
             <circle
               cx={17}
@@ -93,8 +106,8 @@ function Hand({
               cy={12}
               rx={15}
               ry={13}
-              fill={nail.baseColorHex ?? "#ffffff"}
-              stroke={isSelected ? "#111827" : "#9ca3af"}
+              fill={nail.baseColorHex ?? "var(--card)"}
+              stroke={isSelected ? "var(--primary)" : "var(--outline-variant)"}
               strokeWidth={isSelected ? 3 : 1}
               className="pointer-events-none"
             />
@@ -146,9 +159,7 @@ export function NailDesigner({
 
   function updateSelectedNail(patch: Partial<NailState>) {
     if (selectedNailIndex === null) return;
-    setNails((current) =>
-      current.map((nail, index) => (index === selectedNailIndex ? { ...nail, ...patch } : nail)),
-    );
+    setNails((current) => current.map((nail, index) => (index === selectedNailIndex ? { ...nail, ...patch } : nail)));
   }
 
   function applyToAll() {
@@ -167,149 +178,149 @@ export function NailDesigner({
   }
 
   const selectedNail = selectedNailIndex !== null ? nails[selectedNailIndex] : null;
+  const paintedCount = nails.filter((nail) => nail.baseColorCode && nail.finish).length;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <label htmlFor="nail-shape" className="text-sm font-medium">
-          Forma
-        </label>
-        <select
-          id="nail-shape"
-          value={shape}
-          onChange={(e) => setShape(e.target.value as NailShape)}
-          className="px-2 py-1 text-sm"
-          style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
-        >
-          {SHAPES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
+    <div className="flex flex-col gap-5">
+      {/* Lienzo: las manos sobre superficie tonal, como en los mockups del
+          diseñador, para que la uña seleccionada tenga contra qué destacar. */}
+      <Panel level={2} padding="sm" className="flex flex-col gap-3">
+        <svg viewBox="0 0 400 140" className="w-full">
+          <Hand
+            mirrored={false}
+            nails={nails}
+            selectedIndex={selectedNailIndex}
+            indexBase={0}
+            onSelectNail={setSelectedNailIndex}
+          />
+          <Hand
+            mirrored
+            nails={nails}
+            selectedIndex={selectedNailIndex}
+            indexBase={5}
+            onSelectNail={setSelectedNailIndex}
+          />
+        </svg>
+        <div className="flex items-center justify-center gap-3">
+          <Overline>
+            {selectedNailIndex === null
+              ? "Toca una uña para empezar"
+              : `Uña seleccionada: ${selectedNailIndex + 1} de 10`}
+          </Overline>
+          <Chip tone={paintedCount === 10 ? "success" : "neutral"}>{paintedCount}/10 listas</Chip>
+        </div>
+      </Panel>
+
+      <div className="flex flex-col gap-3">
+        <Overline>Forma</Overline>
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+          {SHAPES.map((option) => (
+            <OptionCard
+              key={option.value}
+              label={option.label}
+              selected={shape === option.value}
+              onSelect={() => setShape(option.value)}
+            >
+              <span
+                className="h-12 w-8 border border-outline-variant bg-surface-3"
+                style={{ borderRadius: option.radius }}
+              />
+            </OptionCard>
           ))}
-        </select>
+        </div>
       </div>
 
-      <svg viewBox="0 0 400 140" className="w-full max-w-xl">
-        <Hand mirrored={false} nails={nails} selectedIndex={selectedNailIndex} indexBase={0} onSelectNail={setSelectedNailIndex} />
-        <Hand mirrored nails={nails} selectedIndex={selectedNailIndex} indexBase={5} onSelectNail={setSelectedNailIndex} />
-      </svg>
-
       {selectedNail && (
-        <div
-          className="flex flex-col gap-3 p-4"
-          style={{ background: "var(--card)", color: "var(--card-foreground)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
-        >
-          <p className="text-sm font-medium">Uña {(selectedNailIndex as number) + 1} de 10</p>
-
-          <div className="flex items-center gap-3">
-            <label htmlFor="nail-color" className="w-24 text-sm">
-              Color
-            </label>
-            <select
-              id="nail-color"
-              value={selectedNail.baseColorCode ?? ""}
-              onChange={(e) => {
-                const element = colors.find((c) => c.code === e.target.value);
-                updateSelectedNail({
-                  baseColorCode: element?.code ?? null,
-                  baseColorHex: element?.colorHex ?? null,
-                });
-              }}
-              className="px-2 py-1 text-sm"
-              style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
-            >
-              <option value="">Elegir...</option>
-              {colors.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <label htmlFor="nail-finish" className="w-24 text-sm">
-              Acabado
-            </label>
-            <select
-              id="nail-finish"
-              value={selectedNail.finish ?? ""}
-              onChange={(e) => updateSelectedNail({ finish: e.target.value || null })}
-              className="px-2 py-1 text-sm"
-              style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
-            >
-              <option value="">Elegir...</option>
-              {finishes.map((f) => (
-                <option key={f.code} value={f.code}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
+        <Panel className="flex flex-col gap-5">
+          <div className="flex items-center justify-between gap-3">
+            <Overline>Uña {(selectedNailIndex as number) + 1}</Overline>
+            <BrandButton size="sm" variant="ghost" onClick={applyToAll}>
+              Aplicar a todas
+            </BrandButton>
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-sm">Decoraciones</span>
+            <Overline>Color base</Overline>
             <div className="flex flex-wrap gap-3">
-              {decorations.map((d) => (
-                <label key={d.code} className="flex items-center gap-1 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={selectedNail.decorations.includes(d.code)}
-                    onChange={() => toggleDecoration(d.code)}
-                  />
-                  {d.label}
-                </label>
+              {colors.map((c) => (
+                <Swatch
+                  key={c.code}
+                  color={c.colorHex ?? "var(--surface-3)"}
+                  label={c.label}
+                  selected={selectedNail.baseColorCode === c.code}
+                  onSelect={() =>
+                    updateSelectedNail({ baseColorCode: c.code, baseColorHex: c.colorHex ?? null })
+                  }
+                />
               ))}
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={applyToAll}
-            className="w-fit px-3 py-1 text-sm transition-colors"
-            style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
-          >
-            Aplicar a todas
-          </button>
+          <div className="flex flex-col gap-2">
+            <Overline>Acabado</Overline>
+            <div className="flex flex-wrap gap-2">
+              {finishes.map((f) => (
+                <SelectChip
+                  key={f.code}
+                  selected={selectedNail.finish === f.code}
+                  onSelect={() => updateSelectedNail({ finish: f.code })}
+                >
+                  {f.label}
+                </SelectChip>
+              ))}
+            </div>
+          </div>
+
+          {decorations.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <Overline>Decoraciones</Overline>
+              <div className="flex flex-wrap gap-2">
+                {decorations.map((d) => (
+                  <SelectChip
+                    key={d.code}
+                    selected={selectedNail.decorations.includes(d.code)}
+                    onSelect={() => toggleDecoration(d.code)}
+                  >
+                    {d.label}
+                  </SelectChip>
+                ))}
+              </div>
+            </div>
+          )}
+        </Panel>
+      )}
+
+      {techniques.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <Overline>Técnica</Overline>
+          <div className="flex flex-wrap gap-2">
+            <SelectChip selected={technique === null} onSelect={() => setTechnique(null)}>
+              Sin técnica
+            </SelectChip>
+            {techniques.map((t) => (
+              <SelectChip key={t.code} selected={technique === t.code} onSelect={() => setTechnique(t.code)}>
+                {t.label}
+              </SelectChip>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="flex items-center gap-3">
-        <label htmlFor="nail-technique" className="text-sm font-medium">
-          Técnica
-        </label>
-        <select
-          id="nail-technique"
-          value={technique ?? ""}
-          onChange={(e) => setTechnique(e.target.value || null)}
-          className="px-2 py-1 text-sm"
-          style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
-        >
-          <option value="">Sin técnica</option>
-          {techniques.map((t) => (
-            <option key={t.code} value={t.code}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {quoteError && <InfoNote tone="warning">{quoteError}</InfoNote>}
 
-      <div
-        className="p-4 text-sm"
-        style={{ background: "var(--card)", color: "var(--card-foreground)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
-      >
-        {quoteError && (
-          <p style={{ color: "var(--destructive)" }}>{quoteError}</p>
-        )}
-        {!quoteError && quote && (
-          <p>
-            Precio extra: ${quote.extraPriceClp.toLocaleString("es-CL")} · Minutos extra: {quote.extraMinutes}
-          </p>
-        )}
-        {!quoteError && !quote && (
-          <p style={{ color: "var(--muted-foreground)" }}>Elegí color y acabado en las 10 uñas para ver el precio.</p>
-        )}
-      </div>
+      {!quoteError && quote && (
+        <Panel level={2} padding="sm" className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-0.5">
+            <Overline>Extra por diseño</Overline>
+            <Caption>+{quote.extraMinutes} min de trabajo</Caption>
+          </div>
+          <span className="t-headline t-price">+${quote.extraPriceClp.toLocaleString("es-CL")}</span>
+        </Panel>
+      )}
+
+      {!quoteError && !quote && (
+        <InfoNote>Elige color y acabado en las 10 uñas para ver cuánto suma el diseño.</InfoNote>
+      )}
     </div>
   );
 }

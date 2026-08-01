@@ -1,28 +1,41 @@
+import { inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { ArrowRight, CalendarDays, MessageCircle, Star } from "lucide-react";
 import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import { GetTenantBrandingUseCase } from "@/server/application/branding/get-tenant-branding.use-case";
 import { ListPortfolioUseCase } from "@/server/application/portfolio/list-portfolio.use-case";
+import { ListReviewsUseCase } from "@/server/application/review/list-reviews.use-case";
 import { ListServicesUseCase } from "@/server/application/service/list-services.use-case";
 import { priceFromClp } from "@/server/domain/service/price-from";
+import { ratingSummary } from "@/server/domain/review/rating-summary";
+import { reviewerDisplayName } from "@/server/domain/review/reviewer-display-name";
+import { db } from "@/server/infrastructure/db/client";
+import { users } from "@/server/infrastructure/db/schema/users";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
 import { DrizzlePortfolioRepository } from "@/server/infrastructure/repositories/drizzle-portfolio.repository";
+import { DrizzleReviewsRepository } from "@/server/infrastructure/repositories/drizzle-reviews.repository";
 import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
-import { SafeImage } from "@/app/[slug]/(public)/SafeImage";
+import {
+  ActionLink,
+  Band,
+  BrandButton,
+  Container,
+  ContactCard,
+  FloatingStat,
+  GalleryGrid,
+  Hero,
+  RatingSummary,
+  ReviewCard,
+  Section,
+  SectionHeading,
+  ServiceCard,
+} from "@/components/brand";
+import { instagramLabel, instagramUrl, whatsAppUrl } from "@/app/[slug]/(public)/links";
 
 const FEATURED_SERVICES_LIMIT = 4;
-const PORTFOLIO_PREVIEW_LIMIT = 6;
-
-function normalizePhoneForWhatsApp(phone: string): string {
-  return phone.replace(/[^0-9]/g, "");
-}
-
-function instagramUrl(handle: string): string {
-  const clean = handle.startsWith("@") ? handle.slice(1) : handle;
-  return `https://instagram.com/${clean}`;
-}
+const PORTFOLIO_PREVIEW_LIMIT = 8;
+const REVIEWS_PREVIEW_LIMIT = 3;
 
 export default async function TenantPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -37,8 +50,20 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
   const allServices = await new ListServicesUseCase(new DrizzleServicesRepository()).execute(professional.id);
   const featuredServices = allServices
     .filter((s) => s.active)
-    .map((s) => ({ id: s.id, name: s.name, priceFrom: priceFromClp(s.variants) }))
-    .filter((s): s is { id: string; name: string; priceFrom: number } => s.priceFrom !== null)
+    .map((s) => {
+      const activeVariants = s.variants.filter((v) => v.active);
+      return {
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        priceFrom: priceFromClp(s.variants),
+        // La duración que se muestra es la de la variante más corta, igual que
+        // el precio "desde": ambos son el piso. Mostrar la más larga asustaría
+        // sin motivo a quien todavía no eligió el largo.
+        durationMinutes: activeVariants.length ? Math.min(...activeVariants.map((v) => v.durationMinutes)) : null,
+      };
+    })
+    .filter((s): s is typeof s & { priceFrom: number } => s.priceFrom !== null)
     .slice(0, FEATURED_SERVICES_LIMIT);
 
   const portfolioItems = (
@@ -47,113 +72,150 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
     })
   ).slice(0, PORTFOLIO_PREVIEW_LIMIT);
 
+  const publicReviews = await new ListReviewsUseCase(new DrizzleReviewsRepository()).listPublic(professional.id);
+  const reviewsSummary = ratingSummary(publicReviews);
+  const previewReviews = publicReviews.slice(0, REVIEWS_PREVIEW_LIMIT);
+  const reviewClientIds = Array.from(new Set(previewReviews.map((review) => review.clientUserId)));
+  const reviewClientRows = reviewClientIds.length
+    ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, reviewClientIds))
+    : [];
+  const reviewerNameById = new Map(reviewClientRows.map((client) => [client.id, client.name]));
+
   return (
-    <div className="flex flex-col">
-      <section
-        className="relative flex flex-col items-center gap-4 overflow-hidden px-4 py-16 text-center"
-        style={
-          branding?.coverImageUrl
-            ? {
-                backgroundImage: `linear-gradient(color-mix(in oklch, var(--background) 55%, transparent), var(--background)), url(${branding.coverImageUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
-            : undefined
+    <Container size="xl" className="flex flex-col">
+      <Hero
+        eyebrow={professional.instagramHandle ? instagramLabel(professional.instagramHandle) : undefined}
+        title={professional.businessName}
+        description={professional.bio}
+        imageUrl={branding?.coverImageUrl ?? null}
+        imageAlt={professional.businessName}
+        primaryAction={
+          <BrandButton size="lg" fullWidth href={`/${slug}/reservar`} icon={<CalendarDays className="size-4" />}>
+            Reservar hora
+          </BrandButton>
         }
-      >
-        {branding?.logoUrl && (
-          <SafeImage
-            src={branding.logoUrl}
-            alt={professional.businessName}
-            className="size-16 rounded-full object-cover"
-            style={{ border: "2px solid var(--border)" }}
-          />
-        )}
-        <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-          {professional.businessName}
-        </h1>
-        {professional.bio && <p className="max-w-md text-muted-foreground">{professional.bio}</p>}
-        <Link
-          href={`/${slug}/reservar`}
-          className="mt-2 px-6 py-2.5 text-sm font-semibold"
-          style={{ background: "var(--primary)", color: "var(--primary-foreground)", borderRadius: "var(--radius)" }}
-        >
-          Reservar hora
-        </Link>
-      </section>
+        secondaryAction={
+          professional.phone ? (
+            <BrandButton size="lg" variant="outline" fullWidth href={whatsAppUrl(professional.phone)}>
+              Contactar
+            </BrandButton>
+          ) : undefined
+        }
+        badge={
+          reviewsSummary ? (
+            <FloatingStat
+              icon={<Star className="size-5" />}
+              value={reviewsSummary.average.toFixed(1).replace(".", ",")}
+              label={`${reviewsSummary.count} ${reviewsSummary.count === 1 ? "opinión" : "opiniones"}`}
+            />
+          ) : undefined
+        }
+      />
 
       {featuredServices.length > 0 && (
-        <section className="flex flex-col gap-3 px-4 py-8">
-          <h2 className="text-lg font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-            Servicios destacados
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {featuredServices.map((service) => (
-              <li
-                key={service.id}
-                className="flex items-center justify-between gap-3 p-3 text-sm"
-                style={{
-                  background: "var(--card)",
-                  color: "var(--card-foreground)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius)",
-                }}
-              >
-                <span>{service.name}</span>
-                <span style={{ color: "var(--muted-foreground)" }}>
-                  Desde ${service.priceFrom.toLocaleString("es-CL")}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <Link href={`/${slug}/servicios`} className="w-fit text-sm font-medium" style={{ color: "var(--primary)" }}>
-            Ver catálogo completo →
-          </Link>
-        </section>
+        <div className="px-5">
+          {/* Nivel 2 y no 1: la banda tiene que despegarse del fondo *y* de las
+              tarjetas que lleva dentro, y con un solo escalón las tres capas
+              quedaban indistinguibles en tenants de fondo muy claro. */}
+          <Band level={2} id="servicios">
+            <SectionHeading
+              title="Servicios destacados"
+              subtitle="Elige el servicio, el largo y la hora. El pago es presencial, al terminar."
+              className="mb-10"
+            />
+            <div className="grid gap-5 md:grid-cols-2">
+              {featuredServices.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  href={`/${slug}/reservar?service=${service.id}`}
+                  service={{
+                    id: service.id,
+                    name: service.name,
+                    description: service.description,
+                    priceFromClp: service.priceFrom,
+                    durationMinutes: service.durationMinutes,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="mt-10 flex justify-center">
+              <BrandButton variant="outline" href={`/${slug}/servicios`}>
+                Ver todos los servicios
+              </BrandButton>
+            </div>
+          </Band>
+        </div>
       )}
 
       {portfolioItems.length > 0 && (
-        <section className="flex flex-col gap-3 px-4 py-8">
-          <h2 className="text-lg font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-            Portafolio
-          </h2>
-          <div className="grid grid-cols-3 gap-2">
-            {portfolioItems.map((item) => (
-              <SafeImage key={item.id} src={item.imageUrl} alt="" className="aspect-square rounded-md object-cover" />
-            ))}
-          </div>
-        </section>
+        <Section id="galeria" className="flex flex-col gap-6">
+          <SectionHeading
+            align="start"
+            title="Nuestro trabajo"
+            subtitle={
+              professional.instagramHandle
+                ? `Síguenos en Instagram ${instagramLabel(professional.instagramHandle)}`
+                : undefined
+            }
+            action={
+              professional.instagramHandle ? (
+                <a
+                  href={instagramUrl(professional.instagramHandle)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="t-label hidden text-primary transition-colors hover:underline sm:inline-flex"
+                >
+                  Ver más
+                </a>
+              ) : undefined
+            }
+          />
+          <GalleryGrid items={portfolioItems.map((item) => ({ id: item.id, imageUrl: item.imageUrl, alt: "" }))} />
+        </Section>
       )}
 
-      {(professional.phone || professional.instagramHandle) && (
-        <section className="flex flex-col items-center gap-3 px-4 py-8">
-          {professional.phone && (
-            <a
-              href={`https://wa.me/${normalizePhoneForWhatsApp(professional.phone)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium"
-              style={{ color: "var(--primary)" }}
-            >
-              <MessageCircle className="size-4" />
-              Escríbenos por WhatsApp
-            </a>
-          )}
-          {professional.instagramHandle && (
-            <a
-              href={instagramUrl(professional.instagramHandle)}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm font-medium"
-              style={{ color: "var(--primary)" }}
-            >
-              {professional.instagramHandle.startsWith("@")
-                ? professional.instagramHandle
-                : `@${professional.instagramHandle}`}
-            </a>
-          )}
-        </section>
+      {reviewsSummary && (
+        <Section id="opiniones" className="flex flex-col gap-6">
+          <SectionHeading
+            align="start"
+            title="Lo que dicen las clientas"
+            action={<RatingSummary average={reviewsSummary.average} count={reviewsSummary.count} />}
+          />
+          <div className="grid gap-4 md:grid-cols-3">
+            {previewReviews.map((review) => {
+              const clientName = reviewerNameById.get(review.clientUserId);
+              return (
+                <ReviewCard
+                  key={review.id}
+                  rating={review.rating}
+                  body={review.body}
+                  photoUrl={review.photoUrl}
+                  authorName={clientName ? reviewerDisplayName(clientName) : null}
+                  authorInstagram={review.authorInstagram}
+                />
+              );
+            })}
+          </div>
+          <ActionLink href={`/${slug}/opiniones`} icon={<ArrowRight className="size-4" />}>
+            Ver todas las opiniones
+          </ActionLink>
+        </Section>
       )}
-    </div>
+
+      {professional.phone && (
+        <Section>
+          <ContactCard
+            icon={<MessageCircle className="size-7" />}
+            title="¿Tienes alguna duda especial?"
+            description="Escríbeme directamente por WhatsApp. Estaré feliz de asesorarte sobre qué servicio es el ideal para ti."
+            action={
+              <BrandButton size="lg" href={whatsAppUrl(professional.phone)}>
+                Contactar por WhatsApp
+              </BrandButton>
+            }
+          />
+        </Section>
+      )}
+    </Container>
   );
 }

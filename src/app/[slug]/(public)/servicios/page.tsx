@@ -1,10 +1,22 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { Tag } from "lucide-react";
 import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import { ListServicesUseCase } from "@/server/application/service/list-services.use-case";
 import { priceFromClp } from "@/server/domain/service/price-from";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
+import {
+  BrandButton,
+  Caption,
+  Container,
+  Display,
+  EmptyState,
+  Panel,
+  Price,
+  Section,
+  Title,
+  VariantRow,
+} from "@/components/brand";
 
 const NAIL_LENGTH_LABELS: Record<string, string> = {
   short: "Corta",
@@ -26,71 +38,64 @@ export default async function ServiciosPage({ params }: { params: Promise<{ slug
   const publicServices = allServices
     .filter((s) => s.active)
     .map((s) => ({ ...s, priceFrom: priceFromClp(s.variants) }))
-    .filter((s) => s.priceFrom !== null);
+    .filter((s): s is typeof s & { priceFrom: number } => s.priceFrom !== null);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-        Servicios
-      </h1>
+    <Container size="md">
+      <Section className="flex flex-col gap-8">
+        <div className="flex flex-col gap-2">
+          <Display as="h1">Servicios</Display>
+          <Caption>Precios en pesos chilenos. El pago es presencial, al terminar el servicio.</Caption>
+        </div>
 
-      {publicServices.length === 0 && (
-        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-          Todavía no hay servicios publicados.
-        </p>
-      )}
+        {publicServices.length === 0 ? (
+          <EmptyState
+            icon={<Tag className="size-5" />}
+            title="Todavía no hay servicios publicados"
+            description="Escríbenos y te contamos qué podemos hacer mientras tanto."
+          />
+        ) : (
+          <div className="flex flex-col gap-5">
+            {publicServices.map((service) => {
+              const activeVariants = service.variants.filter((v) => v.active);
+              return (
+                <Panel key={service.id} className="flex flex-col gap-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <Title>{service.name}</Title>
+                    <Price clp={service.priceFrom} prefix="Desde" size="md" className="shrink-0" />
+                  </div>
 
-      <div className="flex flex-col gap-4">
-        {publicServices.map((service) => (
-          <div
-            key={service.id}
-            className="flex flex-col gap-3 p-4"
-            style={{
-              background: "var(--card)",
-              color: "var(--card-foreground)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-            }}
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="font-medium" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-                {service.name}
-              </span>
-              <span className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-                Desde ${service.priceFrom!.toLocaleString("es-CL")}
-              </span>
-            </div>
-            {service.description && (
-              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-                {service.description}
-              </p>
-            )}
-            <ul className="flex flex-col gap-1 text-sm">
-              {service.variants
-                .filter((v) => v.active)
-                .map((v) => (
-                  <li key={v.id} className="flex justify-between">
-                    <span>
-                      {NAIL_LENGTH_LABELS[v.nailLength]} · {v.durationMinutes} min
-                    </span>
-                    <span>${v.priceClp.toLocaleString("es-CL")}</span>
-                  </li>
-                ))}
-            </ul>
-            <Link
-              href={`/${slug}/reservar?service=${service.id}`}
-              className="w-fit px-4 py-1.5 text-sm font-medium"
-              style={{
-                background: "var(--primary)",
-                color: "var(--primary-foreground)",
-                borderRadius: "var(--radius)",
-              }}
-            >
-              Reservar
-            </Link>
+                  {service.description && <Caption>{service.description}</Caption>}
+
+                  {/* Cada variante enlaza a la reserva con el servicio ya
+                      elegido: el catálogo es donde se decide, no una lista de
+                      precios que obligue a empezar el flujo de cero. */}
+                  <div className="-mx-3 flex flex-col">
+                    {activeVariants.map((variant) => (
+                      <VariantRow
+                        key={variant.id}
+                        label={NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength}
+                        durationMinutes={variant.durationMinutes}
+                        priceClp={variant.priceClp}
+                        href={`/${slug}/reservar?service=${service.id}&variant=${variant.id}`}
+                      />
+                    ))}
+                  </div>
+
+                  <BrandButton
+                    variant="outline"
+                    size="sm"
+                    className="self-start"
+                    href={`/${slug}/reservar?service=${service.id}`}
+                  >
+                    Reservar
+                  </BrandButton>
+                </Panel>
+              );
+            })}
           </div>
-        ))}
-      </div>
-    </div>
+        )}
+      </Section>
+    </Container>
   );
 }

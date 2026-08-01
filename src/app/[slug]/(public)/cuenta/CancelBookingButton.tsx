@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { BrandButton } from "@/components/brand";
 
 export function CancelBookingButton({ bookingId }: { bookingId: string }) {
   const router = useRouter();
@@ -27,9 +27,9 @@ export function CancelBookingButton({ bookingId }: { bookingId: string }) {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button size="sm" variant="destructive" disabled={isSubmitting} onClick={handleCancel}>
-        Cancelar
-      </Button>
+      <BrandButton size="sm" variant="danger" disabled={isSubmitting} onClick={handleCancel}>
+        {isSubmitting ? "Cancelando…" : "Cancelar"}
+      </BrandButton>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );

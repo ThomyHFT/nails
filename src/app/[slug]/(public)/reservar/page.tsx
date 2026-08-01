@@ -11,10 +11,10 @@ export default async function ReservarPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ service?: string }>;
+  searchParams: Promise<{ service?: string; variant?: string }>;
 }) {
   const { slug } = await params;
-  const { service: preselectedServiceId } = await searchParams;
+  const { service: preselectedServiceId, variant: preselectedVariantId } = await searchParams;
 
   const useCase = new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository());
   const professional = await useCase.execute(slug);
@@ -51,9 +51,19 @@ export default async function ReservarPage({
   }
 
   const serviceOptions = Array.from(serviceMap.values());
-  const initialServiceId = serviceOptions.some((s) => s.id === preselectedServiceId)
-    ? preselectedServiceId
+  const initialService = serviceOptions.find((s) => s.id === preselectedServiceId);
+  // La variante solo se acepta si pertenece al servicio preseleccionado: un
+  // `?variant=` de otro servicio dejaría el formulario en un estado imposible.
+  const initialVariantId = initialService?.variants.some((v) => v.id === preselectedVariantId)
+    ? preselectedVariantId
     : undefined;
 
-  return <ReservarForm slug={slug} services={serviceOptions} initialServiceId={initialServiceId} />;
+  return (
+    <ReservarForm
+      slug={slug}
+      services={serviceOptions}
+      initialServiceId={initialService?.id}
+      initialVariantId={initialVariantId}
+    />
+  );
 }
