@@ -11,32 +11,6 @@ function tokensToCssDeclarations(tokens: BrandTokenSet): string {
   return `--background:${tokens.background};--foreground:${tokens.foreground};--card:${tokens.card};--card-foreground:${tokens.cardForeground};--popover:${tokens.popover};--popover-foreground:${tokens.popoverForeground};--primary:${tokens.primary};--primary-foreground:${tokens.primaryForeground};--secondary:${tokens.secondary};--secondary-foreground:${tokens.secondaryForeground};--muted:${tokens.muted};--muted-foreground:${tokens.mutedForeground};--accent:${tokens.accent};--accent-foreground:${tokens.accentForeground};--destructive:${tokens.destructive};--border:${tokens.border};--input:${tokens.input};--ring:${tokens.ring};--radius:${tokens.radius};`;
 }
 
-function tokensToStyle(tokens: BrandTokenSet): React.CSSProperties {
-  return {
-    background: tokens.background,
-    color: tokens.foreground,
-    "--background": tokens.background,
-    "--foreground": tokens.foreground,
-    "--card": tokens.card,
-    "--card-foreground": tokens.cardForeground,
-    "--popover": tokens.popover,
-    "--popover-foreground": tokens.popoverForeground,
-    "--primary": tokens.primary,
-    "--primary-foreground": tokens.primaryForeground,
-    "--secondary": tokens.secondary,
-    "--secondary-foreground": tokens.secondaryForeground,
-    "--muted": tokens.muted,
-    "--muted-foreground": tokens.mutedForeground,
-    "--accent": tokens.accent,
-    "--accent-foreground": tokens.accentForeground,
-    "--destructive": tokens.destructive,
-    "--border": tokens.border,
-    "--input": tokens.input,
-    "--ring": tokens.ring,
-    "--radius": tokens.radius,
-  } as React.CSSProperties;
-}
-
 export default async function TenantLayout({
   children,
   params,
@@ -55,20 +29,19 @@ export default async function TenantLayout({
   const resolved = resolveBrandTokens(branding);
   const fontVars = FONT_PAIR_CSS_VARS[resolved.fontPair];
 
-  const scopeAttr = `data-tenant="${slug}"`;
-  const darkOverride = `@media (prefers-color-scheme: dark) { [${scopeAttr}] { ${tokensToCssDeclarations(resolved.dark)} } }`;
+  const selector = `[data-tenant="${slug}"]`;
+  // Ambas variantes viven en el <style>, no en el atributo `style` del div: una
+  // variable inline en el mismo elemento gana siempre sobre cualquier regla
+  // externa, aunque esté dentro de un @media que sí matchea, así que el
+  // override oscuro nunca podría pisar un valor claro puesto inline.
+  const themeCss = [
+    `${selector}{${tokensToCssDeclarations(resolved.light)}--tenant-font-heading:${fontVars.heading};--tenant-font-body:${fontVars.body};}`,
+    `@media (prefers-color-scheme: dark){${selector}{${tokensToCssDeclarations(resolved.dark)}}}`,
+  ].join("");
 
   return (
-    <div
-      data-tenant={slug}
-      className="tenant-brand flex min-h-screen flex-col bg-background text-foreground"
-      style={{
-        ...tokensToStyle(resolved.light),
-        "--tenant-font-heading": fontVars.heading,
-        "--tenant-font-body": fontVars.body,
-      } as React.CSSProperties}
-    >
-      <style dangerouslySetInnerHTML={{ __html: darkOverride }} />
+    <div data-tenant={slug} className="tenant-brand flex min-h-screen flex-col bg-background text-foreground">
+      <style dangerouslySetInnerHTML={{ __html: themeCss }} />
       {children}
     </div>
   );
