@@ -1,5 +1,9 @@
 import type { Booking, BookingActor, BookingStatus } from "@/server/domain/booking/booking.entity";
-import type { BookingRepository, NewBooking } from "@/server/domain/booking/booking-repository.port";
+import type {
+  BookingRepository,
+  NewBooking,
+  NewBookingWithDesign,
+} from "@/server/domain/booking/booking-repository.port";
 
 const ACTIVE_STATUSES: BookingStatus[] = ["pending", "confirmed"];
 
@@ -29,6 +33,20 @@ export class InMemoryBookingRepository implements BookingRepository {
     };
     this.bookings.push(created);
     return created;
+  }
+
+  async createWithDesign(booking: NewBookingWithDesign): Promise<Booking> {
+    return this.create({
+      professionalId: booking.professionalId,
+      clientUserId: booking.clientUserId,
+      serviceVariantId: booking.serviceVariantId,
+      designId: String(this.nextId++),
+      startsAt: booking.startsAt,
+      endsAt: booking.endsAt,
+      priceClp: booking.priceClp,
+      durationMinutes: booking.durationMinutes,
+      clientNote: booking.clientNote,
+    });
   }
 
   async findById(id: string): Promise<Booking | null> {

@@ -6,8 +6,11 @@ import { db } from "@/server/infrastructure/db/client";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { CreateBookingUseCase, SlotNotAvailableError } from "@/server/application/booking/create-booking.use-case";
 import { GenerateAvailableSlotsUseCase } from "@/server/application/booking/generate-available-slots.use-case";
+import { calculateDesignQuote, InvalidDesignElementError } from "@/server/domain/design/calculate-design-quote";
+import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
 import { DrizzleAvailabilityRepository } from "@/server/infrastructure/repositories/drizzle-availability.repository";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
+import { DrizzleDesignRepository } from "@/server/infrastructure/repositories/drizzle-design.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -69,12 +72,33 @@ export async function GET(request: Request) {
   return NextResponse.json({ slots });
 }
 
+const nailSchema = z.object({
+  baseColorCode: z.string().min(1),
+  baseColorHex: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  finish: z.string().min(1),
+  decorations: z.array(z.string()),
+});
+
+const designPayloadSchema = z.object({
+  version: z.literal(2),
+  shape: z.enum(["almond", "coffin", "square", "round", "stiletto"]),
+  technique: z.string().nullable(),
+  nails: z.array(nailSchema).length(10),
+});
+
 const createBookingSchema = z.object({
   slug: z.string().min(1),
   serviceVariantId: z.string().uuid(),
   date: z.string().regex(datePattern),
   startsAt: z.string().datetime(),
   clientNote: z.string().nullable().optional(),
+  design: z
+    .object({
+      payload: designPayloadSchema,
+      expectedExtraPriceClp: z.number().int(),
+      expectedExtraMinutes: z.number().int(),
+    })
+    .optional(),
 });
 
 export async function POST(request: Request) {
@@ -99,7 +123,43 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Variante no encontrada" }, { status: 404 });
   }
 
-  const useCase = new CreateBookingUseCase(new DrizzleAvailabilityRepository(), new DrizzleBookingRepository());
+  let designPayload: NailDesignPayload | undefined;
+
+  if (parsed.data.design) {
+    const catalog = await new DrizzleDesignRepository().listElementsByProfessional(professional.id);
+
+    let quote;
+    try {
+      quote = calculateDesignQuote(parsed.data.design.payload, catalog);
+    } catch (err) {
+      if (err instanceof InvalidDesignElementError) {
+        return NextResponse.json({ error: err.message }, { status: 409 });
+      }
+      throw err;
+    }
+
+    if (
+      quote.extraPriceClp !== parsed.data.design.expectedExtraPriceClp ||
+      quote.extraMinutes !== parsed.data.design.expectedExtraMinutes
+    ) {
+      return NextResponse.json(
+        {
+          error: "El catálogo cambió mientras diseñabas. Revisá el diseño y volvé a intentar.",
+          extraPriceClp: quote.extraPriceClp,
+          extraMinutes: quote.extraMinutes,
+        },
+        { status: 409 },
+      );
+    }
+
+    designPayload = parsed.data.design.payload;
+  }
+
+  const useCase = new CreateBookingUseCase(
+    new DrizzleAvailabilityRepository(),
+    new DrizzleBookingRepository(),
+    new DrizzleDesignRepository(),
+  );
 
   try {
     const booking = await useCase.execute({
@@ -112,6 +172,7 @@ export async function POST(request: Request) {
       startsAt: parsed.data.startsAt,
       priceClp: variant.priceClp,
       durationMinutes: variant.durationMinutes,
+      designPayload,
       clientNote: parsed.data.clientNote,
     });
     return NextResponse.json({ booking }, { status: 201 });

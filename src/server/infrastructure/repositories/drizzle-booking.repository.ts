@@ -1,8 +1,13 @@
 import { and, desc, eq, gt, inArray, lt, sql } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { bookings } from "@/server/infrastructure/db/schema/bookings";
+import { designs } from "@/server/infrastructure/db/schema/designs";
 import type { Booking, BookingActor, BookingStatus } from "@/server/domain/booking/booking.entity";
-import type { BookingRepository, NewBooking } from "@/server/domain/booking/booking-repository.port";
+import type {
+  BookingRepository,
+  NewBooking,
+  NewBookingWithDesign,
+} from "@/server/domain/booking/booking-repository.port";
 
 const ACTIVE_STATUSES: BookingStatus[] = ["pending", "confirmed"];
 
@@ -45,6 +50,43 @@ export class DrizzleBookingRepository implements BookingRepository {
       })
       .returning();
     return toDomain(row);
+  }
+
+  async createWithDesign(booking: NewBookingWithDesign): Promise<Booking> {
+    const designId = crypto.randomUUID();
+    const bookingId = crypto.randomUUID();
+
+    const [, bookingRows] = await db.batch([
+      db.insert(designs).values({
+        id: designId,
+        professionalId: booking.professionalId,
+        clientUserId: booking.clientUserId,
+        source: "client",
+        name: null,
+        payload: booking.design.payload,
+        extraPriceClp: booking.design.extraPriceClp,
+        extraMinutes: booking.design.extraMinutes,
+        referenceImageUrl: null,
+      }),
+      db
+        .insert(bookings)
+        .values({
+          id: bookingId,
+          professionalId: booking.professionalId,
+          clientUserId: booking.clientUserId,
+          serviceVariantId: booking.serviceVariantId,
+          designId,
+          startsAt: booking.startsAt,
+          endsAt: booking.endsAt,
+          status: "pending",
+          priceClp: booking.priceClp,
+          durationMinutes: booking.durationMinutes,
+          clientNote: booking.clientNote ?? null,
+        })
+        .returning(),
+    ]);
+
+    return toDomain(bookingRows[0]);
   }
 
   async findById(id: string): Promise<Booking | null> {

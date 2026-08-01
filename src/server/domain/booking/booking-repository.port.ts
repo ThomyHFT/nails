@@ -1,4 +1,5 @@
 import type { Booking, BookingActor, BookingStatus } from "@/server/domain/booking/booking.entity";
+import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
 
 export interface NewBooking {
   professionalId: string;
@@ -12,8 +13,25 @@ export interface NewBooking {
   clientNote?: string | null;
 }
 
+export interface NewBookingWithDesign {
+  professionalId: string;
+  clientUserId: string;
+  serviceVariantId: string;
+  startsAt: Date;
+  endsAt: Date;
+  priceClp: number;
+  durationMinutes: number;
+  clientNote?: string | null;
+  design: {
+    payload: NailDesignPayload;
+    extraPriceClp: number;
+    extraMinutes: number;
+  };
+}
+
 export interface BookingRepository {
   create(booking: NewBooking): Promise<Booking>;
+  createWithDesign(booking: NewBookingWithDesign): Promise<Booking>;
   findById(id: string): Promise<Booking | null>;
   listActiveByProfessionalInRange(professionalId: string, rangeStart: Date, rangeEnd: Date): Promise<Booking[]>;
   listByProfessional(professionalId: string, status?: BookingStatus): Promise<Booking[]>;
