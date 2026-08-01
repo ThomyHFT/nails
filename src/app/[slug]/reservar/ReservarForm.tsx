@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NailDesigner, type NailDesignerResult } from "@/app/[slug]/reservar/NailDesigner";
 
 export type VariantOption = {
   id: string;
@@ -19,29 +20,58 @@ export type ServiceOption = {
 };
 
 type Slot = { startsAt: string; endsAt: string };
+type Step = "select" | "design" | "schedule";
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
 }
 
+function currentMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
 export function ReservarForm({ slug, services }: { slug: string; services: ServiceOption[] }) {
   const router = useRouter();
+  const [step, setStep] = useState<Step>("select");
+
   const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
   const service = services.find((s) => s.id === serviceId);
   const [variantId, setVariantId] = useState(service?.variants[0]?.id ?? "");
+
+  const [daysWithSlots, setDaysWithSlots] = useState<string[]>([]);
+  const [isLoadingDays, setIsLoadingDays] = useState(false);
+
+  const [design, setDesign] = useState<NailDesignerResult | null>(null);
+
   const [date, setDate] = useState("");
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
-  async function loadSlots(nextDate: string, nextVariantId: string) {
-    if (!nextDate || !nextVariantId) return;
+  async function loadDaysWithSlots(nextVariantId: string) {
+    if (!nextVariantId) return;
+    setIsLoadingDays(true);
+    try {
+      const response = await fetch(
+        `/api/availability/days?slug=${slug}&serviceVariantId=${nextVariantId}&month=${currentMonth()}`,
+      );
+      const data = await response.json();
+      setDaysWithSlots(data.days ?? []);
+    } finally {
+      setIsLoadingDays(false);
+    }
+  }
+
+  async function loadSlots(nextDate: string) {
+    if (!nextDate || !variantId) return;
     setIsLoadingSlots(true);
     setSelectedSlot(null);
     try {
+      const extraMinutes = design?.quote.extraMinutes ?? 0;
       const response = await fetch(
-        `/api/bookings?slug=${slug}&serviceVariantId=${nextVariantId}&date=${nextDate}`,
+        `/api/bookings?slug=${slug}&serviceVariantId=${variantId}&date=${nextDate}&extraMinutes=${extraMinutes}`,
       );
       const data = await response.json();
       setSlots(data.slots ?? []);
@@ -62,6 +92,13 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
         serviceVariantId: variantId,
         date,
         startsAt: selectedSlot.startsAt,
+        design: design
+          ? {
+              payload: design.payload,
+              expectedExtraPriceClp: design.quote.extraPriceClp,
+              expectedExtraMinutes: design.quote.extraMinutes,
+            }
+          : undefined,
       }),
     });
 
@@ -74,47 +111,111 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
     router.push(`/${slug}/cuenta`);
   }
 
+  if (step === "select") {
+    return (
+      <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-10">
+        <h1 className="text-2xl font-semibold">Reservar hora</h1>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium">Servicio</label>
+          <select
+            value={serviceId}
+            onChange={(e) => {
+              setServiceId(e.target.value);
+              const nextService = services.find((s) => s.id === e.target.value);
+              const nextVariantId = nextService?.variants[0]?.id ?? "";
+              setVariantId(nextVariantId);
+              setDaysWithSlots([]);
+              loadDaysWithSlots(nextVariantId);
+            }}
+            className="rounded-md border px-2 py-1"
+          >
+            {services.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium">Variante</label>
+          <select
+            value={variantId}
+            onChange={(e) => {
+              setVariantId(e.target.value);
+              loadDaysWithSlots(e.target.value);
+            }}
+            className="rounded-md border px-2 py-1"
+          >
+            {service?.variants.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.nailLength} — ${v.priceClp.toLocaleString("es-CL")} — {v.durationMinutes} min
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-md border p-4">
+          <p className="text-sm font-medium">Días con cupo este mes</p>
+          <p className="text-sm text-muted-foreground">
+            El horario final depende del diseño que elijas: algunos horarios de estos días pueden desaparecer al
+            sumar los minutos extra.
+          </p>
+          {isLoadingDays && <p className="text-sm text-muted-foreground">Cargando…</p>}
+          {!isLoadingDays && daysWithSlots.length === 0 && (
+            <p className="text-sm text-muted-foreground">No hay días con cupo este mes todavía.</p>
+          )}
+          {!isLoadingDays && daysWithSlots.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {daysWithSlots.map((d) => (
+                <span key={d} className="rounded-md border px-2 py-1 text-xs">
+                  {d}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Button disabled={!variantId} onClick={() => setStep("design")}>
+          Continuar
+        </Button>
+      </div>
+    );
+  }
+
+  if (step === "design") {
+    return (
+      <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-10">
+        <h1 className="text-2xl font-semibold">Diseña tus uñas</h1>
+
+        <NailDesigner slug={slug} onChange={setDesign} />
+
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setDesign(null);
+              setStep("schedule");
+            }}
+          >
+            Reservar sin diseño
+          </Button>
+          <Button disabled={!design} onClick={() => setStep("schedule")}>
+            Continuar con este diseño
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-10">
-      <h1 className="text-2xl font-semibold">Reservar hora</h1>
+      <h1 className="text-2xl font-semibold">Elegí fecha y hora</h1>
 
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">Servicio</label>
-        <select
-          value={serviceId}
-          onChange={(e) => {
-            setServiceId(e.target.value);
-            const nextService = services.find((s) => s.id === e.target.value);
-            setVariantId(nextService?.variants[0]?.id ?? "");
-            setSlots([]);
-          }}
-          className="rounded-md border px-2 py-1"
-        >
-          {services.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">Variante</label>
-        <select
-          value={variantId}
-          onChange={(e) => {
-            setVariantId(e.target.value);
-            loadSlots(date, e.target.value);
-          }}
-          className="rounded-md border px-2 py-1"
-        >
-          {service?.variants.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.nailLength} — ${v.priceClp.toLocaleString("es-CL")} — {v.durationMinutes} min
-            </option>
-          ))}
-        </select>
-      </div>
+      <Button variant="ghost" className="w-fit" onClick={() => setStep("design")}>
+        ‹ Editar diseño
+      </Button>
 
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium">Fecha</label>
@@ -123,7 +224,7 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
           value={date}
           onChange={(e) => {
             setDate(e.target.value);
-            loadSlots(e.target.value, variantId);
+            loadSlots(e.target.value);
           }}
         />
       </div>
@@ -131,7 +232,11 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
       {isLoadingSlots && <p className="text-sm text-muted-foreground">Cargando horarios…</p>}
 
       {!isLoadingSlots && date && slots.length === 0 && (
-        <p className="text-sm text-muted-foreground">No hay horarios disponibles para esta fecha.</p>
+        <p className="text-sm text-muted-foreground">
+          No hay horarios disponibles para esta fecha
+          {design ? ` considerando los ${design.quote.extraMinutes} minutos extra del diseño` : ""}. Podés elegir
+          otro día{design ? " o volver a editar el diseño" : ""}.
+        </p>
       )}
 
       {slots.length > 0 && (

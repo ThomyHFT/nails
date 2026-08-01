@@ -45,8 +45,10 @@ export async function GET(request: Request) {
   const slug = searchParams.get("slug");
   const serviceVariantId = searchParams.get("serviceVariantId");
   const date = searchParams.get("date");
+  const extraMinutesParam = searchParams.get("extraMinutes");
+  const extraMinutes = extraMinutesParam ? Number(extraMinutesParam) : 0;
 
-  if (!slug || !serviceVariantId || !date || !datePattern.test(date)) {
+  if (!slug || !serviceVariantId || !date || !datePattern.test(date) || Number.isNaN(extraMinutes)) {
     return NextResponse.json({ error: "slug, serviceVariantId y date (YYYY-MM-DD) son requeridos" }, { status: 400 });
   }
 
@@ -66,7 +68,7 @@ export async function GET(request: Request) {
     timezone: professional.timezone,
     bufferMinutes: professional.bufferMinutes,
     date,
-    durationMinutes: variant.durationMinutes,
+    durationMinutes: variant.durationMinutes + extraMinutes,
   });
 
   return NextResponse.json({ slots });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { calculateDesignQuote, type DesignQuote } from "@/server/domain/design/calculate-design-quote";
 import type { DesignElement } from "@/server/domain/design/design-element.entity";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
@@ -57,19 +57,19 @@ function Hand({
   mirrored,
   nails,
   selectedIndex,
-  offset,
+  indexBase,
   onSelectNail,
 }: {
   mirrored: boolean;
   nails: NailState[];
   selectedIndex: number | null;
-  offset: number;
+  indexBase: number;
   onSelectNail: (index: number) => void;
 }) {
   return (
-    <g transform={mirrored ? `translate(${175 + offset}, 20) scale(-1, 1) translate(-175, 0)` : `translate(${offset}, 20)`}>
+    <g transform={mirrored ? "translate(390, 20) scale(-1, 1)" : "translate(10, 20)"}>
       {FINGER_X.map((x, i) => {
-        const nailIndex = offset === 0 ? i : 5 + i;
+        const nailIndex = indexBase + i;
         const height = FINGER_HEIGHT[i];
         const nail = nails[nailIndex];
         const isSelected = selectedIndex === nailIndex;
@@ -129,21 +129,20 @@ export function NailDesigner({
   const decorations = catalog.filter((e) => e.category === "decoration");
   const techniques = catalog.filter((e) => e.category === "technique");
 
-  const payload = buildPayload(shape, technique, nails);
-  let quote: DesignQuote | null = null;
-  let quoteError: string | null = null;
-  if (payload) {
+  const payload = useMemo(() => buildPayload(shape, technique, nails), [shape, technique, nails]);
+
+  const { quote, quoteError } = useMemo(() => {
+    if (!payload) return { quote: null as DesignQuote | null, quoteError: null as string | null };
     try {
-      quote = calculateDesignQuote(payload, catalog);
+      return { quote: calculateDesignQuote(payload, catalog), quoteError: null };
     } catch (err) {
-      quoteError = err instanceof Error ? err.message : "No se pudo cotizar el diseño";
+      return { quote: null, quoteError: err instanceof Error ? err.message : "No se pudo cotizar el diseño" };
     }
-  }
+  }, [payload, catalog]);
 
   useEffect(() => {
     onChange?.(payload && quote ? { payload, quote } : null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- onChange notificado solo cuando cambia el payload/quote calculados
-  }, [payload, quote]);
+  }, [payload, quote, onChange]);
 
   function updateSelectedNail(patch: Partial<NailState>) {
     if (selectedNailIndex === null) return;
@@ -189,9 +188,9 @@ export function NailDesigner({
         </select>
       </div>
 
-      <svg viewBox="0 0 350 140" className="w-full max-w-xl">
-        <Hand mirrored={false} nails={nails} selectedIndex={selectedNailIndex} offset={0} onSelectNail={setSelectedNailIndex} />
-        <Hand mirrored nails={nails} selectedIndex={selectedNailIndex} offset={175} onSelectNail={setSelectedNailIndex} />
+      <svg viewBox="0 0 400 140" className="w-full max-w-xl">
+        <Hand mirrored={false} nails={nails} selectedIndex={selectedNailIndex} indexBase={0} onSelectNail={setSelectedNailIndex} />
+        <Hand mirrored nails={nails} selectedIndex={selectedNailIndex} indexBase={5} onSelectNail={setSelectedNailIndex} />
       </svg>
 
       {selectedNail && (
