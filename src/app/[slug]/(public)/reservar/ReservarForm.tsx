@@ -114,7 +114,9 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
   if (step === "select") {
     return (
       <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-10">
-        <h1 className="text-2xl font-semibold">Reservar hora</h1>
+        <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
+          Reservar hora
+        </h1>
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">Servicio</label>
@@ -128,7 +130,8 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
               setDaysWithSlots([]);
               loadDaysWithSlots(nextVariantId);
             }}
-            className="rounded-md border px-2 py-1"
+            className="h-9 px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
           >
             {services.map((s) => (
               <option key={s.id} value={s.id}>
@@ -146,7 +149,8 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
               setVariantId(e.target.value);
               loadDaysWithSlots(e.target.value);
             }}
-            className="rounded-md border px-2 py-1"
+            className="h-9 px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
           >
             {service?.variants.map((v) => (
               <option key={v.id} value={v.id}>
@@ -156,20 +160,33 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
           </select>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-md border p-4">
+        <div
+          className="flex flex-col gap-2 p-4"
+          style={{ background: "var(--card)", color: "var(--card-foreground)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
+        >
           <p className="text-sm font-medium">Días con cupo este mes</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
             El horario final depende del diseño que elijas: algunos horarios de estos días pueden desaparecer al
             sumar los minutos extra.
           </p>
-          {isLoadingDays && <p className="text-sm text-muted-foreground">Cargando…</p>}
+          {isLoadingDays && (
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+              Cargando…
+            </p>
+          )}
           {!isLoadingDays && daysWithSlots.length === 0 && (
-            <p className="text-sm text-muted-foreground">No hay días con cupo este mes todavía.</p>
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+              No hay días con cupo este mes todavía.
+            </p>
           )}
           {!isLoadingDays && daysWithSlots.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {daysWithSlots.map((d) => (
-                <span key={d} className="rounded-md border px-2 py-1 text-xs">
+                <span
+                  key={d}
+                  className="px-2 py-1 text-xs"
+                  style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
+                >
                   {d}
                 </span>
               ))}
@@ -187,7 +204,9 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
   if (step === "design") {
     return (
       <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-10">
-        <h1 className="text-2xl font-semibold">Diseña tus uñas</h1>
+        <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
+          Diseña tus uñas
+        </h1>
 
         <NailDesigner slug={slug} onChange={setDesign} />
 
@@ -209,9 +228,17 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
     );
   }
 
+  const variant = service?.variants.find((v) => v.id === variantId) ?? null;
+  const totalPriceClp = (variant?.priceClp ?? 0) + (design?.quote.extraPriceClp ?? 0);
+  const designSummary = design
+    ? `Diseño personalizado (+$${design.quote.extraPriceClp.toLocaleString("es-CL")}, +${design.quote.extraMinutes} min)`
+    : "Sin diseño";
+
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-10">
-      <h1 className="text-2xl font-semibold">Elegí fecha y hora</h1>
+      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
+        Elegí fecha y hora
+      </h1>
 
       <Button variant="ghost" className="w-fit" onClick={() => setStep("design")}>
         ‹ Editar diseño
@@ -229,10 +256,14 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
         />
       </div>
 
-      {isLoadingSlots && <p className="text-sm text-muted-foreground">Cargando horarios…</p>}
+      {isLoadingSlots && (
+        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+          Cargando horarios…
+        </p>
+      )}
 
       {!isLoadingSlots && date && slots.length === 0 && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
           No hay horarios disponibles para esta fecha
           {design ? ` considerando los ${design.quote.extraMinutes} minutos extra del diseño` : ""}. Podés elegir
           otro día{design ? " o volver a editar el diseño" : ""}.
@@ -251,6 +282,45 @@ export function ReservarForm({ slug, services }: { slug: string; services: Servi
               {formatTime(slot.startsAt)}
             </Button>
           ))}
+        </div>
+      )}
+
+      {selectedSlot && (
+        <div
+          className="flex flex-col gap-2 p-4 text-sm"
+          style={{
+            background: "var(--card)",
+            color: "var(--card-foreground)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+          }}
+        >
+          <p className="text-sm font-medium">Resumen de tu reserva</p>
+          <div className="flex justify-between">
+            <span>Servicio</span>
+            <span>
+              {service?.name} ({variant?.nailLength})
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Diseño</span>
+            <span>{designSummary}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Fecha</span>
+            <span>{new Date(`${date}T00:00:00`).toLocaleDateString("es-CL", { dateStyle: "long" })}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Hora</span>
+            <span>{formatTime(selectedSlot.startsAt)}</span>
+          </div>
+          <div className="flex justify-between font-semibold">
+            <span>Total</span>
+            <span>${totalPriceClp.toLocaleString("es-CL")}</span>
+          </div>
+          <p className="pt-1" style={{ color: "var(--muted-foreground)" }}>
+            El pago es presencial, en el local, al momento de tu cita.
+          </p>
         </div>
       )}
 

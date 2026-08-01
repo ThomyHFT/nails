@@ -178,7 +178,8 @@ export function NailDesigner({
           id="nail-shape"
           value={shape}
           onChange={(e) => setShape(e.target.value as NailShape)}
-          className="rounded-md border px-2 py-1 text-sm"
+          className="px-2 py-1 text-sm"
+          style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
         >
           {SHAPES.map((s) => (
             <option key={s.value} value={s.value}>
@@ -194,7 +195,10 @@ export function NailDesigner({
       </svg>
 
       {selectedNail && (
-        <div className="flex flex-col gap-3 rounded-md border p-4">
+        <div
+          className="flex flex-col gap-3 p-4"
+          style={{ background: "var(--card)", color: "var(--card-foreground)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
+        >
           <p className="text-sm font-medium">Uña {(selectedNailIndex as number) + 1} de 10</p>
 
           <div className="flex items-center gap-3">
@@ -211,7 +215,8 @@ export function NailDesigner({
                   baseColorHex: element?.colorHex ?? null,
                 });
               }}
-              className="rounded-md border px-2 py-1 text-sm"
+              className="px-2 py-1 text-sm"
+              style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
             >
               <option value="">Elegir...</option>
               {colors.map((c) => (
@@ -230,7 +235,8 @@ export function NailDesigner({
               id="nail-finish"
               value={selectedNail.finish ?? ""}
               onChange={(e) => updateSelectedNail({ finish: e.target.value || null })}
-              className="rounded-md border px-2 py-1 text-sm"
+              className="px-2 py-1 text-sm"
+              style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
             >
               <option value="">Elegir...</option>
               {finishes.map((f) => (
@@ -260,7 +266,8 @@ export function NailDesigner({
           <button
             type="button"
             onClick={applyToAll}
-            className="w-fit rounded-md border px-3 py-1 text-sm hover:bg-muted"
+            className="w-fit px-3 py-1 text-sm transition-colors"
+            style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
           >
             Aplicar a todas
           </button>
@@ -275,7 +282,8 @@ export function NailDesigner({
           id="nail-technique"
           value={technique ?? ""}
           onChange={(e) => setTechnique(e.target.value || null)}
-          className="rounded-md border px-2 py-1 text-sm"
+          className="px-2 py-1 text-sm"
+          style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
         >
           <option value="">Sin técnica</option>
           {techniques.map((t) => (
@@ -286,15 +294,20 @@ export function NailDesigner({
         </select>
       </div>
 
-      <div className="rounded-md border p-4 text-sm">
-        {quoteError && <p className="text-destructive">{quoteError}</p>}
+      <div
+        className="p-4 text-sm"
+        style={{ background: "var(--card)", color: "var(--card-foreground)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
+      >
+        {quoteError && (
+          <p style={{ color: "var(--destructive)" }}>{quoteError}</p>
+        )}
         {!quoteError && quote && (
           <p>
             Precio extra: ${quote.extraPriceClp.toLocaleString("es-CL")} · Minutos extra: {quote.extraMinutes}
           </p>
         )}
         {!quoteError && !quote && (
-          <p className="text-muted-foreground">Elegí color y acabado en las 10 uñas para ver el precio.</p>
+          <p style={{ color: "var(--muted-foreground)" }}>Elegí color y acabado en las 10 uñas para ver el precio.</p>
         )}
       </div>
     </div>
