@@ -1,6 +1,6 @@
 # SPEC 03 — Diseñador de uñas y cotización por elementos
 
-> **Estado:** approved
+> **Estado:** Implemented
 > **Depende de:** SPEC 01, SPEC 02
 > **Fecha:** 2026-07-31
 > **Objetivo:** Permitir que la clienta diseñe sus uñas dentro del flujo de reserva, con cotización automática del precio y el tiempo extra a partir del catálogo de elementos que la profesional administra.
