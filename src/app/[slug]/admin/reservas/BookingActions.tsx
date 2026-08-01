@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { BrandButton } from "@/components/brand";
 
 async function postAction(bookingId: string, action: "confirm" | "complete" | "no-show") {
   return fetch(`/api/bookings/${bookingId}/${action}`, { method: "POST" });
@@ -33,18 +33,18 @@ export function BookingActions({ bookingId, status }: { bookingId: string; statu
     <div className="flex flex-col items-end gap-1">
       <div className="flex gap-2">
         {status === "pending" && (
-          <Button size="sm" disabled={isSubmitting} onClick={() => run("confirm")}>
+          <BrandButton size="sm" disabled={isSubmitting} onClick={() => run("confirm")}>
             Confirmar
-          </Button>
+          </BrandButton>
         )}
         {(status === "pending" || status === "confirmed") && (
           <>
-            <Button size="sm" variant="outline" disabled={isSubmitting} onClick={() => run("complete")}>
+            <BrandButton size="sm" variant="outline" disabled={isSubmitting} onClick={() => run("complete")}>
               Completada
-            </Button>
-            <Button size="sm" variant="destructive" disabled={isSubmitting} onClick={() => run("no-show")}>
+            </BrandButton>
+            <BrandButton size="sm" variant="danger" disabled={isSubmitting} onClick={() => run("no-show")}>
               No show
-            </Button>
+            </BrandButton>
           </>
         )}
       </div>

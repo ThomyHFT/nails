@@ -1,18 +1,15 @@
 import { MarcaForm } from "@/app/[slug]/admin/marca/MarcaForm";
+import { AdminPageHeader } from "@/components/brand";
 
 export default async function MarcaPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-          Marca
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Elige el arquetipo, los colores y la tipografía de tu micrositio.
-        </p>
-      </div>
+    <div className="flex flex-col gap-8">
+      <AdminPageHeader
+        title="Marca"
+        description="Elige el arquetipo, los colores y la tipografía de tu micrositio."
+      />
       <MarcaForm slug={slug} />
     </div>
   );

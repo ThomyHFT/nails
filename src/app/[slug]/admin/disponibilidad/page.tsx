@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AdminPageHeader } from "@/components/brand";
 
 const WEEKDAYS = [
   { value: 1, label: "Lunes" },
@@ -153,9 +154,10 @@ export default function DisponibilidadPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
-      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-        Disponibilidad
-      </h1>
+      <AdminPageHeader
+        title="Disponibilidad"
+        description="Define tus horarios semanales, el buffer entre citas y las excepciones puntuales."
+      />
 
       {!currentMonthHasRules && (
         <p className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AdminPageHeader } from "@/components/brand";
 
 type NailLength = "short" | "medium" | "long" | "single";
 
@@ -137,9 +138,10 @@ export default function ServiciosPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
-      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-        Servicios
-      </h1>
+      <AdminPageHeader
+        title="Servicios"
+        description="Cada servicio tiene variantes por largo de uña, con su precio y duración."
+      />
 
       <form onSubmit={createService} className="flex items-end gap-3">
         <div className="flex flex-1 flex-col gap-2">

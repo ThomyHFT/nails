@@ -110,7 +110,7 @@ export default function DisenoPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
-      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
+      <h1 className="t-display">
         Catálogo de diseño
       </h1>
 

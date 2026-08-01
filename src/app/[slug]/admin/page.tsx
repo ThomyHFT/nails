@@ -1,11 +1,26 @@
 import { eq, inArray } from "drizzle-orm";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight, Banknote, CalendarCheck, CalendarDays, Clock } from "lucide-react";
 import { db } from "@/server/infrastructure/db/client";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { users } from "@/server/infrastructure/db/schema/users";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
+import {
+  ActionLink,
+  AdminPageHeader,
+  AppointmentRow,
+  EmptyState,
+  Overline,
+  StatCard,
+} from "@/components/brand";
+
+const NAIL_LENGTH_LABELS: Record<string, string> = {
+  short: "Corta",
+  medium: "Media",
+  long: "Larga",
+  single: "Única",
+};
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
@@ -24,15 +39,23 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+  const weekStart = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
 
   const todaysBookings = bookings
     .filter(
       (b) =>
-        b.startsAt >= todayStart &&
-        b.startsAt < todayEnd &&
-        (b.status === "pending" || b.status === "confirmed"),
+        b.startsAt >= todayStart && b.startsAt < todayEnd && (b.status === "pending" || b.status === "confirmed"),
     )
     .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+
+  const pendingCount = todaysBookings.filter((b) => b.status === "pending").length;
+
+  // Ingresos de los últimos 7 días sobre reservas completadas. `priceClp` es la
+  // foto congelada al reservar, así que la suma no cambia si después suben los
+  // precios del catálogo.
+  const weekRevenueClp = bookings
+    .filter((b) => b.status === "completed" && b.startsAt >= weekStart && b.startsAt < todayEnd)
+    .reduce((total, b) => total + b.priceClp, 0);
 
   const clientIds = Array.from(new Set(todaysBookings.map((b) => b.clientUserId)));
   const variantIds = Array.from(new Set(todaysBookings.map((b) => b.serviceVariantId)));
@@ -54,54 +77,70 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
   const variantById = new Map(variantRows.map((v) => [v.id, v]));
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
-          Resumen del día
-        </h1>
-        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-          {now.toLocaleDateString("es-CL", { dateStyle: "full" })}
-        </p>
+    <div className="flex max-w-5xl flex-col gap-8">
+      <AdminPageHeader
+        title="Resumen del día"
+        description={now.toLocaleDateString("es-CL", { dateStyle: "full" })}
+      />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          icon={<CalendarDays className="size-5" />}
+          label="Citas hoy"
+          value={todaysBookings.length}
+          hint={pendingCount > 0 ? `${pendingCount} por confirmar` : undefined}
+        />
+        <StatCard
+          icon={<Banknote className="size-5" />}
+          label="Ingresos 7 días"
+          value={`$${weekRevenueClp.toLocaleString("es-CL")}`}
+          hint="Reservas completadas"
+        />
+        <StatCard
+          icon={<Clock className="size-5" />}
+          label="Próxima cita"
+          value={todaysBookings.length > 0 ? formatTime(todaysBookings[0].startsAt) : "—"}
+        />
       </div>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Próximas citas de hoy</h2>
-        {todaysBookings.length === 0 && (
-          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-            No tienes citas pendientes o confirmadas para hoy.
-          </p>
+      <section className="flex flex-col gap-4">
+        <Overline>Próximas citas de hoy</Overline>
+
+        {todaysBookings.length === 0 ? (
+          <EmptyState
+            icon={<CalendarCheck className="size-5" />}
+            title="Sin citas para hoy"
+            description="No tienes reservas pendientes ni confirmadas para el día de hoy."
+          />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {todaysBookings.map((booking) => {
+              const client = clientById.get(booking.clientUserId);
+              const variant = variantById.get(booking.serviceVariantId);
+              return (
+                <AppointmentRow
+                  key={booking.id}
+                  href={`/${slug}/admin/reservas`}
+                  timeRange={formatTime(booking.startsAt)}
+                  status={booking.status === "confirmed" ? "Confirmada" : "Pendiente"}
+                  statusTone={booking.status === "confirmed" ? "success" : "warning"}
+                  serviceName={
+                    variant
+                      ? `${variant.serviceName} · ${NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength}`
+                      : "Servicio"
+                  }
+                  clientName={client?.name ?? "Clienta"}
+                  priceClp={booking.priceClp}
+                />
+              );
+            })}
+          </div>
         )}
-        <ul className="flex flex-col gap-2">
-          {todaysBookings.map((booking) => {
-            const client = clientById.get(booking.clientUserId);
-            const variant = variantById.get(booking.serviceVariantId);
-            return (
-              <li
-                key={booking.id}
-                className="flex items-center justify-between gap-4 p-3 text-sm"
-                style={{
-                  background: "var(--card)",
-                  color: "var(--card-foreground)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius)",
-                }}
-              >
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">{client?.name ?? "Clienta"}</span>
-                  <span style={{ color: "var(--muted-foreground)" }}>
-                    {variant ? `${variant.serviceName} (${variant.nailLength})` : booking.serviceVariantId}
-                  </span>
-                </div>
-                <span className="font-medium">{formatTime(booking.startsAt)}</span>
-              </li>
-            );
-          })}
-        </ul>
       </section>
 
-      <Link href={`/${slug}/admin/reservas`} className="w-fit text-sm font-medium" style={{ color: "var(--primary)" }}>
-        Ver todas las reservas →
-      </Link>
+      <ActionLink href={`/${slug}/admin/reservas`} icon={<ArrowRight className="size-4" />}>
+        Ver todas las reservas
+      </ActionLink>
     </div>
   );
 }
