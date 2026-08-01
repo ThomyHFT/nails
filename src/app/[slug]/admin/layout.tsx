@@ -1,4 +1,5 @@
 import { requireTenantOwner } from "@/server/interface/guards";
+import { AdminSidebar } from "@/app/[slug]/admin/AdminSidebar";
 
 export default async function AdminLayout({
   children,
@@ -12,7 +13,7 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen">
-      <nav className="w-56 shrink-0 border-r px-4 py-6" />
+      <AdminSidebar slug={slug} />
       <main className="flex-1 px-6 py-6">{children}</main>
     </div>
   );

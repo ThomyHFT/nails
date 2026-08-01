@@ -63,7 +63,9 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
 
   return (
     <div className="flex max-w-3xl flex-col gap-8">
-      <h1 className="text-2xl font-semibold">Reservas</h1>
+      <h1 className="text-2xl font-semibold" style={{ fontFamily: "var(--tenant-font-heading)" }}>
+        Reservas
+      </h1>
 
       {STATUS_ORDER.map((status) => {
         const rows = bookingsByStatus.get(status) ?? [];
@@ -79,12 +81,21 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                 const strikes = strikesByClient.get(booking.clientUserId) ?? 0;
 
                 return (
-                  <li key={booking.id} className="flex items-center justify-between gap-4 rounded-md border p-3">
+                  <li
+                    key={booking.id}
+                    className="flex items-center justify-between gap-4 p-3"
+                    style={{
+                      background: "var(--card)",
+                      color: "var(--card-foreground)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius)",
+                    }}
+                  >
                     <div className="flex flex-col gap-1 text-sm">
                       <span className="font-medium">
                         {client?.name ?? "Clienta"} {strikes > 0 && `— ${strikes} strike${strikes > 1 ? "s" : ""}`}
                       </span>
-                      <span className="text-muted-foreground">
+                      <span style={{ color: "var(--muted-foreground)" }}>
                         {variant ? `${variant.serviceName} (${variant.nailLength})` : booking.serviceVariantId}
                       </span>
                       <span>{formatDateTime(booking.startsAt)}</span>
@@ -99,7 +110,11 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
         );
       })}
 
-      {bookings.length === 0 && <p className="text-sm text-muted-foreground">Todavía no hay reservas.</p>}
+      {bookings.length === 0 && (
+        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+          Todavía no hay reservas.
+        </p>
+      )}
     </div>
   );
 }
