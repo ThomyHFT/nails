@@ -1,6 +1,6 @@
 # SPEC 05 — Catálogo de servicios, portafolio y subida de imágenes
 
-> **Estado:** Draft
+> **Estado:** Approved
 > **Depende de:** SPEC 01, SPEC 02, SPEC 03, SPEC 04
 > **Fecha:** 2026-07-31
 > **Objetivo:** Que la profesional administre sus servicios y precios desde el panel, resolver la subida de imágenes de una vez con Vercel Blob, y llenar con contenido real los contenedores de catálogo y portafolio que el SPEC 04 dejó vacíos en la landing.
