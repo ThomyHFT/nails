@@ -35,6 +35,17 @@ Un Server Component puede importar `src/server/application/*` para lecturas simp
 
 Convenciones de nombres: `*.entity.ts`, `*-repository.port.ts`, `*.use-case.ts`, `drizzle-*.repository.ts`. Fakes de test en `__fakes__/in-memory-*.ts`.
 
+## UI — design system
+
+La UI se compone con las primitivas de `src/components/brand` (`Hero`, `Panel`, `Band`, `ServiceCard`, `SelectChip`, `ReviewCard`, `AdminPageHeader`…), no con clases sueltas. Son presentacionales: no importan nada de `server/`, no hacen fetch y reciben datos ya resueltos. `Button`/`Input` de shadcn quedan para los formularios densos del admin.
+
+Los tokens viven en [globals.css](src/app/globals.css) y se derivan de los del tenant que resuelve el SPEC 04, así que una pieza se ve Minimal Nude, Glam, Editorial o Pastel sin ramas por arquetipo. La ruta `/estilo` es la referencia visual con conmutador de arquetipo y modo claro/oscuro; no la enlaza nadie desde la app.
+
+Dos reglas que no se deducen leyendo el CSS:
+
+- La escalera tonal (`--surface-1..4`) se tiñe con `--foreground`, no con `--primary`. Mezclar contra primary funcionaba con la paleta nude, pero un tenant de primary saturado convertía bandas y pie en bloques de color.
+- Las cifras van en la familia de cuerpo, nunca en la de titular: un `0` en Playfair o Cormorant a tamaño display se lee como `o` minúscula.
+
 ## Convenciones de datos
 
 - PK `uuid` con `gen_random_uuid()`. Timestamps `timestamptz` en UTC; la UI presenta en `America/Santiago`.
@@ -53,11 +64,11 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [03](specs/03-disenador-unas-cotizacion.md) | Diseñador de uñas, catálogo `design_elements`, cotización | Implemented |
 | [04](specs/04-personalizacion-marca-tenant.md) | Personalización de marca por tenant (`tenant_branding`, arquetipos, theming) y rediseño visual completo | Implemented |
 | [05](specs/05-catalogo-portafolio-imagenes.md) | CRUD de servicios, subida de imágenes con Vercel Blob, portafolio, catálogo público | Implemented |
-| 06 (sin redactar) | Reviews: moderación, publicación y vista pública | — |
+| [06](specs/06-reviews-moderacion-publica.md) | Reviews: moderación, publicación y vista pública | Implemented |
 
 Sin redactar todavía, mencionado en specs anteriores como diferido: notificaciones por email con Resend. La subida de imágenes se resuelve en el SPEC 05 con Vercel Blob; `designs.reference_image_url` queda pendiente de enchufar esa infraestructura al flujo de reserva.
 
-El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` y `designs` solo tienen filas de seed, y `portfolio_items` y `reviews` están vacías.
+El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` y `designs` solo tienen filas de seed.
 
 ## Deploy
 
