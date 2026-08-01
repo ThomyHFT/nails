@@ -1,6 +1,8 @@
 import { MarcaForm } from "@/app/[slug]/admin/marca/MarcaForm";
 
-export default function MarcaPage() {
+export default async function MarcaPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -11,7 +13,7 @@ export default function MarcaPage() {
           Elige el arquetipo, los colores y la tipografía de tu micrositio.
         </p>
       </div>
-      <MarcaForm />
+      <MarcaForm slug={slug} />
     </div>
   );
 }

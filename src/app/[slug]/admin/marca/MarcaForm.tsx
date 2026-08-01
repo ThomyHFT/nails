@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ImageUploader } from "@/components/ImageUploader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BRAND_ARCHETYPES } from "@/server/domain/branding/brand-archetypes";
@@ -34,7 +35,7 @@ function toFormState(branding: TenantBranding | null): FormState {
   };
 }
 
-export function MarcaForm() {
+export function MarcaForm({ slug }: { slug: string }) {
   const [form, setForm] = useState<FormState | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -176,20 +177,30 @@ export function MarcaForm() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="logoUrl">Logo (URL)</Label>
+          <Label htmlFor="logoUrl">Logo</Label>
+          <ImageUploader
+            pathPrefix={`branding/${slug}`}
+            currentUrl={form.logoUrl || null}
+            onUploaded={(url) => setForm({ ...form, logoUrl: url })}
+          />
           <Input
             id="logoUrl"
-            placeholder="https://…"
+            placeholder="o pega una URL https://…"
             value={form.logoUrl}
             onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="coverImageUrl">Portada (URL)</Label>
+          <Label htmlFor="coverImageUrl">Portada</Label>
+          <ImageUploader
+            pathPrefix={`branding/${slug}`}
+            currentUrl={form.coverImageUrl || null}
+            onUploaded={(url) => setForm({ ...form, coverImageUrl: url })}
+          />
           <Input
             id="coverImageUrl"
-            placeholder="https://…"
+            placeholder="o pega una URL https://…"
             value={form.coverImageUrl}
             onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })}
           />
