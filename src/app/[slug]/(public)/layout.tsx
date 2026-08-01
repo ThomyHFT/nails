@@ -1,0 +1,32 @@
+import { notFound } from "next/navigation";
+import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
+import { GetTenantBrandingUseCase } from "@/server/application/branding/get-tenant-branding.use-case";
+import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
+import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
+import { TenantHeader } from "@/app/[slug]/(public)/TenantHeader";
+import { BottomNav } from "@/app/[slug]/(public)/BottomNav";
+
+export default async function PublicLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  const professional = await new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
+  if (!professional) {
+    notFound();
+  }
+
+  const branding = await new GetTenantBrandingUseCase(new DrizzleBrandingRepository()).execute(professional.id);
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <TenantHeader slug={slug} businessName={professional.businessName} logoUrl={branding?.logoUrl ?? null} />
+      <main className="flex-1">{children}</main>
+      <BottomNav slug={slug} />
+    </div>
+  );
+}

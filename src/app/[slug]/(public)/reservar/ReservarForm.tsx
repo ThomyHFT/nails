@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NailDesigner, type NailDesignerResult } from "@/app/[slug]/reservar/NailDesigner";
+import { NailDesigner, type NailDesignerResult } from "@/app/[slug]/(public)/reservar/NailDesigner";
 
 export type VariantOption = {
   id: string;

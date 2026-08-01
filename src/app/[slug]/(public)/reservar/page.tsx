@@ -4,7 +4,7 @@ import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-pr
 import { db } from "@/server/infrastructure/db/client";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
-import { ReservarForm, type ServiceOption } from "@/app/[slug]/reservar/ReservarForm";
+import { ReservarForm, type ServiceOption } from "@/app/[slug]/(public)/reservar/ReservarForm";
 
 export default async function ReservarPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

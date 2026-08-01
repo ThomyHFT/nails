@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/server/infrastructure/db/client";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
-import { CancelBookingButton } from "@/app/[slug]/cuenta/CancelBookingButton";
+import { CancelBookingButton } from "@/app/[slug]/(public)/cuenta/CancelBookingButton";
 
 const CANCELLABLE_STATUSES = new Set(["pending", "confirmed"]);
 
