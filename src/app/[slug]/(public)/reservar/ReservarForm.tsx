@@ -31,11 +31,19 @@ function currentMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
-export function ReservarForm({ slug, services }: { slug: string; services: ServiceOption[] }) {
+export function ReservarForm({
+  slug,
+  services,
+  initialServiceId,
+}: {
+  slug: string;
+  services: ServiceOption[];
+  initialServiceId?: string;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("select");
 
-  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
+  const [serviceId, setServiceId] = useState(initialServiceId ?? services[0]?.id ?? "");
   const service = services.find((s) => s.id === serviceId);
   const [variantId, setVariantId] = useState(service?.variants[0]?.id ?? "");
 

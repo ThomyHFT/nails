@@ -6,8 +6,15 @@ import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositor
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { ReservarForm, type ServiceOption } from "@/app/[slug]/(public)/reservar/ReservarForm";
 
-export default async function ReservarPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ReservarPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ service?: string }>;
+}) {
   const { slug } = await params;
+  const { service: preselectedServiceId } = await searchParams;
 
   const useCase = new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository());
   const professional = await useCase.execute(slug);
@@ -44,6 +51,9 @@ export default async function ReservarPage({ params }: { params: Promise<{ slug:
   }
 
   const serviceOptions = Array.from(serviceMap.values());
+  const initialServiceId = serviceOptions.some((s) => s.id === preselectedServiceId)
+    ? preselectedServiceId
+    : undefined;
 
-  return <ReservarForm slug={slug} services={serviceOptions} />;
+  return <ReservarForm slug={slug} services={serviceOptions} initialServiceId={initialServiceId} />;
 }
