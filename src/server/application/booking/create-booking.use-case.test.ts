@@ -185,4 +185,97 @@ describe("CreateBookingUseCase", () => {
 
     expect(booking.durationMinutes).toBe(60);
   });
+
+  it("saves the design's reference image url when the client uploads one", async () => {
+    const { useCase, availabilityRepository, bookingRepository, designRepository } = makeUseCase();
+    await withMondayRule(availabilityRepository);
+    await designRepository.createElement({
+      professionalId: PROFESSIONAL_ID,
+      category: "color",
+      code: "red",
+      label: "Rojo",
+      colorHex: "#FF0000",
+    });
+    await designRepository.createElement({
+      professionalId: PROFESSIONAL_ID,
+      category: "finish",
+      code: "matte",
+      label: "Mate",
+    });
+
+    const payload: NailDesignPayload = {
+      version: 2,
+      shape: "almond",
+      technique: null,
+      nails: Array.from({ length: 10 }, () => ({
+        baseColorCode: "red",
+        baseColorHex: "#FF0000",
+        finish: "matte",
+        decorations: [],
+      })),
+    };
+
+    const booking = await useCase.execute({
+      professionalId: PROFESSIONAL_ID,
+      timezone: "UTC",
+      bufferMinutes: 0,
+      clientUserId: "client-1",
+      serviceVariantId: "variant-1",
+      date: MONDAY,
+      startsAt: "2026-08-10T09:00:00.000Z",
+      priceClp: 15_000,
+      durationMinutes: 60,
+      designPayload: payload,
+      designReferenceImageUrl: "https://blob.vercel-storage.com/design-references/inspo.jpg",
+    });
+
+    const savedDesign = bookingRepository.designs.find((d) => d.id === booking.designId);
+    expect(savedDesign?.referenceImageUrl).toBe("https://blob.vercel-storage.com/design-references/inspo.jpg");
+  });
+
+  it("leaves the design's reference image url null when the client does not upload one", async () => {
+    const { useCase, availabilityRepository, bookingRepository, designRepository } = makeUseCase();
+    await withMondayRule(availabilityRepository);
+    await designRepository.createElement({
+      professionalId: PROFESSIONAL_ID,
+      category: "color",
+      code: "red",
+      label: "Rojo",
+      colorHex: "#FF0000",
+    });
+    await designRepository.createElement({
+      professionalId: PROFESSIONAL_ID,
+      category: "finish",
+      code: "matte",
+      label: "Mate",
+    });
+
+    const payload: NailDesignPayload = {
+      version: 2,
+      shape: "almond",
+      technique: null,
+      nails: Array.from({ length: 10 }, () => ({
+        baseColorCode: "red",
+        baseColorHex: "#FF0000",
+        finish: "matte",
+        decorations: [],
+      })),
+    };
+
+    const booking = await useCase.execute({
+      professionalId: PROFESSIONAL_ID,
+      timezone: "UTC",
+      bufferMinutes: 0,
+      clientUserId: "client-1",
+      serviceVariantId: "variant-1",
+      date: MONDAY,
+      startsAt: "2026-08-10T09:00:00.000Z",
+      priceClp: 15_000,
+      durationMinutes: 60,
+      designPayload: payload,
+    });
+
+    const savedDesign = bookingRepository.designs.find((d) => d.id === booking.designId);
+    expect(savedDesign?.referenceImageUrl).toBeNull();
+  });
 });

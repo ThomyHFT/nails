@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { ArrowLeft, ArrowRight, Banknote, CalendarDays, Sparkles } from "lucide-react";
 import {
   BookingSummaryCard,
@@ -101,7 +102,16 @@ export function ReservarForm({
   initialVariantId?: string;
 }) {
   const router = useRouter();
+  const { status: sessionStatus } = useSession();
   const [step, setStep] = useState<Step>("select");
+
+  function goToDesignStep() {
+    if (sessionStatus !== "authenticated") {
+      router.push(`/${slug}/login`);
+      return;
+    }
+    setStep("design");
+  }
 
   const [serviceId, setServiceId] = useState(initialServiceId ?? services[0]?.id ?? "");
   const service = services.find((s) => s.id === serviceId);
@@ -168,6 +178,7 @@ export function ReservarForm({
                 payload: design.payload,
                 expectedExtraPriceClp: design.quote.extraPriceClp,
                 expectedExtraMinutes: design.quote.extraMinutes,
+                referenceImageUrl: design.referenceImageUrl,
               }
             : undefined,
         }),
@@ -276,7 +287,7 @@ export function ReservarForm({
         <BrandButton
           size="lg"
           disabled={!variantId}
-          onClick={() => setStep("design")}
+          onClick={goToDesignStep}
           icon={<ArrowRight className="size-4" />}
         >
           Continuar

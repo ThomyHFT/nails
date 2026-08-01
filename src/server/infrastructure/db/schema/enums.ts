@@ -41,3 +41,10 @@ export const brandFontPairEnum = pgEnum("brand_font_pair", [
   "jakarta_solo",
   "fraunces_nunito",
 ]);
+
+export const emailNotificationTypeEnum = pgEnum("email_notification_type", [
+  "confirmation",
+  "cancellation",
+]);
+
+export const emailNotificationStatusEnum = pgEnum("email_notification_status", ["sent", "failed"]);

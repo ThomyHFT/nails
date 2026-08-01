@@ -24,6 +24,7 @@ export interface CreateBookingInput {
   priceClp: number;
   durationMinutes: number;
   designPayload?: NailDesignPayload | null;
+  designReferenceImageUrl?: string | null;
   clientNote?: string | null;
   now?: Date;
 }
@@ -77,6 +78,7 @@ export class CreateBookingUseCase {
           payload: input.designPayload,
           extraPriceClp,
           extraMinutes,
+          referenceImageUrl: input.designReferenceImageUrl ?? null,
         },
       });
     }

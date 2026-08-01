@@ -22,6 +22,11 @@ function toDomain(row: typeof professionals.$inferSelect): Professional {
 }
 
 export class DrizzleProfessionalRepository implements ProfessionalRepository {
+  async findById(id: string): Promise<Professional | null> {
+    const [row] = await db.select().from(professionals).where(eq(professionals.id, id)).limit(1);
+    return row ? toDomain(row) : null;
+  }
+
   async findBySlug(slug: string): Promise<Professional | null> {
     const [row] = await db.select().from(professionals).where(eq(professionals.slug, slug)).limit(1);
     return row ? toDomain(row) : null;

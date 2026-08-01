@@ -65,10 +65,9 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [04](specs/04-personalizacion-marca-tenant.md) | Personalización de marca por tenant (`tenant_branding`, arquetipos, theming) y rediseño visual completo | Implemented |
 | [05](specs/05-catalogo-portafolio-imagenes.md) | CRUD de servicios, subida de imágenes con Vercel Blob, portafolio, catálogo público | Implemented |
 | [06](specs/06-reviews-moderacion-publica.md) | Reviews: moderación, publicación y vista pública | Implemented |
+| [07](specs/07-notificaciones-email-foto-referencia.md) | Notificaciones por email (Resend) al confirmar/cancelar reserva, foto de referencia en el diseñador | Implemented |
 
-Sin redactar todavía, mencionado en specs anteriores como diferido: notificaciones por email con Resend. La subida de imágenes se resuelve en el SPEC 05 con Vercel Blob; `designs.reference_image_url` queda pendiente de enchufar esa infraestructura al flujo de reserva.
-
-El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` y `designs` solo tienen filas de seed.
+El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` solo tiene filas de seed; `designs` ya tiene escritor real desde el SPEC 07 (`reference_image_url`).
 
 ## Deploy
 

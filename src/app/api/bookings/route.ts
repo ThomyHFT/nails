@@ -99,6 +99,7 @@ const createBookingSchema = z.object({
       payload: designPayloadSchema,
       expectedExtraPriceClp: z.number().int(),
       expectedExtraMinutes: z.number().int(),
+      referenceImageUrl: z.string().nullable().optional(),
     })
     .optional(),
 });
@@ -175,6 +176,7 @@ export async function POST(request: Request) {
       priceClp: variant.priceClp,
       durationMinutes: variant.durationMinutes,
       designPayload,
+      designReferenceImageUrl: parsed.data.design?.referenceImageUrl ?? null,
       clientNote: parsed.data.clientNote,
     });
     return NextResponse.json({ booking }, { status: 201 });

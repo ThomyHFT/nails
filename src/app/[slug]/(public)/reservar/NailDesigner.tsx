@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { calculateDesignQuote, type DesignQuote } from "@/server/domain/design/calculate-design-quote";
 import type { DesignElement } from "@/server/domain/design/design-element.entity";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
+import { ImageUploader } from "@/components/ImageUploader";
 import {
   BrandButton,
   Caption,
@@ -28,6 +29,7 @@ export type NailState = {
 export interface NailDesignerResult {
   payload: NailDesignPayload;
   quote: DesignQuote;
+  referenceImageUrl: string | null;
 }
 
 const SHAPES: { value: NailShape; label: string; radius: string }[] = [
@@ -130,6 +132,7 @@ export function NailDesigner({
   const [technique, setTechnique] = useState<string | null>(null);
   const [nails, setNails] = useState<NailState[]>(() => Array.from({ length: 10 }, emptyNail));
   const [selectedNailIndex, setSelectedNailIndex] = useState<number | null>(null);
+  const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/design-elements/public?slug=${slug}`)
@@ -154,8 +157,8 @@ export function NailDesigner({
   }, [payload, catalog]);
 
   useEffect(() => {
-    onChange?.(payload && quote ? { payload, quote } : null);
-  }, [payload, quote, onChange]);
+    onChange?.(payload && quote ? { payload, quote, referenceImageUrl } : null);
+  }, [payload, quote, referenceImageUrl, onChange]);
 
   function updateSelectedNail(patch: Partial<NailState>) {
     if (selectedNailIndex === null) return;
@@ -305,6 +308,17 @@ export function NailDesigner({
           </div>
         </div>
       )}
+
+      <div className="flex flex-col gap-2">
+        <Overline>Foto de referencia (opcional)</Overline>
+        <Caption>Sube una foto de inspiración para que la profesional vea qué quieres antes de la cita.</Caption>
+        <ImageUploader
+          pathPrefix={`design-references/${slug}`}
+          currentUrl={referenceImageUrl}
+          clientPayload={JSON.stringify({ purpose: "design-reference" })}
+          onUploaded={setReferenceImageUrl}
+        />
+      </div>
 
       {quoteError && <InfoNote tone="warning">{quoteError}</InfoNote>}
 

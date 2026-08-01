@@ -26,6 +26,7 @@ export interface NewBookingWithDesign {
     payload: NailDesignPayload;
     extraPriceClp: number;
     extraMinutes: number;
+    referenceImageUrl?: string | null;
   };
 }
 

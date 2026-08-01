@@ -66,7 +66,7 @@ export class DrizzleBookingRepository implements BookingRepository {
         payload: booking.design.payload,
         extraPriceClp: booking.design.extraPriceClp,
         extraMinutes: booking.design.extraMinutes,
-        referenceImageUrl: null,
+        referenceImageUrl: booking.design.referenceImageUrl ?? null,
       }),
       db
         .insert(bookings)

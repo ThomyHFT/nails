@@ -4,6 +4,7 @@ import { CalendarClock, CalendarDays } from "lucide-react";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { db } from "@/server/infrastructure/db/client";
+import { designs } from "@/server/infrastructure/db/schema/designs";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { users } from "@/server/infrastructure/db/schema/users";
 import type { Booking, BookingStatus } from "@/server/domain/booking/booking.entity";
@@ -13,6 +14,7 @@ import {
   Caption,
   Chip,
   EmptyState,
+  MediaFrame,
   MetaItem,
   Overline,
   Panel,
@@ -63,8 +65,9 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
 
   const clientIds = Array.from(new Set(bookings.map((b) => b.clientUserId)));
   const variantIds = Array.from(new Set(bookings.map((b) => b.serviceVariantId)));
+  const designIds = Array.from(new Set(bookings.map((b) => b.designId).filter((id): id is string => id !== null)));
 
-  const [clientRows, variantRows] = await Promise.all([
+  const [clientRows, variantRows, designRows] = await Promise.all([
     clientIds.length
       ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, clientIds))
       : Promise.resolve([]),
@@ -75,10 +78,14 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
           .innerJoin(services, eq(serviceVariants.serviceId, services.id))
           .where(inArray(serviceVariants.id, variantIds))
       : Promise.resolve([]),
+    designIds.length
+      ? db.select({ id: designs.id, referenceImageUrl: designs.referenceImageUrl }).from(designs).where(inArray(designs.id, designIds))
+      : Promise.resolve([]),
   ]);
 
   const clientById = new Map(clientRows.map((c) => [c.id, c]));
   const variantById = new Map(variantRows.map((v) => [v.id, v]));
+  const designById = new Map(designRows.map((d) => [d.id, d]));
 
   const strikesByClient = new Map<string, number>();
   for (const clientId of clientIds) {
@@ -116,6 +123,7 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
               {rows.map((booking) => {
                 const client = clientById.get(booking.clientUserId);
                 const variant = variantById.get(booking.serviceVariantId);
+                const design = booking.designId ? designById.get(booking.designId) : undefined;
                 const strikes = strikesByClient.get(booking.clientUserId) ?? 0;
 
                 return (
@@ -143,6 +151,15 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                         ? `${variant.serviceName} · ${NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength}`
                         : booking.serviceVariantId}
                     </Caption>
+
+                    {design?.referenceImageUrl && (
+                      <MediaFrame
+                        src={design.referenceImageUrl}
+                        alt="Foto de referencia del diseño"
+                        ratio="square"
+                        className="max-w-24"
+                      />
+                    )}
 
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <MetaItem icon={<CalendarDays />}>{formatDateTime(booking.startsAt)}</MetaItem>

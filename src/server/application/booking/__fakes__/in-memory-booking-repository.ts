@@ -10,6 +10,7 @@ const ACTIVE_STATUSES: BookingStatus[] = ["pending", "confirmed"];
 export class InMemoryBookingRepository implements BookingRepository {
   private readonly bookings: Booking[] = [];
   private nextId = 1;
+  readonly designs: Array<{ id: string; referenceImageUrl: string | null }> = [];
 
   async create(booking: NewBooking): Promise<Booking> {
     const now = new Date();
@@ -36,11 +37,14 @@ export class InMemoryBookingRepository implements BookingRepository {
   }
 
   async createWithDesign(booking: NewBookingWithDesign): Promise<Booking> {
+    const designId = String(this.nextId++);
+    this.designs.push({ id: designId, referenceImageUrl: booking.design.referenceImageUrl ?? null });
+
     return this.create({
       professionalId: booking.professionalId,
       clientUserId: booking.clientUserId,
       serviceVariantId: booking.serviceVariantId,
-      designId: String(this.nextId++),
+      designId,
       startsAt: booking.startsAt,
       endsAt: booking.endsAt,
       priceClp: booking.priceClp,

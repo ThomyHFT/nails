@@ -11,7 +11,7 @@ const TOKEN_OPTIONS = {
   addRandomSuffix: true,
 };
 
-async function canUploadAsReviewClient(clientUserId: string, clientPayload: string | null): Promise<boolean> {
+export async function canUploadAsReviewClient(clientUserId: string, clientPayload: string | null): Promise<boolean> {
   if (!clientPayload) return false;
   let bookingId: string | undefined;
   try {
@@ -23,6 +23,16 @@ async function canUploadAsReviewClient(clientUserId: string, clientPayload: stri
 
   const booking = await new DrizzleBookingRepository().findById(bookingId);
   return !!booking && booking.clientUserId === clientUserId && booking.status === "completed";
+}
+
+export function canUploadAsDesignReferenceClient(clientPayload: string | null): boolean {
+  if (!clientPayload) return false;
+  try {
+    const purpose = (JSON.parse(clientPayload) as { purpose?: string }).purpose;
+    return purpose === "design-reference";
+  } catch {
+    return false;
+  }
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -46,8 +56,13 @@ export async function POST(request: Request): Promise<NextResponse> {
           return TOKEN_OPTIONS;
         }
 
-        if (session.user.role === "client" && (await canUploadAsReviewClient(session.user.id, clientPayload))) {
-          return TOKEN_OPTIONS;
+        if (session.user.role === "client") {
+          if (await canUploadAsReviewClient(session.user.id, clientPayload)) {
+            return TOKEN_OPTIONS;
+          }
+          if (canUploadAsDesignReferenceClient(clientPayload)) {
+            return TOKEN_OPTIONS;
+          }
         }
 
         throw new Error("No autorizado");
