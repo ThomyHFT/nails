@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, ArrowRight, Banknote, CalendarDays, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Banknote, CalendarDays, Check, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   BookingSummaryCard,
   BrandButton,
@@ -64,6 +65,43 @@ function currentMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
+function todayISO(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function shiftMonth(month: string, delta: number): string {
+  const [year, mon] = month.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, mon - 1 + delta, 1));
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}-01`;
+}
+
+function monthLabel(month: string): string {
+  const [year, mon] = month.split("-").map(Number);
+  const label = new Intl.DateTimeFormat("es-CL", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(year, mon - 1, 1)),
+  );
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function daysInMonth(month: string): number {
+  const [year, mon] = month.split("-").map(Number);
+  return new Date(Date.UTC(year, mon, 0)).getUTCDate();
+}
+
+// Lunes primero: el mismo domingo-al-final que usa el calendario del admin.
+function leadingBlanks(month: string): number {
+  const [year, mon] = month.split("-").map(Number);
+  return (new Date(Date.UTC(year, mon - 1, 1)).getUTCDay() + 6) % 7;
+}
+
+function dateAt(month: string, day: number): string {
+  const [year, mon] = month.split("-").map(Number);
+  return `${year}-${String(mon).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+const WEEKDAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
 /** Barra de progreso de los tres pasos. Da contexto de dónde estoy y cuánto falta. */
 function StepIndicator({ current }: { current: Step }) {
   const currentIndex = STEPS.findIndex((step) => step.id === current);
@@ -123,6 +161,9 @@ export function ReservarForm({
   const [design, setDesign] = useState<NailDesignerResult | null>(null);
 
   const [date, setDate] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(currentMonth());
+  const [calendarDays, setCalendarDays] = useState<string[]>([]);
+  const [isLoadingCalendarDays, setIsLoadingCalendarDays] = useState(false);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -167,6 +208,30 @@ export function ReservarForm({
       setIsLoadingSlots(false);
     }
   }
+
+  async function loadCalendarDays(month: string) {
+    if (!variantId) return;
+    setIsLoadingCalendarDays(true);
+    try {
+      const response = await fetch(
+        `/api/availability/days?slug=${slug}&serviceVariantId=${variantId}&month=${month}`,
+      );
+      const data = await response.json();
+      setCalendarDays(data.days ?? []);
+    } finally {
+      setIsLoadingCalendarDays(false);
+    }
+  }
+
+  // El calendario del paso 3 pide sus propios días con cupo por mes: la
+  // clienta puede navegar a un mes distinto del que se mostró como panel
+  // informativo en el paso 1.
+  useEffect(() => {
+    if (step !== "schedule") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga async (fetch + finally), no setState síncrono
+    void loadCalendarDays(calendarMonth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, calendarMonth, variantId]);
 
   async function confirmBooking() {
     if (!selectedSlot || !variantId) return;
@@ -363,18 +428,81 @@ export function ReservarForm({
           <StepIndicator current="schedule" />
         </div>
 
-        <label className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <Overline>Fecha</Overline>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => {
-              setDate(e.target.value);
-              loadSlots(e.target.value);
-            }}
-            className="t-body h-11 w-full rounded-lg border border-outline-variant bg-background px-4 text-foreground outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
-          />
-        </label>
+          <Panel padding="sm" className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                aria-label="Mes anterior"
+                disabled={calendarMonth <= currentMonth()}
+                onClick={() => setCalendarMonth((m) => shiftMonth(m, -1))}
+                className="inline-flex size-9 items-center justify-center rounded-pill text-foreground outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <span className="t-title">{monthLabel(calendarMonth)}</span>
+              <button
+                type="button"
+                aria-label="Mes siguiente"
+                onClick={() => setCalendarMonth((m) => shiftMonth(m, 1))}
+                className="inline-flex size-9 items-center justify-center rounded-pill text-foreground outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {WEEKDAY_LABELS.map((label) => (
+                <Caption key={label} className="text-xs">
+                  {label}
+                </Caption>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: leadingBlanks(calendarMonth) }, (_, i) => (
+                <div key={`blank-${i}`} />
+              ))}
+              {Array.from({ length: daysInMonth(calendarMonth) }, (_, i) => {
+                const day = i + 1;
+                const cellDate = dateAt(calendarMonth, day);
+                const hasSlots = calendarDays.includes(cellDate);
+                const isPast = cellDate < todayISO();
+                const isSelected = date === cellDate;
+                const disabled = isPast || (!hasSlots && !isLoadingCalendarDays);
+
+                return (
+                  <button
+                    key={cellDate}
+                    type="button"
+                    disabled={disabled}
+                    aria-pressed={isSelected}
+                    onClick={() => {
+                      setDate(cellDate);
+                      loadSlots(cellDate);
+                    }}
+                    className={cn(
+                      "flex aspect-square items-center justify-center rounded-lg text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : disabled
+                          ? "text-muted-foreground/40"
+                          : "text-foreground hover:bg-surface-2",
+                    )}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+
+            {isLoadingCalendarDays && <Caption>Cargando días disponibles…</Caption>}
+            {!isLoadingCalendarDays && calendarDays.length === 0 && (
+              <Caption>No hay días con cupo en {monthLabel(calendarMonth).toLowerCase()}.</Caption>
+            )}
+          </Panel>
+        </div>
 
         {isLoadingSlots && <Caption>Cargando horarios…</Caption>}
 
