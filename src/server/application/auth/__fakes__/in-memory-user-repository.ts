@@ -39,4 +39,11 @@ export class InMemoryUserRepository implements UserRepository {
       this.usersById.set(userId, { ...user, passwordHash, updatedAt: new Date() });
     }
   }
+
+  async markEmailVerified(userId: string): Promise<void> {
+    const user = this.usersById.get(userId);
+    if (user) {
+      this.usersById.set(userId, { ...user, emailVerifiedAt: new Date(), updatedAt: new Date() });
+    }
+  }
 }

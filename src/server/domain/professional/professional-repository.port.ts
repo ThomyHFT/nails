@@ -6,4 +6,6 @@ export interface ProfessionalRepository {
   findByOwnerUserId(ownerUserId: string): Promise<Professional | null>;
   updateBufferMinutes(professionalId: string, bufferMinutes: number): Promise<Professional>;
   updateTagline(professionalId: string, tagline: string | null): Promise<Professional>;
+  /** Setea `publishedAt` a ahora. Es lo que verificar el correo desbloquea. */
+  markPublished(professionalId: string): Promise<Professional>;
 }

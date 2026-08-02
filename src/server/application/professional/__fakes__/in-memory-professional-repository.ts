@@ -29,4 +29,11 @@ export class InMemoryProfessionalRepository implements ProfessionalRepository {
     professional.tagline = tagline;
     return professional;
   }
+
+  async markPublished(professionalId: string): Promise<Professional> {
+    const professional = this.professionals.find((p) => p.id === professionalId);
+    if (!professional) throw new Error("Profesional no encontrada");
+    professional.publishedAt = new Date();
+    return professional;
+  }
 }

@@ -61,4 +61,13 @@ export class DrizzleProfessionalRepository implements ProfessionalRepository {
       .returning();
     return toDomain(row);
   }
+
+  async markPublished(professionalId: string): Promise<Professional> {
+    const [row] = await db
+      .update(professionals)
+      .set({ publishedAt: new Date(), updatedAt: new Date() })
+      .where(eq(professionals.id, professionalId))
+      .returning();
+    return toDomain(row);
+  }
 }
