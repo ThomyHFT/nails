@@ -110,7 +110,6 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
           <Caption>
             Sesión iniciada como <strong className="font-medium text-foreground">{session.user.email}</strong>
           </Caption>
-          <SignOutButton slug={slug} />
         </div>
 
         {bookings.length === 0 ? (
@@ -160,6 +159,10 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
             })}
           </div>
         )}
+
+        {/* Discreta y al final: es una acción de servicio, no debería
+            competir en tono con el título de la página. */}
+        <SignOutButton slug={slug} />
       </Section>
     </Container>
   );
