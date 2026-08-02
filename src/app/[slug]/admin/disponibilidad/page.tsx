@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminPageHeader } from "@/components/brand/admin";
+import { InfoNote } from "@/components/brand/booking";
 import { Chip } from "@/components/brand/chip";
 import { Panel } from "@/components/brand/surface";
 import { Body, Caption, Title } from "@/components/brand/typography";
@@ -269,16 +270,16 @@ export default function DisponibilidadPage() {
       />
 
       {!currentMonthHasRules && (
-        <p className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm">
+        <InfoNote tone="warning">
           Todavía no cargaste el horario base de este mes. No se podrán agendar reservas hasta que lo hagas.
-        </p>
+        </InfoNote>
       )}
 
       {!nextMonthHasRules && (
-        <p className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm">
+        <InfoNote tone="warning">
           Todavía no cargaste el horario base del próximo mes. No se podrán agendar reservas en ese mes hasta que lo
           hagas.
-        </p>
+        </InfoNote>
       )}
 
       <details className="group" open={!currentMonthHasRules}>

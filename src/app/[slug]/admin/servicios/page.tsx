@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AdminPageHeader } from "@/components/brand";
+import { AdminCard, AdminPageHeader, BrandButton, Caption } from "@/components/brand";
 import { ImageUploader } from "@/components/ImageUploader";
 
 type NailLength = "short" | "medium" | "long" | "single";
@@ -237,188 +237,190 @@ export default function ServiciosPage() {
 
       <div className="flex flex-col gap-4">
         {services.map((service) => (
-          <section
+          <AdminCard
             key={service.id}
-            className="flex flex-col gap-3 p-4"
-            style={{
-              background: "var(--card)",
-              color: "var(--card-foreground)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-            }}
+            title={
+              editingServiceId === service.id ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    value={editingServiceName}
+                    onChange={(e) => setEditingServiceName(e.target.value)}
+                    className="h-8"
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={() => saveServiceName(service.id)}>
+                    Guardar
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingServiceId(null)}>
+                    Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className={service.active ? "" : "text-muted-foreground line-through"}
+                  onClick={() => {
+                    setEditingServiceId(service.id);
+                    setEditingServiceName(service.name);
+                  }}
+                >
+                  {service.name}
+                </button>
+              )
+            }
+            // Desactivar es reversible y Eliminar no: mismo peso de texto no
+            // alcanzaba para distinguirlas. Ghost para lo reversible, danger
+            // (tinte, no relleno sólido) para lo que borra de verdad.
+            action={
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <BrandButton variant="ghost" size="sm" onClick={() => toggleServiceActive(service)}>
+                  {service.active ? "Desactivar" : "Activar"}
+                </BrandButton>
+                {confirmDeleteServiceId === service.id ? (
+                  <>
+                    <Caption className="text-xs">¿Eliminar?</Caption>
+                    <BrandButton variant="danger" size="sm" onClick={() => deleteService(service.id)}>
+                      Sí
+                    </BrandButton>
+                    <BrandButton variant="ghost" size="sm" onClick={() => setConfirmDeleteServiceId(null)}>
+                      No
+                    </BrandButton>
+                  </>
+                ) : (
+                  <BrandButton variant="danger" size="sm" onClick={() => setConfirmDeleteServiceId(service.id)}>
+                    Eliminar
+                  </BrandButton>
+                )}
+              </div>
+            }
           >
-            <div className="flex items-start gap-3">
+            <div className="flex flex-wrap items-start gap-4">
               <ImageUploader
                 pathPrefix={`services/${params.slug}`}
                 currentUrl={service.imageUrl}
                 onUploaded={(url) => saveServiceImage(service.id, url)}
               />
-              <div className="flex flex-1 flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  {editingServiceId === service.id ? (
-                    <div className="flex flex-1 items-center gap-2">
-                      <Input
-                        value={editingServiceName}
-                        onChange={(e) => setEditingServiceName(e.target.value)}
-                        className="h-8"
-                        autoFocus
-                      />
-                      <Button size="sm" onClick={() => saveServiceName(service.id)}>
-                        Guardar
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setEditingServiceId(null)}>
-                        Cancelar
-                      </Button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className={`font-medium ${service.active ? "" : "line-through"}`}
-                      onClick={() => {
-                        setEditingServiceId(service.id);
-                        setEditingServiceName(service.name);
-                      }}
-                    >
-                      {service.name}
-                    </button>
-                  )}
 
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => toggleServiceActive(service)}>
-                      {service.active ? "Desactivar" : "Activar"}
+              <div className="flex flex-1 flex-col gap-3">
+                <ul className="flex flex-col gap-2">
+                  {service.variants.map((variant) => (
+                    <li key={variant.id} className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className={`w-16 ${variant.active ? "" : "text-muted-foreground line-through"}`}>
+                        {NAIL_LENGTHS.find((n) => n.value === variant.nailLength)?.label}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Caption className="text-xs">$</Caption>
+                        <Input
+                          type="number"
+                          min={1}
+                          defaultValue={variant.priceClp}
+                          onBlur={(e) => {
+                            const value = Number(e.target.value);
+                            if (value !== variant.priceClp) updateVariantPrice(variant.id, value);
+                          }}
+                          className="w-24"
+                        />
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          min={1}
+                          defaultValue={variant.durationMinutes}
+                          onBlur={(e) => {
+                            const value = Number(e.target.value);
+                            if (value !== variant.durationMinutes) updateVariantDuration(variant.id, value);
+                          }}
+                          className="w-20"
+                        />
+                        <Caption className="text-xs">min</Caption>
+                      </span>
+                      <BrandButton variant="ghost" size="sm" onClick={() => toggleVariantActive(variant)}>
+                        {variant.active ? "Desactivar" : "Activar"}
+                      </BrandButton>
+                      {confirmDeleteVariantId === variant.id ? (
+                        <>
+                          <Caption className="text-xs">¿Eliminar?</Caption>
+                          <BrandButton variant="danger" size="sm" onClick={() => deleteVariant(variant.id)}>
+                            Sí
+                          </BrandButton>
+                          <BrandButton variant="ghost" size="sm" onClick={() => setConfirmDeleteVariantId(null)}>
+                            No
+                          </BrandButton>
+                        </>
+                      ) : (
+                        <BrandButton variant="danger" size="sm" onClick={() => setConfirmDeleteVariantId(variant.id)}>
+                          Eliminar
+                        </BrandButton>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+
+                {variantForm?.serviceId === service.id ? (
+                  <form onSubmit={createVariant} className="flex flex-wrap items-end gap-3">
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor={`nail-length-${service.id}`}>Largo</Label>
+                      <select
+                        id={`nail-length-${service.id}`}
+                        value={variantForm.nailLength}
+                        onChange={(e) => setVariantForm({ ...variantForm, nailLength: e.target.value as NailLength })}
+                        className="h-8 rounded-lg border border-outline-variant bg-background px-2 text-sm"
+                      >
+                        {NAIL_LENGTHS.map((n) => (
+                          <option key={n.value} value={n.value}>
+                            {n.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor={`price-${service.id}`}>Precio (CLP)</Label>
+                      <Input
+                        id={`price-${service.id}`}
+                        type="number"
+                        min={1}
+                        value={variantForm.priceClp}
+                        onChange={(e) => setVariantForm({ ...variantForm, priceClp: Number(e.target.value) })}
+                        className="w-28"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor={`duration-${service.id}`}>Minutos</Label>
+                      <Input
+                        id={`duration-${service.id}`}
+                        type="number"
+                        min={1}
+                        value={variantForm.durationMinutes}
+                        onChange={(e) => setVariantForm({ ...variantForm, durationMinutes: Number(e.target.value) })}
+                        className="w-24"
+                      />
+                    </div>
+                    <Button type="submit" size="sm">
+                      Agregar
                     </Button>
-                    {confirmDeleteServiceId === service.id ? (
-                      <>
-                        <span className="text-sm">¿Eliminar?</span>
-                        <Button variant="destructive" size="sm" onClick={() => deleteService(service.id)}>
-                          Sí
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteServiceId(null)}>
-                          No
-                        </Button>
-                      </>
-                    ) : (
-                      <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteServiceId(service.id)}>
-                        Eliminar
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setVariantForm(null)}>
+                      Cancelar
+                    </Button>
+                  </form>
+                ) : (
+                  <BrandButton
+                    variant="outline"
+                    size="sm"
+                    className="w-fit"
+                    onClick={() => setVariantForm(emptyVariantForm(service.id))}
+                  >
+                    Agregar variante
+                  </BrandButton>
+                )}
               </div>
             </div>
-
-            <ul className="flex flex-col gap-2">
-              {service.variants.map((variant) => (
-                <li key={variant.id} className="flex items-center gap-3 text-sm">
-                  <span className={`w-16 ${variant.active ? "" : "line-through"}`}>
-                    {NAIL_LENGTHS.find((n) => n.value === variant.nailLength)?.label}
-                  </span>
-                  <Input
-                    type="number"
-                    min={1}
-                    defaultValue={variant.priceClp}
-                    onBlur={(e) => {
-                      const value = Number(e.target.value);
-                      if (value !== variant.priceClp) updateVariantPrice(variant.id, value);
-                    }}
-                    className="w-28"
-                  />
-                  <Input
-                    type="number"
-                    min={1}
-                    defaultValue={variant.durationMinutes}
-                    onBlur={(e) => {
-                      const value = Number(e.target.value);
-                      if (value !== variant.durationMinutes) updateVariantDuration(variant.id, value);
-                    }}
-                    className="w-20"
-                  />
-                  <span style={{ color: "var(--muted-foreground)" }}>min</span>
-                  <Button variant="ghost" size="sm" onClick={() => toggleVariantActive(variant)}>
-                    {variant.active ? "Desactivar" : "Activar"}
-                  </Button>
-                  {confirmDeleteVariantId === variant.id ? (
-                    <>
-                      <span>¿Eliminar?</span>
-                      <Button variant="destructive" size="sm" onClick={() => deleteVariant(variant.id)}>
-                        Sí
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteVariantId(null)}>
-                        No
-                      </Button>
-                    </>
-                  ) : (
-                    <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteVariantId(variant.id)}>
-                      Eliminar
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-
-            {variantForm?.serviceId === service.id ? (
-              <form onSubmit={createVariant} className="flex flex-wrap items-end gap-3">
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor={`nail-length-${service.id}`}>Largo</Label>
-                  <select
-                    id={`nail-length-${service.id}`}
-                    value={variantForm.nailLength}
-                    onChange={(e) => setVariantForm({ ...variantForm, nailLength: e.target.value as NailLength })}
-                    className="h-8 px-2 text-sm"
-                    style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
-                  >
-                    {NAIL_LENGTHS.map((n) => (
-                      <option key={n.value} value={n.value}>
-                        {n.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor={`price-${service.id}`}>Precio (CLP)</Label>
-                  <Input
-                    id={`price-${service.id}`}
-                    type="number"
-                    min={1}
-                    value={variantForm.priceClp}
-                    onChange={(e) => setVariantForm({ ...variantForm, priceClp: Number(e.target.value) })}
-                    className="w-28"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor={`duration-${service.id}`}>Minutos</Label>
-                  <Input
-                    id={`duration-${service.id}`}
-                    type="number"
-                    min={1}
-                    value={variantForm.durationMinutes}
-                    onChange={(e) => setVariantForm({ ...variantForm, durationMinutes: Number(e.target.value) })}
-                    className="w-24"
-                  />
-                </div>
-                <Button type="submit" size="sm">
-                  Agregar
-                </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setVariantForm(null)}>
-                  Cancelar
-                </Button>
-              </form>
-            ) : (
-              <Button variant="outline" size="sm" className="w-fit" onClick={() => setVariantForm(emptyVariantForm(service.id))}>
-                Agregar variante
-              </Button>
-            )}
-          </section>
+          </AdminCard>
         ))}
 
-        {services.length === 0 && (
-          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-            Todavía no creaste ningún servicio.
-          </p>
-        )}
+        {services.length === 0 && <Caption>Todavía no creaste ningún servicio.</Caption>}
       </div>
 
-      {status && <p className="text-sm">{status}</p>}
+      {status && <Caption>{status}</Caption>}
     </div>
   );
 }

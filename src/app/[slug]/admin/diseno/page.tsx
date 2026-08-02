@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AdminCard, AdminPageHeader, BrandButton, Caption, SegmentedControl, Swatch } from "@/components/brand";
 
 type ElementCategory = "color" | "finish" | "decoration" | "technique";
 
@@ -94,6 +94,20 @@ export default function DisenoPage() {
     loadElements();
   }
 
+  async function updateExtraMinutes(id: string, extraMinutes: number) {
+    setStatus(null);
+    const response = await fetch("/api/design-elements", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, extraMinutes }),
+    });
+    if (!response.ok) {
+      setStatus("No se pudo actualizar los minutos extra.");
+      return;
+    }
+    loadElements();
+  }
+
   async function toggleActive(element: DesignElement) {
     setStatus(null);
     const response = await fetch("/api/design-elements", {
@@ -110,136 +124,152 @@ export default function DisenoPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
-      <h1 className="t-display">
-        Catálogo de diseño
-      </h1>
+      <AdminPageHeader
+        title="Catálogo de diseño"
+        description="Colores, acabados, decoraciones y técnicas que la clienta ve en el diseñador de uñas."
+      />
 
-      <form
-        onSubmit={createElement}
-        className="flex flex-col gap-3 p-4"
-        style={{ background: "var(--card)", color: "var(--card-foreground)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}
-      >
-        <h2 className="text-lg font-medium">Nuevo elemento</h2>
-
-        <div className="flex items-center gap-3">
-          <Label htmlFor="element-category">Categoría</Label>
-          <select
-            id="element-category"
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value as ElementCategory })}
-            className="px-2 py-1 text-sm"
-            style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Label htmlFor="element-code">Código</Label>
-          <Input
-            id="element-code"
-            value={form.code}
-            onChange={(e) => setForm({ ...form, code: e.target.value })}
-            required
-            className="w-40"
-          />
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Label htmlFor="element-label">Nombre</Label>
-          <Input
-            id="element-label"
-            value={form.label}
-            onChange={(e) => setForm({ ...form, label: e.target.value })}
-            required
-            className="w-56"
-          />
-        </div>
-
-        {form.category === "color" && (
-          <div className="flex items-center gap-3">
-            <Label htmlFor="element-color-hex">Color</Label>
-            <input
-              id="element-color-hex"
-              type="color"
-              value={form.colorHex}
-              onChange={(e) => setForm({ ...form, colorHex: e.target.value })}
+      <AdminCard title="Nuevo elemento">
+        <form onSubmit={createElement} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label>Categoría</Label>
+            <SegmentedControl
+              size="sm"
+              options={CATEGORIES}
+              value={form.category}
+              onChange={(category) => setForm({ ...form, category })}
             />
-            <span className="text-sm">{form.colorHex}</span>
           </div>
-        )}
 
-        <div className="flex items-center gap-3">
-          <Label htmlFor="element-price">Precio extra (CLP)</Label>
-          <Input
-            id="element-price"
-            type="number"
-            min={0}
-            value={form.priceDeltaClp}
-            onChange={(e) => setForm({ ...form, priceDeltaClp: Number(e.target.value) })}
-            className="w-32"
-          />
-        </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="element-code">Código</Label>
+              <Input
+                id="element-code"
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+                placeholder="ej: rojo-cherimoya"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="element-label">Nombre</Label>
+              <Input
+                id="element-label"
+                value={form.label}
+                onChange={(e) => setForm({ ...form, label: e.target.value })}
+                placeholder="ej: Rojo Cherimoya"
+                required
+              />
+            </div>
+          </div>
 
-        <div className="flex items-center gap-3">
-          <Label htmlFor="element-minutes">Minutos extra</Label>
-          <Input
-            id="element-minutes"
-            type="number"
-            min={0}
-            value={form.extraMinutes}
-            onChange={(e) => setForm({ ...form, extraMinutes: Number(e.target.value) })}
-            className="w-32"
-          />
-        </div>
+          {form.category === "color" && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="element-color-hex">Color</Label>
+              <div className="flex items-center gap-3">
+                <Swatch color={form.colorHex} label={form.label || "Vista previa"} selected />
+                <input
+                  id="element-color-hex"
+                  type="color"
+                  value={form.colorHex}
+                  onChange={(e) => setForm({ ...form, colorHex: e.target.value })}
+                  className="h-9 w-16 cursor-pointer rounded-lg border border-outline-variant bg-transparent p-0"
+                />
+                <Caption className="text-xs">{form.colorHex}</Caption>
+              </div>
+            </div>
+          )}
 
-        <Button type="submit" className="w-fit">
-          Crear elemento
-        </Button>
-      </form>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="element-price">Precio extra (CLP)</Label>
+              <Input
+                id="element-price"
+                type="number"
+                min={0}
+                value={form.priceDeltaClp}
+                onChange={(e) => setForm({ ...form, priceDeltaClp: Number(e.target.value) })}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="element-minutes">Minutos extra</Label>
+              <Input
+                id="element-minutes"
+                type="number"
+                min={0}
+                value={form.extraMinutes}
+                onChange={(e) => setForm({ ...form, extraMinutes: Number(e.target.value) })}
+              />
+            </div>
+          </div>
+
+          <BrandButton type="submit" size="sm" className="w-fit">
+            Crear elemento
+          </BrandButton>
+        </form>
+      </AdminCard>
 
       {CATEGORIES.map((category) => {
         const items = elements.filter((e) => e.category === category.value);
         if (items.length === 0) return null;
 
         return (
-          <section key={category.value} className="flex flex-col gap-3">
-            <h2 className="text-lg font-medium">{category.label}</h2>
-            <ul className="flex flex-col gap-2">
+          <AdminCard key={category.value} title={category.label}>
+            <ul className="flex flex-col gap-3">
               {items.map((element) => (
-                <li key={element.id} className="flex items-center gap-3 text-sm">
-                  {element.colorHex && (
-                    <span
-                      className="inline-block size-4 rounded-full border"
-                      style={{ backgroundColor: element.colorHex }}
+                <li
+                  key={element.id}
+                  className="flex flex-wrap items-center gap-3 border-b border-outline-variant pb-3 text-sm last:border-0 last:pb-0"
+                >
+                  {element.colorHex && <Swatch color={element.colorHex} label={element.label} className="size-8" />}
+                  <span
+                    className={
+                      element.active ? "min-w-24 flex-1" : "min-w-24 flex-1 text-muted-foreground line-through"
+                    }
+                  >
+                    {element.label}
+                  </span>
+
+                  <span className="flex items-center gap-1">
+                    <Caption className="text-xs">$</Caption>
+                    <Input
+                      type="number"
+                      min={0}
+                      defaultValue={element.priceDeltaClp}
+                      onBlur={(e) => {
+                        const value = Number(e.target.value);
+                        if (value !== element.priceDeltaClp) updatePrice(element.id, value);
+                      }}
+                      className="w-24"
                     />
-                  )}
-                  <span className={element.active ? "" : "text-muted-foreground line-through"}>{element.label}</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    defaultValue={element.priceDeltaClp}
-                    onBlur={(e) => {
-                      const value = Number(e.target.value);
-                      if (value !== element.priceDeltaClp) updatePrice(element.id, value);
-                    }}
-                    className="w-24"
-                  />
-                  <Button variant="ghost" size="sm" onClick={() => toggleActive(element)}>
+                  </span>
+
+                  <span className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      min={0}
+                      defaultValue={element.extraMinutes}
+                      onBlur={(e) => {
+                        const value = Number(e.target.value);
+                        if (value !== element.extraMinutes) updateExtraMinutes(element.id, value);
+                      }}
+                      className="w-20"
+                    />
+                    <Caption className="text-xs">min</Caption>
+                  </span>
+
+                  <BrandButton variant="ghost" size="sm" onClick={() => toggleActive(element)}>
                     {element.active ? "Desactivar" : "Activar"}
-                  </Button>
+                  </BrandButton>
                 </li>
               ))}
             </ul>
-          </section>
+          </AdminCard>
         );
       })}
 
-      {status && <p className="text-sm">{status}</p>}
+      {status && <Caption>{status}</Caption>}
     </div>
   );
 }
