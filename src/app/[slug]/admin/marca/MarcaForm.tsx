@@ -206,12 +206,22 @@ export function MarcaForm({ slug }: { slug: string }) {
             currentUrl={form.logoUrl || null}
             onUploaded={(url) => setForm({ ...form, logoUrl: url })}
           />
-          <Input
-            id="logoUrl"
-            placeholder="o pega una URL https://…"
-            value={form.logoUrl}
-            onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
-          />
+          {/* Colapsado por defecto: con la miniatura de arriba, mostrar la URL
+              completa de Vercel Blob en un input a ancho completo era ruido —
+              la vía normal es subir la imagen, esto es solo el escape hatch
+              para pegar una URL externa. */}
+          <details className="group">
+            <summary className="w-fit cursor-pointer text-xs text-muted-foreground">
+              Pegar una URL en vez de subir
+            </summary>
+            <Input
+              id="logoUrl"
+              placeholder="https://…"
+              value={form.logoUrl}
+              onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
+              className="mt-2"
+            />
+          </details>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -221,12 +231,18 @@ export function MarcaForm({ slug }: { slug: string }) {
             currentUrl={form.coverImageUrl || null}
             onUploaded={(url) => setForm({ ...form, coverImageUrl: url })}
           />
-          <Input
-            id="coverImageUrl"
-            placeholder="o pega una URL https://…"
-            value={form.coverImageUrl}
-            onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })}
-          />
+          <details className="group">
+            <summary className="w-fit cursor-pointer text-xs text-muted-foreground">
+              Pegar una URL en vez de subir
+            </summary>
+            <Input
+              id="coverImageUrl"
+              placeholder="https://…"
+              value={form.coverImageUrl}
+              onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })}
+              className="mt-2"
+            />
+          </details>
         </div>
 
         <Button type="submit" disabled={saving} className="w-fit">

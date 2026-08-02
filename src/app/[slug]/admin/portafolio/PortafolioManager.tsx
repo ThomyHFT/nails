@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/ImageUploader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AdminCard, BrandButton, Caption, MediaFrame, Panel } from "@/components/brand";
 
 type PortfolioItem = {
   id: string;
@@ -104,16 +104,7 @@ export function PortafolioManager({ slug }: { slug: string }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <div
-        className="flex flex-col gap-3 p-4"
-        style={{
-          background: "var(--card)",
-          color: "var(--card-foreground)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-        }}
-      >
-        <p className="text-sm font-medium">Nueva foto</p>
+      <AdminCard title="Nueva foto">
         <ImageUploader pathPrefix={`portfolio/${slug}`} onUploaded={setNewImageUrl} />
 
         <div className="flex flex-col gap-1.5">
@@ -127,8 +118,7 @@ export function PortafolioManager({ slug }: { slug: string }) {
             id="service"
             value={newServiceId}
             onChange={(e) => setNewServiceId(e.target.value)}
-            className="h-8 px-2 text-sm"
-            style={{ border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" }}
+            className="h-8 rounded-lg border border-outline-variant bg-background px-2 text-sm"
           >
             <option value="">Ninguno</option>
             {services.map((s) => (
@@ -139,26 +129,16 @@ export function PortafolioManager({ slug }: { slug: string }) {
           </select>
         </div>
 
-        <Button type="button" disabled={!newImageUrl} onClick={createItem} className="w-fit">
+        <BrandButton size="sm" disabled={!newImageUrl} onClick={createItem} className="w-fit">
           Guardar en el portafolio
-        </Button>
-      </div>
+        </BrandButton>
+      </AdminCard>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex flex-col gap-2 p-3"
-            style={{
-              background: "var(--card)",
-              color: "var(--card-foreground)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- URL de Vercel Blob, no un asset local optimizable */}
-            <img src={item.imageUrl} alt={item.caption ?? ""} className="aspect-square w-full rounded object-cover" />
-            {item.caption && <p className="text-xs">{item.caption}</p>}
+          <Panel key={item.id} padding="sm" className="flex flex-col gap-3">
+            <MediaFrame src={item.imageUrl} alt={item.caption ?? ""} ratio="square" />
+            {item.caption && <Caption className="text-xs">{item.caption}</Caption>}
             <div className="flex items-center gap-2">
               <Label htmlFor={`order-${item.id}`} className="text-xs">
                 Orden
@@ -174,25 +154,21 @@ export function PortafolioManager({ slug }: { slug: string }) {
                 className="w-16"
               />
             </div>
-            <div className="flex items-center justify-between gap-2">
-              <Button variant="outline" size="sm" onClick={() => togglePublished(item)}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <BrandButton variant="outline" size="sm" onClick={() => togglePublished(item)}>
                 {item.published ? "Despublicar" : "Publicar"}
-              </Button>
-              <Button variant="destructive" size="sm" onClick={() => deleteItem(item.id)}>
+              </BrandButton>
+              <BrandButton variant="danger" size="sm" onClick={() => deleteItem(item.id)}>
                 Eliminar
-              </Button>
+              </BrandButton>
             </div>
-          </div>
+          </Panel>
         ))}
       </div>
 
-      {items.length === 0 && (
-        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-          Todavía no subiste ninguna foto.
-        </p>
-      )}
+      {items.length === 0 && <Caption>Todavía no subiste ninguna foto.</Caption>}
 
-      {status && <p className="text-sm">{status}</p>}
+      {status && <Caption>{status}</Caption>}
     </div>
   );
 }
