@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, ArrowRight, Banknote, CalendarDays, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Banknote, CalendarDays, Check, Sparkles } from "lucide-react";
 import {
   BookingSummaryCard,
   BrandButton,
@@ -143,6 +143,15 @@ export function ReservarForm({
     }
   }
 
+  // Sin esto, "Días con cupo este mes" abría siempre en "No hay días con cupo
+  // este mes todavía" hasta que la clienta tocara servicio o largo: los datos
+  // solo se pedían en los `onClick`, nunca al montar con la variante inicial.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga async (fetch + finally), no setState síncrono
+    void loadDaysWithSlots(variantId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function loadSlots(nextDate: string) {
     if (!nextDate || !variantId) return;
     setIsLoadingSlots(true);
@@ -232,11 +241,14 @@ export function ReservarForm({
                   }}
                   className={
                     selected
-                      ? "flex items-center justify-between gap-3 rounded-card border border-primary bg-primary-tint px-4 py-3 text-left transition-all"
-                      : "flex items-center justify-between gap-3 rounded-card border border-outline-variant bg-card px-4 py-3 text-left transition-all hover:border-outline hover:bg-surface-2"
+                      ? "flex items-center justify-between gap-3 rounded-card border-2 border-primary bg-primary-tint px-4 py-3 text-left shadow-e1 transition-all"
+                      : "flex items-center justify-between gap-3 rounded-card border-2 border-outline-variant bg-card px-4 py-3 text-left transition-all hover:border-outline hover:bg-surface-2"
                   }
                 >
-                  <span className="font-medium">{option.name}</span>
+                  <span className="flex items-center gap-2 font-medium">
+                    {selected && <Check className="size-4 shrink-0 text-primary" strokeWidth={3} aria-hidden />}
+                    {option.name}
+                  </span>
                   {cheapest !== null && <Price clp={cheapest} prefix="Desde" size="sm" />}
                 </button>
               );
