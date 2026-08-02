@@ -3,9 +3,20 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, ArrowRight, Banknote, CalendarDays, Check, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Banknote,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  ActionLink,
   BookingSummaryCard,
   BrandButton,
   Caption,
@@ -37,7 +48,7 @@ export type ServiceOption = {
 };
 
 type Slot = { startsAt: string; endsAt: string };
-type Step = "select" | "design" | "schedule";
+type Step = "select" | "design" | "schedule" | "confirmed";
 
 const NAIL_LENGTH_LABELS: Record<string, string> = {
   short: "Corta",
@@ -264,7 +275,12 @@ export function ReservarForm({
         return;
       }
 
-      router.push(`/${slug}/cuenta`);
+      // Antes de esto, confirmar redirigía en silencio a /cuenta: el momento
+      // más emocional del flujo (la cita quedó agendada) no tenía ninguna
+      // pantalla propia. router.refresh() precarga /cuenta en segundo plano
+      // para que, al salir de "confirmed", ya liste la reserva nueva.
+      setStep("confirmed");
+      router.refresh();
     } finally {
       setIsConfirming(false);
     }
@@ -405,6 +421,57 @@ export function ReservarForm({
           >
             Continuar con este diseño
           </BrandButton>
+        </div>
+      </Container>
+    );
+  }
+
+  if (step === "confirmed" && selectedSlot) {
+    return (
+      <Container size="md" className="flex flex-col gap-8 px-5 py-10">
+        <div className="flex flex-col items-center gap-4 py-6 text-center">
+          {/* El momento más emocional del flujo: hasta acá, confirmar
+              redirigía en silencio a /cuenta y esto quedaba mudo. */}
+          <span className="inline-flex size-16 items-center justify-center rounded-full bg-success-tint text-on-success-tint">
+            <CheckCircle2 className="size-8" />
+          </span>
+          <Display as="h1">¡Reserva confirmada!</Display>
+          <Caption className="max-w-sm">
+            Te esperamos el {new Date(`${date}T00:00:00`).toLocaleDateString("es-CL", { dateStyle: "long" })} a las{" "}
+            {formatTime(selectedSlot.startsAt)}.
+          </Caption>
+        </div>
+
+        <BookingSummaryCard
+          serviceName={service?.name ?? "Servicio"}
+          variantLabel={
+            variant
+              ? `Largo ${NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength} · ${totalMinutes} min`
+              : undefined
+          }
+          priceClp={totalPriceClp}
+          attributes={design ? <Chip tone="primary">Diseño personalizado</Chip> : <Chip>Sin diseño</Chip>}
+        />
+
+        <div className="flex flex-col gap-2">
+          <SummaryRow
+            highlighted
+            icon={<CalendarDays className="size-5" />}
+            title={`${new Date(`${date}T00:00:00`).toLocaleDateString("es-CL", { dateStyle: "long" })}, ${formatTime(selectedSlot.startsAt)}`}
+            detail="America/Santiago"
+          />
+          <SummaryRow
+            icon={<Banknote className="size-5" />}
+            title="Pago presencial"
+            detail="Se abona en el local al terminar el servicio."
+          />
+        </div>
+
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <BrandButton size="lg" href={`/${slug}/cuenta`}>
+            Ver mis reservas
+          </BrandButton>
+          <ActionLink href={`/${slug}`}>Volver al inicio</ActionLink>
         </div>
       </Container>
     );
