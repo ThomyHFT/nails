@@ -27,7 +27,11 @@ export default async function PublicLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <TenantHeader slug={slug} businessName={professional.businessName} logoUrl={branding?.logoUrl ?? null} />
-      <main className="flex-1">{children}</main>
+      {/* `flex flex-col` y no solo `flex-1`: AuthCard depende de heredar un
+          padre flex para que su propio `flex-1 justify-center` centre el
+          formulario. Sin esto, login/registro/recuperar quedaban pegados
+          arriba con el pie 400px más abajo. */}
+      <main className="flex flex-1 flex-col">{children}</main>
       <SiteFooter
         businessName={professional.businessName}
         links={[
