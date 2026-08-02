@@ -84,13 +84,9 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
   return (
     <Container size="xl" className="flex flex-col">
       <Hero
-        eyebrow={
-          professional.tagline
-            ? professional.businessName
-            : professional.instagramHandle
-              ? instagramLabel(professional.instagramHandle)
-              : undefined
-        }
+        // El eyebrow nunca repite el nombre del negocio: ya está en el header,
+        // 60px más arriba. Si hay Instagram lo anticipa acá; si no, se omite.
+        eyebrow={professional.instagramHandle ? instagramLabel(professional.instagramHandle) : undefined}
         title={professional.tagline ?? professional.businessName}
         description={professional.bio}
         imageUrl={branding?.coverImageUrl ?? null}

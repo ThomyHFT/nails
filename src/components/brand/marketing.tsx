@@ -37,8 +37,11 @@ export function Hero({
   className?: string;
 }) {
   return (
-    <section className={cn("flex flex-col items-center gap-10 px-5 pt-10 pb-14 md:flex-row md:gap-12 md:py-20", className)}>
-      <div className="flex w-full flex-col items-start gap-6 md:w-1/2">
+    <section className={cn("flex flex-col items-center gap-8 px-5 pt-10 pb-14 md:flex-row md:gap-12 md:py-20", className)}>
+      {/* En móvil el trabajo va primero: en un oficio visual la foto no puede
+          quedar bajo el pliegue del CTA. En escritorio vuelve al orden natural
+          del documento (texto a la izquierda). */}
+      <div className="order-2 flex w-full flex-col items-start gap-6 md:order-1 md:w-3/5">
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
         <Display className="text-primary">{title}</Display>
         {description && <BodyLarge className="max-w-md">{description}</BodyLarge>}
@@ -51,9 +54,13 @@ export function Hero({
       </div>
 
       {imageUrl !== undefined && (
-        <div className="relative w-full md:w-1/2">
+        // Ancho acotado en escritorio: a media pantalla completa la portada
+        // `portrait` medía ~800px de alto y dejaba el titular flotando en un
+        // mar de crema. Con un máximo de 380px, el hero queda a la altura de
+        // su propio contenido en vez de a la de la foto.
+        <div className="relative order-1 w-full max-w-sm md:order-2 md:ml-auto md:w-2/5">
           <MediaFrame src={imageUrl} alt={imageAlt ?? ""} ratio="portrait" className="shadow-e1" />
-          {badge && <div className="absolute -bottom-6 -left-6 hidden md:block">{badge}</div>}
+          {badge && <div className="absolute -bottom-5 left-4 md:-bottom-6 md:-left-6">{badge}</div>}
         </div>
       )}
     </section>
