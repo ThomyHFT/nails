@@ -84,8 +84,14 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
   return (
     <Container size="xl" className="flex flex-col">
       <Hero
-        eyebrow={professional.instagramHandle ? instagramLabel(professional.instagramHandle) : undefined}
-        title={professional.businessName}
+        eyebrow={
+          professional.tagline
+            ? professional.businessName
+            : professional.instagramHandle
+              ? instagramLabel(professional.instagramHandle)
+              : undefined
+        }
+        title={professional.tagline ?? professional.businessName}
         description={professional.bio}
         imageUrl={branding?.coverImageUrl ?? null}
         imageAlt={professional.businessName}

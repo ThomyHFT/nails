@@ -11,6 +11,7 @@ function toDomain(row: typeof professionals.$inferSelect): Professional {
     ownerUserId: row.ownerUserId,
     businessName: row.businessName,
     bio: row.bio,
+    tagline: row.tagline,
     phone: row.phone,
     instagramHandle: row.instagramHandle,
     timezone: row.timezone,
@@ -45,6 +46,15 @@ export class DrizzleProfessionalRepository implements ProfessionalRepository {
     const [row] = await db
       .update(professionals)
       .set({ bufferMinutes, updatedAt: new Date() })
+      .where(eq(professionals.id, professionalId))
+      .returning();
+    return toDomain(row);
+  }
+
+  async updateTagline(professionalId: string, tagline: string | null): Promise<Professional> {
+    const [row] = await db
+      .update(professionals)
+      .set({ tagline, updatedAt: new Date() })
       .where(eq(professionals.id, professionalId))
       .returning();
     return toDomain(row);

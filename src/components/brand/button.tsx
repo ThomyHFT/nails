@@ -161,7 +161,7 @@ export function ActionLink({
     <Link
       href={href}
       className={cn(
-        "t-label group inline-flex items-center gap-2 text-primary transition-colors hover:text-[var(--primary-hover)]",
+        "t-label group inline-flex items-center gap-2 rounded-sm text-primary outline-none transition-colors hover:text-[var(--primary-hover)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className,
       )}
     >

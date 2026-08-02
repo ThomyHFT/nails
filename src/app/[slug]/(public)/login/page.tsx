@@ -1,10 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { AuthCard, BrandButton, Caption, TextField } from "@/components/brand";
+import { ActionLink, AuthCard, BrandButton, Caption, TextField } from "@/components/brand";
 
 export default function LoginPage() {
+  const params = useParams<{ slug: string }>();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+  const registroHref = `/${params.slug}/registro${next ? `?next=${encodeURIComponent(next)}` : ""}`;
   const { data: session, status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +51,16 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthCard title="Iniciar sesión" description="Entra para ver tus reservas y dejar tu opinión.">
+    <AuthCard
+      title="Iniciar sesión"
+      description="Entra para ver tus reservas y dejar tu opinión."
+      footer={
+        <div className="flex flex-col items-center gap-3">
+          <ActionLink href={registroHref}>¿No tienes cuenta? Crear cuenta</ActionLink>
+          <ActionLink href={`/${params.slug}/recuperar`}>Olvidé mi contraseña</ActionLink>
+        </div>
+      }
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <TextField
           label="Email"

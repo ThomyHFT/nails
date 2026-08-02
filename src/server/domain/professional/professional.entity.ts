@@ -4,6 +4,7 @@ export interface Professional {
   ownerUserId: string;
   businessName: string;
   bio: string | null;
+  tagline: string | null;
   phone: string | null;
   instagramHandle: string | null;
   timezone: string;

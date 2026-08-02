@@ -9,6 +9,7 @@ describe("Professional entity shape", () => {
       ownerUserId: "user-1",
       businessName: "Uñas por Karla",
       bio: null,
+      tagline: null,
       phone: null,
       instagramHandle: null,
       timezone: "America/Santiago",

@@ -1,10 +1,10 @@
-import { Button } from "@/components/ui/button";
+import { notFound, redirect } from "next/navigation";
+import { env } from "@/server/infrastructure/config/env";
 
 export default function Home() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-2xl font-semibold">misuñas</h1>
-      <Button>Reservar hora</Button>
-    </div>
-  );
+  if (!env.DEMO_TENANT_SLUG) {
+    notFound();
+  }
+
+  redirect(`/${env.DEMO_TENANT_SLUG}`);
 }

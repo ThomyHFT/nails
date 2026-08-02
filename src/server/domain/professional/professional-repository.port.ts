@@ -5,4 +5,5 @@ export interface ProfessionalRepository {
   findBySlug(slug: string): Promise<Professional | null>;
   findByOwnerUserId(ownerUserId: string): Promise<Professional | null>;
   updateBufferMinutes(professionalId: string, bufferMinutes: number): Promise<Professional>;
+  updateTagline(professionalId: string, tagline: string | null): Promise<Professional>;
 }

@@ -107,7 +107,7 @@ export function ReservarForm({
 
   function goToDesignStep() {
     if (sessionStatus !== "authenticated") {
-      router.push(`/${slug}/login`);
+      router.push(`/${slug}/login?next=${encodeURIComponent(`/${slug}/reservar`)}`);
       return;
     }
     setStep("design");

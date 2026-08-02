@@ -43,7 +43,10 @@ export function AppHeader({
       )}
     >
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-5">
-        <Link href={homeHref} className="flex items-center gap-3">
+        <Link
+          href={homeHref}
+          className="flex items-center gap-3 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
           {logoUrl ? (
             <MediaFrame src={logoUrl} alt={businessName} ratio="square" rounded="full" className="size-10 shrink-0" />
           ) : null}
@@ -58,7 +61,7 @@ export function AppHeader({
                 href={item.href}
                 aria-current={item.active ? "page" : undefined}
                 className={cn(
-                  "t-body pb-1 transition-colors",
+                  "t-body pb-1 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   item.active
                     ? "border-b border-primary text-primary"
                     : "text-muted-foreground hover:text-primary",
@@ -95,7 +98,7 @@ export function BottomNavBar({ items, className }: { items: NavItem[]; className
           href={item.href}
           aria-current={item.active ? "page" : undefined}
           className={cn(
-            "flex min-w-20 flex-col items-center gap-1 rounded-pill px-3 py-1.5 text-xs font-medium transition-all duration-200 [transition-timing-function:var(--ease-brand)] active:scale-95 [&_svg]:size-5",
+            "flex min-w-20 flex-col items-center gap-1 rounded-pill px-3 py-1.5 text-xs font-medium outline-none transition-all duration-200 [transition-timing-function:var(--ease-brand)] active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&_svg]:size-5",
             item.active
               ? "bg-primary-container text-on-primary-container"
               : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",

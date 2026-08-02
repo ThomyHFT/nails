@@ -66,8 +66,9 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [05](specs/05-catalogo-portafolio-imagenes.md) | CRUD de servicios, subida de imágenes con Vercel Blob, portafolio, catálogo público | Implemented |
 | [06](specs/06-reviews-moderacion-publica.md) | Reviews: moderación, publicación y vista pública | Implemented |
 | [07](specs/07-notificaciones-email-foto-referencia.md) | Notificaciones por email (Resend) al confirmar/cancelar reserva, foto de referencia en el diseñador | Implemented |
+| [08](specs/08-producto-listo-para-mostrar.md) | Registro alcanzable, recuperación de contraseña, metadata real, panel usable en teléfono, estados de error/carga, accesibilidad, seed de portafolio y tagline | Implemented |
 
-El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` solo tiene filas de seed; `designs` ya tiene escritor real desde el SPEC 07 (`reference_image_url`).
+El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` solo tiene filas de seed; `designs` ya tiene escritor real desde el SPEC 07 (`reference_image_url`). `professionals.tagline` existe desde el SPEC 08.
 
 ## Deploy
 
@@ -85,3 +86,4 @@ La migración va **antes** del push: las migraciones son aditivas y el build de 
 - **`neon-http` no soporta `db.transaction()`.** [client.ts](src/server/infrastructure/db/client.ts) usa el driver HTTP. Para escrituras atómicas se usa `db.batch([...])` con los uuid generados en la aplicación con `crypto.randomUUID()`.
 - **`getToken` en el middleware necesita `secureCookie`** cuando corre sobre https, o no encuentra la sesión en producción (commit `53d51ec`).
 - El `.env` local apunta a la **base de Neon de producción**. No hay base de desarrollo separada: cuidado al probar con datos, y limpiar lo que se inserta a mano.
+- **`notFound()` llamado dentro de un `layout.tsx` no usa el `not-found.tsx` del mismo segmento.** Next busca el de un segmento padre, porque el layout que lanza el error no puede envolver su propio boundary. El `not-found.tsx` de slug inexistente vive en `src/app/not-found.tsx` (raíz), no en `src/app/[slug]/`, por esto mismo (SPEC 08).

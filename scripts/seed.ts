@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
@@ -6,13 +7,56 @@ import { professionals, users } from "@/server/infrastructure/db/schema/users";
 import { services, serviceVariants } from "@/server/infrastructure/db/schema/services";
 import { designElements } from "@/server/infrastructure/db/schema/designs";
 import { bookings } from "@/server/infrastructure/db/schema/bookings";
-import { reviews } from "@/server/infrastructure/db/schema/content";
+import { reviews, portfolioItems } from "@/server/infrastructure/db/schema/content";
 
 const SEED_CLIENT_EMAIL = "clienta@misunas.cl";
 
 const SEED_SLUG = "karla";
 const SEED_EMAIL = "profesional@misunas.cl";
-const SEED_PASSWORD = "cambiame123";
+
+function resolveSeedPassword(): { password: string; generated: boolean } {
+  const fromEnv = process.env.SEED_PASSWORD;
+  if (fromEnv) {
+    return { password: fromEnv, generated: false };
+  }
+  return { password: randomBytes(9).toString("base64url"), generated: true };
+}
+
+const { password: SEED_PASSWORD, generated: seedPasswordGenerated } = resolveSeedPassword();
+
+/**
+ * Fotos reales ya subidas a Vercel Blob para el tenant demo durante pruebas
+ * del SPEC 05. Sembrarlas acá no fabrica URLs nuevas: reutiliza activos que
+ * ya existen para este mismo tenant.
+ */
+const DEMO_PORTFOLIO_IMAGE_URLS = [
+  "https://qr2ouln3uia3q0sv.public.blob.vercel-storage.com/portfolio/karla/WhatsApp%20Image%202026-08-01%20at%2000.29.02-0XBdJtcIrrBg0QUGKvLt1csCvY6ocD.jpeg",
+  "https://qr2ouln3uia3q0sv.public.blob.vercel-storage.com/portfolio/karla/WhatsApp%20Image%202026-08-01%20at%2000.29-01DOOfMlLrbzm7knt4WYKrvj8gDgxk.jpeg",
+];
+
+async function seedPortfolio(professionalId: string) {
+  const [anyItem] = await db
+    .select({ id: portfolioItems.id })
+    .from(portfolioItems)
+    .where(eq(portfolioItems.professionalId, professionalId))
+    .limit(1);
+
+  if (anyItem) {
+    console.log("Portafolio ya sembrado.");
+    return;
+  }
+
+  await db.insert(portfolioItems).values(
+    DEMO_PORTFOLIO_IMAGE_URLS.map((imageUrl, index) => ({
+      professionalId,
+      imageUrl,
+      sortOrder: index,
+      published: true,
+    })),
+  );
+
+  console.log(`Portafolio sembrado: ${DEMO_PORTFOLIO_IMAGE_URLS.length} fotos.`);
+}
 
 /**
  * Reservas completadas y sus opiniones. Se resuelve todo desde la base en vez
@@ -126,6 +170,7 @@ async function main() {
     // falte.
     console.log(`Ya existe el tenant "${SEED_SLUG}". Rellenando lo que falte.`);
     await seedReviews(existing.id);
+    await seedPortfolio(existing.id);
     return;
   }
 
@@ -222,10 +267,17 @@ async function main() {
   });
 
   await seedReviews(professional.id);
+  await seedPortfolio(professional.id);
 
   console.log(`Seed completo. Tenant "${SEED_SLUG}" creado.`);
-  console.log(`Login profesional: ${SEED_EMAIL} / ${SEED_PASSWORD}`);
-  console.log(`Login clienta: ${SEED_CLIENT_EMAIL} / ${SEED_PASSWORD}`);
+  if (seedPasswordGenerated) {
+    console.log(`SEED_PASSWORD no estaba definida: se generó una aleatoria, solo se imprime esta vez.`);
+    console.log(`Login profesional: ${SEED_EMAIL} / ${SEED_PASSWORD}`);
+    console.log(`Login clienta: ${SEED_CLIENT_EMAIL} / ${SEED_PASSWORD}`);
+  } else {
+    console.log(`Login profesional: ${SEED_EMAIL} / (la contraseña de SEED_PASSWORD)`);
+    console.log(`Login clienta: ${SEED_CLIENT_EMAIL} / (la contraseña de SEED_PASSWORD)`);
+  }
 }
 
 main()

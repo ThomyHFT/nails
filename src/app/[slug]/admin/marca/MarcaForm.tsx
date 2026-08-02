@@ -22,9 +22,10 @@ type FormState = {
   fontPair: BrandFontPair | "";
   logoUrl: string;
   coverImageUrl: string;
+  tagline: string;
 };
 
-function toFormState(branding: TenantBranding | null): FormState {
+function toFormState(branding: TenantBranding | null, tagline: string | null): FormState {
   return {
     archetype: branding?.archetype ?? "minimal_nude",
     primaryColorHex: branding?.primaryColorHex ?? "",
@@ -32,6 +33,7 @@ function toFormState(branding: TenantBranding | null): FormState {
     fontPair: branding?.fontPair ?? "",
     logoUrl: branding?.logoUrl ?? "",
     coverImageUrl: branding?.coverImageUrl ?? "",
+    tagline: tagline ?? "",
   };
 }
 
@@ -41,9 +43,13 @@ export function MarcaForm({ slug }: { slug: string }) {
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    const response = await fetch("/api/branding");
-    const data = await response.json();
-    setForm(toFormState(data.branding ?? null));
+    const [brandingResponse, taglineResponse] = await Promise.all([
+      fetch("/api/branding"),
+      fetch("/api/professional/tagline"),
+    ]);
+    const brandingData = await brandingResponse.json();
+    const taglineData = await taglineResponse.json();
+    setForm(toFormState(brandingData.branding ?? null, taglineData.tagline ?? null));
   }, []);
 
   useEffect(() => {
@@ -75,22 +81,29 @@ export function MarcaForm({ slug }: { slug: string }) {
     setSaving(true);
     setStatus(null);
 
-    const response = await fetch("/api/branding", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        archetype: form.archetype,
-        primaryColorHex: form.primaryColorHex || null,
-        onPrimaryColorHex: form.onPrimaryColorHex || null,
-        fontPair: form.fontPair || null,
-        logoUrl: form.logoUrl || null,
-        coverImageUrl: form.coverImageUrl || null,
+    const [brandingResponse, taglineResponse] = await Promise.all([
+      fetch("/api/branding", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          archetype: form.archetype,
+          primaryColorHex: form.primaryColorHex || null,
+          onPrimaryColorHex: form.onPrimaryColorHex || null,
+          fontPair: form.fontPair || null,
+          logoUrl: form.logoUrl || null,
+          coverImageUrl: form.coverImageUrl || null,
+        }),
       }),
-    });
+      fetch("/api/professional/tagline", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tagline: form.tagline || null }),
+      }),
+    ]);
 
     setSaving(false);
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
+    if (!brandingResponse.ok || !taglineResponse.ok) {
+      const data = await (!brandingResponse.ok ? brandingResponse : taglineResponse).json().catch(() => null);
       setStatus(typeof data?.error === "string" ? data.error : "No se pudo guardar la marca.");
       return;
     }
@@ -104,6 +117,16 @@ export function MarcaForm({ slug }: { slug: string }) {
   return (
     <div className="grid gap-8 lg:grid-cols-2">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tagline">Titular del hero</Label>
+          <Input
+            id="tagline"
+            placeholder="Ej: Manicura que dura, diseños que enamoran"
+            value={form.tagline}
+            onChange={(e) => setForm({ ...form, tagline: e.target.value })}
+          />
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="archetype">Arquetipo</Label>
           <select

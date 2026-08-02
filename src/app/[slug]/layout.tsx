@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { FONT_PAIR_CSS_VARS } from "@/app/fonts";
 import { GetTenantBrandingUseCase } from "@/server/application/branding/get-tenant-branding.use-case";
@@ -9,6 +10,33 @@ import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositor
 
 function tokensToCssDeclarations(tokens: BrandTokenSet): string {
   return `--background:${tokens.background};--foreground:${tokens.foreground};--card:${tokens.card};--card-foreground:${tokens.cardForeground};--popover:${tokens.popover};--popover-foreground:${tokens.popoverForeground};--primary:${tokens.primary};--primary-foreground:${tokens.primaryForeground};--secondary:${tokens.secondary};--secondary-foreground:${tokens.secondaryForeground};--muted:${tokens.muted};--muted-foreground:${tokens.mutedForeground};--accent:${tokens.accent};--accent-foreground:${tokens.accentForeground};--destructive:${tokens.destructive};--border:${tokens.border};--input:${tokens.input};--ring:${tokens.ring};--radius:${tokens.radius};`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  const professional = await new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
+  if (!professional) {
+    notFound();
+  }
+
+  const branding = await new GetTenantBrandingUseCase(new DrizzleBrandingRepository()).execute(professional.id);
+
+  const description = professional.bio ?? undefined;
+
+  return {
+    title: professional.businessName,
+    description,
+    openGraph: {
+      title: professional.businessName,
+      description,
+      images: branding?.coverImageUrl ? [{ url: branding.coverImageUrl }] : undefined,
+    },
+  };
 }
 
 export default async function TenantLayout({

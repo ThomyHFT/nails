@@ -170,7 +170,7 @@ export function SiteFooter({
                 href={link.href}
                 target="_blank"
                 rel="noreferrer"
-                className="t-caption text-muted-foreground transition-colors hover:text-primary"
+                className="t-caption rounded-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {link.label}
               </a>
@@ -178,7 +178,7 @@ export function SiteFooter({
               <Link
                 key={link.href}
                 href={link.href}
-                className="t-caption text-muted-foreground transition-colors hover:text-primary"
+                className="t-caption rounded-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {link.label}
               </Link>

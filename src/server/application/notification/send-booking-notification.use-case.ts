@@ -30,13 +30,24 @@ export class SendBookingNotificationUseCase {
     private readonly userRepository: UserRepository,
     private readonly professionalRepository: ProfessionalRepository,
     private readonly brandingRepository: BrandingRepository,
-    private readonly emailSender: EmailSender,
+    private readonly emailSender: EmailSender | null,
     private readonly emailNotificationRepository: EmailNotificationRepository,
   ) {}
 
   async execute(input: { bookingId: string; type: BookingNotificationType }): Promise<void> {
     const booking = await this.bookingRepository.findById(input.bookingId);
     if (!booking) return;
+
+    if (!this.emailSender) {
+      await this.emailNotificationRepository.create({
+        professionalId: booking.professionalId,
+        bookingId: booking.id,
+        type: input.type,
+        status: "failed",
+        errorMessage: "RESEND_API_KEY no configurada",
+      });
+      return;
+    }
 
     try {
       const [client, professional, branding] = await Promise.all([

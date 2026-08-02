@@ -99,9 +99,17 @@ function Hand({
               r={22}
               fill="transparent"
               role="button"
+              tabIndex={0}
               aria-label={`Uña ${nailIndex + 1}`}
-              className="cursor-pointer"
+              aria-pressed={isSelected}
+              className="cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               onClick={() => onSelectNail(nailIndex)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectNail(nailIndex);
+                }
+              }}
             />
             <ellipse
               cx={17}

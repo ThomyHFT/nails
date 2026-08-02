@@ -123,7 +123,7 @@ export function VariantRow({
   );
 
   const classes =
-    "flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-surface-2";
+    "flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 outline-none transition-colors duration-150 hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   return href ? (
     <Link href={href} className={classes}>

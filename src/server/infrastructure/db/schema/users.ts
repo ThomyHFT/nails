@@ -16,6 +16,19 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const professionals = pgTable("professionals", {
   id: uuid("id")
     .primaryKey()
@@ -27,6 +40,7 @@ export const professionals = pgTable("professionals", {
     .references(() => users.id),
   businessName: text("business_name").notNull(),
   bio: text("bio"),
+  tagline: text("tagline"),
   phone: text("phone"),
   instagramHandle: text("instagram_handle"),
   timezone: text("timezone").notNull().default("America/Santiago"),

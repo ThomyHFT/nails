@@ -7,7 +7,7 @@ import { InMemoryEmailNotificationRepository } from "@/server/application/notifi
 import { SendBookingNotificationUseCase } from "@/server/application/notification/send-booking-notification.use-case";
 import { InMemoryProfessionalRepository } from "@/server/application/professional/__fakes__/in-memory-professional-repository";
 
-async function setup() {
+async function setup({ withEmailSender = true }: { withEmailSender?: boolean } = {}) {
   const bookingRepository = new InMemoryBookingRepository();
   const userRepository = new InMemoryUserRepository();
   const professionalRepository = new InMemoryProfessionalRepository();
@@ -28,6 +28,7 @@ async function setup() {
     ownerUserId: "owner-1",
     businessName: "Fran Uñas",
     bio: null,
+    tagline: null,
     phone: null,
     instagramHandle: null,
     timezone: "America/Santiago",
@@ -52,7 +53,7 @@ async function setup() {
     userRepository,
     professionalRepository,
     brandingRepository,
-    emailSender,
+    withEmailSender ? emailSender : null,
     emailNotificationRepository,
   );
 
@@ -91,6 +92,23 @@ describe("SendBookingNotificationUseCase", () => {
         type: "cancellation",
         status: "failed",
         errorMessage: "Resend está caído",
+      },
+    ]);
+  });
+
+  it("logs a failed attempt with the missing-key reason and never sends when there is no email sender", async () => {
+    const { useCase, booking, emailSender, emailNotificationRepository } = await setup({ withEmailSender: false });
+
+    await useCase.execute({ bookingId: booking.id, type: "confirmation" });
+
+    expect(emailSender.sent).toHaveLength(0);
+    expect(emailNotificationRepository.rows).toEqual([
+      {
+        professionalId: "prof-1",
+        bookingId: booking.id,
+        type: "confirmation",
+        status: "failed",
+        errorMessage: "RESEND_API_KEY no configurada",
       },
     ]);
   });

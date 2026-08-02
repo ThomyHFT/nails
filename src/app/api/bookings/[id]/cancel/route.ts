@@ -9,6 +9,7 @@ import { DrizzleEmailNotificationRepository } from "@/server/infrastructure/repo
 import { ResendEmailSender } from "@/server/infrastructure/email/resend-email-sender";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
+import { env } from "@/server/infrastructure/config/env";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,7 +29,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         new DrizzleUserRepository(),
         new DrizzleProfessionalRepository(),
         new DrizzleBrandingRepository(),
-        new ResendEmailSender(process.env.RESEND_API_KEY ?? "", process.env.EMAIL_FROM_ADDRESS ?? "onboarding@resend.dev"),
+        env.RESEND_API_KEY
+          ? new ResendEmailSender(env.RESEND_API_KEY, env.EMAIL_FROM_ADDRESS ?? "onboarding@resend.dev")
+          : null,
         new DrizzleEmailNotificationRepository(),
       );
       await notificationUseCase.execute({ bookingId: booking.id, type: "cancellation" });

@@ -22,4 +22,11 @@ export class InMemoryProfessionalRepository implements ProfessionalRepository {
     professional.bufferMinutes = bufferMinutes;
     return professional;
   }
+
+  async updateTagline(professionalId: string, tagline: string | null): Promise<Professional> {
+    const professional = this.professionals.find((p) => p.id === professionalId);
+    if (!professional) throw new Error("Profesional no encontrada");
+    professional.tagline = tagline;
+    return professional;
+  }
 }

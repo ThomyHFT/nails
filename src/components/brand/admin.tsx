@@ -96,7 +96,7 @@ export function SidebarItem({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-pill px-4 py-2.5 text-sm font-medium transition-colors duration-200 [&_svg]:size-5",
+        "flex items-center gap-3 rounded-pill px-4 py-2.5 text-sm font-medium transition-colors duration-200 outline-none [&_svg]:size-5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         tone === "danger"
           ? "text-destructive hover:bg-destructive-tint"
           : active
@@ -168,8 +168,8 @@ export function AppointmentRow({
   );
 
   const classes = cn(
-    "flex flex-col gap-3 rounded-card border border-outline-variant bg-card p-4 transition-shadow duration-200",
-    href && "hover:shadow-e1",
+    "flex flex-col gap-3 rounded-card border border-outline-variant bg-card p-4 transition-shadow duration-200 outline-none",
+    href && "hover:shadow-e1 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
     className,
   );
 
