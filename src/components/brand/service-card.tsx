@@ -70,16 +70,16 @@ export function ServiceCard({
   return (
     <article
       className={cn(
-        "group flex flex-col justify-between gap-5 rounded-card border border-outline-variant bg-card p-6 shadow-e1 transition-shadow duration-300 hover:shadow-e2",
+        "group flex min-h-[13rem] flex-col justify-between gap-5 rounded-card border border-outline-variant bg-card p-6 shadow-e1 transition-shadow duration-300 hover:shadow-e2",
         className,
       )}
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
           <Title>{service.name}</Title>
-          <Chip tone="neutral" className="t-price">
-            ${service.priceFromClp.toLocaleString("es-CL")}
-          </Chip>
+          {/* En foreground y no en chip tonal: es el dato que más se mira y un
+              chip gris se leía como una etiqueta deshabilitada. */}
+          <Price clp={service.priceFromClp} prefix="Desde" size="md" className="shrink-0 text-foreground" />
         </div>
         {service.description && <p className="t-caption text-muted-foreground">{service.description}</p>}
       </div>

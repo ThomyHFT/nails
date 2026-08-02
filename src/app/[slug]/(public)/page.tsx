@@ -1,6 +1,7 @@
 import { inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { ArrowRight, CalendarDays, MessageCircle, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import { GetTenantBrandingUseCase } from "@/server/application/branding/get-tenant-branding.use-case";
 import { ListPortfolioUseCase } from "@/server/application/portfolio/list-portfolio.use-case";
@@ -119,13 +120,23 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
           {/* Nivel 2 y no 1: la banda tiene que despegarse del fondo *y* de las
               tarjetas que lleva dentro, y con un solo escalón las tres capas
               quedaban indistinguibles en tenants de fondo muy claro. */}
-          <Band level={2} id="servicios">
+          <Band level={2} id="servicios" className="scroll-mt-24">
             <SectionHeading
               title="Servicios destacados"
               subtitle="Elige el servicio, el largo y la hora. El pago es presencial, al terminar."
               className="mb-10"
             />
-            <div className="grid gap-5 md:grid-cols-2">
+            {/* La grilla sigue el conteo real: a dos columnas fijas, tres
+                servicios dejaban un hueco huérfano a media pantalla. */}
+            <div
+              className={cn(
+                "grid gap-5",
+                featuredServices.length === 1 && "mx-auto max-w-md",
+                featuredServices.length === 2 && "md:grid-cols-2",
+                featuredServices.length === 3 && "md:grid-cols-3",
+                featuredServices.length >= 4 && "md:grid-cols-2",
+              )}
+            >
               {featuredServices.map((service) => (
                 <ServiceCard
                   key={service.id}
@@ -141,9 +152,9 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
               ))}
             </div>
             <div className="mt-10 flex justify-center">
-              <BrandButton variant="outline" href={`/${slug}/servicios`}>
+              <ActionLink href={`/${slug}/servicios`} icon={<ArrowRight className="size-4" />}>
                 Ver todos los servicios
-              </BrandButton>
+              </ActionLink>
             </div>
           </Band>
         </div>
@@ -165,7 +176,7 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
                   href={instagramUrl(professional.instagramHandle)}
                   target="_blank"
                   rel="noreferrer"
-                  className="hidden text-sm font-semibold text-primary transition-colors hover:underline sm:inline-flex"
+                  className="inline-flex text-sm font-semibold text-primary transition-colors hover:underline"
                 >
                   Ver más
                 </a>
@@ -183,7 +194,14 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
             title="Lo que dicen las clientas"
             action={<RatingSummary average={reviewsSummary.average} count={reviewsSummary.count} />}
           />
-          <div className="grid gap-4 md:grid-cols-3">
+          <div
+            className={cn(
+              "grid gap-4",
+              previewReviews.length === 1 && "max-w-md",
+              previewReviews.length === 2 && "md:grid-cols-2",
+              previewReviews.length >= 3 && "md:grid-cols-3",
+            )}
+          >
             {previewReviews.map((review) => {
               const clientName = reviewerNameById.get(review.clientUserId);
               return (

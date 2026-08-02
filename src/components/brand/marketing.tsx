@@ -94,8 +94,11 @@ export function FloatingStat({
 }
 
 /**
- * Grilla de portafolio. Dos columnas en móvil y cuatro en escritorio, con el
- * zoom al hover que ya trae `MediaFrame`.
+ * Grilla de portafolio. Dos columnas en móvil, hasta cuatro en escritorio,
+ * con el zoom al hover que ya trae `MediaFrame`.
+ *
+ * Las columnas de escritorio siguen el conteo real de fotos: a cuatro fijas,
+ * un portafolio con dos o tres fotos dejaba media grilla vacía a la derecha.
  */
 export function GalleryGrid({
   items,
@@ -104,8 +107,10 @@ export function GalleryGrid({
   items: { id: string; imageUrl: string; alt?: string }[];
   className?: string;
 }) {
+  const desktopCols = items.length === 1 ? "md:grid-cols-1" : items.length === 3 ? "md:grid-cols-3" : "md:grid-cols-4";
+
   return (
-    <div className={cn("grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4", className)}>
+    <div className={cn("grid grid-cols-2 gap-3 md:gap-4", desktopCols, items.length === 1 && "max-w-sm", className)}>
       {items.map((item) => (
         <MediaFrame key={item.id} src={item.imageUrl} alt={item.alt ?? ""} ratio="square" />
       ))}
