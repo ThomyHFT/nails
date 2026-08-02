@@ -31,7 +31,7 @@ describe("SendEmailVerificationUseCase", () => {
 
     await useCase.execute(input);
 
-    expect(emailSender.sent[0].html).toContain(`/verificar/${tokenGenerator.nextToken}`);
+    expect(emailSender.sent[0].html).toContain(`/api/email-verification/confirm?token=${tokenGenerator.nextToken}`);
     expect(tokensRepository.tokens[0].tokenHash).toBe(tokenGenerator.hashToken(tokenGenerator.nextToken));
   });
 

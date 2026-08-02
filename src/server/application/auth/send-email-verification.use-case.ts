@@ -42,7 +42,7 @@ export class SendEmailVerificationUseCase {
 
     await this.emailVerificationTokensRepository.create({ userId: input.userId, tokenHash, expiresAt });
 
-    const verifyUrl = `${input.baseUrl}/verificar/${token}`;
+    const verifyUrl = `${input.baseUrl}/api/email-verification/confirm?token=${token}`;
     const template = buildEmailVerificationEmail({ businessName: input.businessName, verifyUrl });
 
     await this.emailSender.send({ to: input.email, subject: template.subject, html: template.html });
