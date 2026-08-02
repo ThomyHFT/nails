@@ -292,9 +292,17 @@ export default function DisponibilidadPage() {
         <Panel className="mt-3 flex flex-col gap-3">
           <Caption>Se aplica a {monthLabel(month)}. Cada mes se define de nuevo.</Caption>
           {ruleRows.map((row) => (
-            <div key={row.weekday} className="flex items-center gap-3">
-              <input type="checkbox" checked={row.enabled} onChange={() => toggleRow(row.weekday)} />
-              <span className="w-24 text-sm">{WEEKDAYS.find((w) => w.value === row.weekday)?.label}</span>
+            <div key={row.weekday} className="flex flex-wrap items-center gap-3">
+              <input
+                id={`weekday-${row.weekday}`}
+                type="checkbox"
+                checked={row.enabled}
+                onChange={() => toggleRow(row.weekday)}
+                className="accent-primary"
+              />
+              <Label htmlFor={`weekday-${row.weekday}`} className="w-20 shrink-0 font-normal">
+                {WEEKDAYS.find((w) => w.value === row.weekday)?.label}
+              </Label>
               <Input
                 type="time"
                 value={row.startTime}
@@ -302,7 +310,7 @@ export default function DisponibilidadPage() {
                 onChange={(e) => updateRow(row.weekday, "startTime", e.target.value)}
                 className="w-32"
               />
-              <span>a</span>
+              <Caption className="text-xs">a</Caption>
               <Input
                 type="time"
                 value={row.endTime}

@@ -31,6 +31,14 @@ const STATUS_LABELS: Record<BookingStatus, string> = {
   no_show: "No show",
 };
 
+const STATUS_BADGE_LABELS: Record<BookingStatus, string> = {
+  pending: "Pendiente",
+  confirmed: "Confirmada",
+  completed: "Completada",
+  cancelled: "Cancelada",
+  no_show: "No asistió",
+};
+
 const STATUS_TONES: Record<BookingStatus, "success" | "warning" | "danger" | "neutral"> = {
   pending: "warning",
   confirmed: "success",
@@ -129,12 +137,12 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                 return (
                   <Panel key={booking.id} padding="sm" className="flex flex-col gap-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex flex-col gap-1">
+                      <div className="flex min-w-0 flex-col gap-1">
                         <Title>{client?.name ?? "Clienta"}</Title>
-                        {client?.email && <Caption className="text-xs">{client.email}</Caption>}
+                        {client?.email && <Caption className="truncate text-xs">{client.email}</Caption>}
                       </div>
                       <div className="flex flex-col items-end gap-1.5">
-                        <StatusBadge tone={STATUS_TONES[booking.status]}>{booking.status}</StatusBadge>
+                        <StatusBadge tone={STATUS_TONES[booking.status]}>{STATUS_BADGE_LABELS[booking.status]}</StatusBadge>
                         {/* Los strikes son la señal que decide si conviene
                             confirmar: van junto al estado, no enterrados en la
                             línea del nombre. */}

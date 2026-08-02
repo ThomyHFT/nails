@@ -100,7 +100,9 @@ export function SidebarItem({
         tone === "danger"
           ? "text-destructive hover:bg-destructive-tint"
           : active
-            ? "bg-surface-3 text-primary"
+            ? // primary-tint y no surface-3: contra el hover (surface-2) el
+              // activo se leía casi igual de gris que el resto de los ítems.
+              "bg-primary-tint text-primary font-semibold"
             : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
       )}
     >
