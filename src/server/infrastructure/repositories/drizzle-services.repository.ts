@@ -18,6 +18,7 @@ function serviceToDomain(row: typeof services.$inferSelect): Service {
     professionalId: row.professionalId,
     name: row.name,
     description: row.description,
+    imageUrl: row.imageUrl,
     sortOrder: row.sortOrder,
     active: row.active,
     createdAt: row.createdAt,
@@ -78,6 +79,7 @@ export class DrizzleServicesRepository implements ServicesRepository {
         professionalId: service.professionalId,
         name: service.name,
         description: service.description ?? null,
+        imageUrl: service.imageUrl ?? null,
         sortOrder: service.sortOrder ?? 0,
       })
       .returning();

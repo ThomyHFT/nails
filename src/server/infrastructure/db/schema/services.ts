@@ -12,6 +12,7 @@ export const services = pgTable("services", {
     .references(() => professionals.id),
   name: text("name").notNull(),
   description: text("description"),
+  imageUrl: text("image_url"),
   sortOrder: integer("sort_order").notNull().default(0),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

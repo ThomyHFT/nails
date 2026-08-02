@@ -57,6 +57,7 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
         id: s.id,
         name: s.name,
         description: s.description,
+        imageUrl: s.imageUrl,
         priceFrom: priceFromClp(s.variants),
         // La duración que se muestra es la de la variante más corta, igual que
         // el precio "desde": ambos son el piso. Mostrar la más larga asustaría
@@ -141,10 +142,15 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
                 <ServiceCard
                   key={service.id}
                   href={`/${slug}/reservar?service=${service.id}`}
+                  // Con foto sube la variante "media" del sistema (foto arriba,
+                  // precio grande): sin ella, la compacta ya está pensada para
+                  // sostenerse sin imagen.
+                  variant={service.imageUrl ? "media" : "compact"}
                   service={{
                     id: service.id,
                     name: service.name,
                     description: service.description,
+                    imageUrl: service.imageUrl,
                     priceFromClp: service.priceFrom,
                     durationMinutes: service.durationMinutes,
                   }}

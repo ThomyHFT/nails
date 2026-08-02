@@ -5,6 +5,7 @@ export interface Service {
   professionalId: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   sortOrder: number;
   active: boolean;
   createdAt: Date;

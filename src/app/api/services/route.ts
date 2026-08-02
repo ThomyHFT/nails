@@ -28,6 +28,7 @@ async function requireOwnedProfessional() {
 const createServiceSchema = z.object({
   name: z.string().min(1),
   description: z.string().nullable().optional(),
+  imageUrl: z.string().url().nullable().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -35,6 +36,7 @@ const patchServiceSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
+  imageUrl: z.string().url().nullable().optional(),
   sortOrder: z.number().int().optional(),
   active: z.boolean().optional(),
 });

@@ -11,6 +11,7 @@ import {
   Container,
   Display,
   EmptyState,
+  MediaFrame,
   Panel,
   Price,
   Section,
@@ -60,12 +61,23 @@ export default async function ServiciosPage({ params }: { params: Promise<{ slug
               const activeVariants = service.variants.filter((v) => v.active);
               return (
                 <Panel key={service.id} className="flex flex-col gap-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <Title>{service.name}</Title>
-                    <Price clp={service.priceFrom} prefix="Desde" size="md" className="shrink-0" />
+                  <div className="flex items-start gap-4">
+                    {service.imageUrl && (
+                      <MediaFrame
+                        src={service.imageUrl}
+                        alt={service.name}
+                        ratio="square"
+                        className="size-20 shrink-0"
+                      />
+                    )}
+                    <div className="flex flex-1 flex-col gap-1.5">
+                      <div className="flex items-start justify-between gap-4">
+                        <Title>{service.name}</Title>
+                        <Price clp={service.priceFrom} prefix="Desde" size="md" className="shrink-0" />
+                      </div>
+                      {service.description && <Caption>{service.description}</Caption>}
+                    </div>
                   </div>
-
-                  {service.description && <Caption>{service.description}</Caption>}
 
                   {/* Cada variante enlaza a la reserva con el servicio ya
                       elegido: el catálogo es donde se decide, no una lista de

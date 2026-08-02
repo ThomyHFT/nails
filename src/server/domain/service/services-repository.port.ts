@@ -5,12 +5,14 @@ export interface NewService {
   professionalId: string;
   name: string;
   description?: string | null;
+  imageUrl?: string | null;
   sortOrder?: number;
 }
 
 export interface ServicePatch {
   name?: string;
   description?: string | null;
+  imageUrl?: string | null;
   sortOrder?: number;
   active?: boolean;
 }

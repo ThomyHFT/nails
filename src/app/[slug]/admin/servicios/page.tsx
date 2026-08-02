@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminPageHeader } from "@/components/brand";
+import { ImageUploader } from "@/components/ImageUploader";
 
 type NailLength = "short" | "medium" | "long" | "single";
 
@@ -20,6 +22,7 @@ type Service = {
   id: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   active: boolean;
   variants: ServiceVariant[];
 };
@@ -36,6 +39,7 @@ function emptyVariantForm(serviceId: string) {
 }
 
 export default function ServiciosPage() {
+  const params = useParams<{ slug: string }>();
   const [services, setServices] = useState<Service[]>([]);
   const [newServiceName, setNewServiceName] = useState("");
   const [variantForm, setVariantForm] = useState<ReturnType<typeof emptyVariantForm> | null>(null);
@@ -103,6 +107,21 @@ export default function ServiciosPage() {
       return;
     }
     setEditingServiceId(null);
+    loadServices();
+  }
+
+  async function saveServiceImage(serviceId: string, imageUrl: string) {
+    setStatus(null);
+    const response = await fetch("/api/services", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: serviceId, imageUrl }),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setStatus(typeof data?.error === "string" ? data.error : "No se pudo actualizar la foto.");
+      return;
+    }
     loadServices();
   }
 
@@ -228,54 +247,63 @@ export default function ServiciosPage() {
               borderRadius: "var(--radius)",
             }}
           >
-            <div className="flex items-center justify-between gap-3">
-              {editingServiceId === service.id ? (
-                <div className="flex flex-1 items-center gap-2">
-                  <Input
-                    value={editingServiceName}
-                    onChange={(e) => setEditingServiceName(e.target.value)}
-                    className="h-8"
-                    autoFocus
-                  />
-                  <Button size="sm" onClick={() => saveServiceName(service.id)}>
-                    Guardar
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setEditingServiceId(null)}>
-                    Cancelar
-                  </Button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className={`font-medium ${service.active ? "" : "line-through"}`}
-                  onClick={() => {
-                    setEditingServiceId(service.id);
-                    setEditingServiceName(service.name);
-                  }}
-                >
-                  {service.name}
-                </button>
-              )}
+            <div className="flex items-start gap-3">
+              <ImageUploader
+                pathPrefix={`services/${params.slug}`}
+                currentUrl={service.imageUrl}
+                onUploaded={(url) => saveServiceImage(service.id, url)}
+              />
+              <div className="flex flex-1 flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  {editingServiceId === service.id ? (
+                    <div className="flex flex-1 items-center gap-2">
+                      <Input
+                        value={editingServiceName}
+                        onChange={(e) => setEditingServiceName(e.target.value)}
+                        className="h-8"
+                        autoFocus
+                      />
+                      <Button size="sm" onClick={() => saveServiceName(service.id)}>
+                        Guardar
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setEditingServiceId(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={`font-medium ${service.active ? "" : "line-through"}`}
+                      onClick={() => {
+                        setEditingServiceId(service.id);
+                        setEditingServiceName(service.name);
+                      }}
+                    >
+                      {service.name}
+                    </button>
+                  )}
 
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => toggleServiceActive(service)}>
-                  {service.active ? "Desactivar" : "Activar"}
-                </Button>
-                {confirmDeleteServiceId === service.id ? (
-                  <>
-                    <span className="text-sm">¿Eliminar?</span>
-                    <Button variant="destructive" size="sm" onClick={() => deleteService(service.id)}>
-                      Sí
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => toggleServiceActive(service)}>
+                      {service.active ? "Desactivar" : "Activar"}
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteServiceId(null)}>
-                      No
-                    </Button>
-                  </>
-                ) : (
-                  <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteServiceId(service.id)}>
-                    Eliminar
-                  </Button>
-                )}
+                    {confirmDeleteServiceId === service.id ? (
+                      <>
+                        <span className="text-sm">¿Eliminar?</span>
+                        <Button variant="destructive" size="sm" onClick={() => deleteService(service.id)}>
+                          Sí
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteServiceId(null)}>
+                          No
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteServiceId(service.id)}>
+                        Eliminar
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 

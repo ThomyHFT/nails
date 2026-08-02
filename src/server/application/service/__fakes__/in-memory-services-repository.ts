@@ -32,6 +32,7 @@ export class InMemoryServicesRepository implements ServicesRepository {
       professionalId: service.professionalId,
       name: service.name,
       description: service.description ?? null,
+      imageUrl: service.imageUrl ?? null,
       sortOrder: service.sortOrder ?? 0,
       active: true,
       createdAt: new Date(),
