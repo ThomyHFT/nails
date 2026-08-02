@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { TriangleAlert } from "lucide-react";
+import { ActionLink, BrandButton, EmptyState } from "@/components/brand";
 
 export default function AdminError({
   error,
@@ -19,17 +19,19 @@ export default function AdminError({
   }, [error]);
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
-      <p className="text-sm font-medium text-foreground">Ocurrió un error al cargar esta sección.</p>
-      <p className="text-sm text-muted-foreground">Puedes reintentar o volver al inicio del panel.</p>
-      <div className="mt-2 flex gap-3">
-        <Button variant="outline" onClick={reset}>
-          Reintentar
-        </Button>
-        <Link href={`/${params.slug}/admin`} className={buttonVariants({ variant: "default" })}>
-          Volver al panel
-        </Link>
-      </div>
+    <div className="flex flex-1 flex-col items-center justify-center px-5 py-16">
+      <EmptyState
+        icon={<TriangleAlert />}
+        title="Ocurrió un error al cargar esta sección"
+        description="Puedes reintentar o volver al inicio del panel."
+        action={
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <BrandButton onClick={reset}>Reintentar</BrandButton>
+            <ActionLink href={`/${params.slug}/admin`}>Volver al panel</ActionLink>
+          </div>
+        }
+        className="max-w-md"
+      />
     </div>
   );
 }
