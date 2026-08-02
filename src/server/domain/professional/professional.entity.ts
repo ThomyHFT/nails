@@ -9,7 +9,27 @@ export interface Professional {
   instagramHandle: string | null;
   timezone: string;
   active: boolean;
+  /** `null` mientras no verifique el correo: hasta entonces el micrositio no es público. */
+  publishedAt: Date | null;
+  /** `null` = sin vencimiento (cuentas internas o ya pagadas). */
+  trialEndsAt: Date | null;
   bufferMinutes: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/**
+ * Si el micrositio público del tenant es visible. Las tres condiciones son el
+ * mismo interruptor visto desde tres momentos distintos: `active` es el corte
+ * manual por abuso, `publishedAt` es la verificación de correo pendiente, y
+ * `trialEndsAt` es el vencimiento de la prueba.
+ *
+ * Vive en el dominio y no repartido por las páginas para que no haya forma de
+ * publicar un tenant por olvidarse de una de las tres.
+ */
+export function isPubliclyVisible(professional: Professional, now: Date = new Date()): boolean {
+  if (!professional.active) return false;
+  if (professional.publishedAt === null) return false;
+  if (professional.trialEndsAt !== null && professional.trialEndsAt <= now) return false;
+  return true;
 }

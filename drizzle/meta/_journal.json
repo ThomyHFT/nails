@@ -92,6 +92,13 @@
       "when": 1785697097335,
       "tag": "0012_goofy_purifiers",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785712206962,
+      "tag": "0013_typical_hedge_knight",
+      "breakpoints": true
     }
   ]
 }

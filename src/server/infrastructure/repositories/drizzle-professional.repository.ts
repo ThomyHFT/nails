@@ -16,6 +16,8 @@ function toDomain(row: typeof professionals.$inferSelect): Professional {
     instagramHandle: row.instagramHandle,
     timezone: row.timezone,
     active: row.active,
+    publishedAt: row.publishedAt,
+    trialEndsAt: row.trialEndsAt,
     bufferMinutes: row.bufferMinutes,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

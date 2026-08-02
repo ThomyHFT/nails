@@ -33,6 +33,8 @@ async function setup({ withEmailSender = true }: { withEmailSender?: boolean } =
     instagramHandle: null,
     timezone: "America/Santiago",
     active: true,
+    publishedAt: new Date("2026-01-01T00:00:00Z"),
+    trialEndsAt: null,
     bufferMinutes: 15,
     createdAt: new Date(),
     updatedAt: new Date(),
