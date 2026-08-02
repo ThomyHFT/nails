@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { FONT_PAIR_CSS_VARS } from "@/app/fonts";
 import { GetTenantBrandingUseCase } from "@/server/application/branding/get-tenant-branding.use-case";
@@ -39,6 +39,27 @@ export async function generateMetadata({
   };
 }
 
+// La barra de estado del navegador en móvil, sin esto, corta el crema del
+// tenant con el gris/blanco por defecto de Chrome apenas se hace scroll.
+export async function generateViewport({ params }: { params: Promise<{ slug: string }> }): Promise<Viewport> {
+  const { slug } = await params;
+
+  const professional = await new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
+  if (!professional) {
+    return {};
+  }
+
+  const branding = await new GetTenantBrandingUseCase(new DrizzleBrandingRepository()).execute(professional.id);
+  const resolved = resolveBrandTokens(branding);
+
+  return {
+    themeColor: [
+      { media: "(prefers-color-scheme: light)", color: resolved.light.background },
+      { media: "(prefers-color-scheme: dark)", color: resolved.dark.background },
+    ],
+  };
+}
+
 export default async function TenantLayout({
   children,
   params,
@@ -62,9 +83,16 @@ export default async function TenantLayout({
   // variable inline en el mismo elemento gana siempre sobre cualquier regla
   // externa, aunque esté dentro de un @media que sí matchea, así que el
   // override oscuro nunca podría pisar un valor claro puesto inline.
+  //
+  // El selector incluye `:root` además de `[data-tenant]`: las custom
+  // properties no suben de un hijo a su padre, así que sin esto `--background`
+  // del tenant solo pintaba el div y el `<body>` se quedaba blanco. No se
+  // notaba en el scroll normal, pero el rebote elástico de iOS (o cualquier
+  // altura de contenido menor a 100vh) dejaba ver esa costura blanca detrás
+  // del crema del tenant.
   const themeCss = [
-    `${selector}{${tokensToCssDeclarations(resolved.light)}--tenant-font-heading:${fontVars.heading};--tenant-font-body:${fontVars.body};}`,
-    `@media (prefers-color-scheme: dark){${selector}{${tokensToCssDeclarations(resolved.dark)}}}`,
+    `${selector}, :root{${tokensToCssDeclarations(resolved.light)}--tenant-font-heading:${fontVars.heading};--tenant-font-body:${fontVars.body};}`,
+    `@media (prefers-color-scheme: dark){${selector}, :root{${tokensToCssDeclarations(resolved.dark)}}}`,
   ].join("");
 
   return (
