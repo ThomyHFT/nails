@@ -23,6 +23,7 @@ import {
   Title,
 } from "@/components/brand";
 import { CancelBookingButton } from "@/app/[slug]/(public)/cuenta/CancelBookingButton";
+import { SignOutButton } from "@/app/[slug]/(public)/cuenta/SignOutButton";
 
 const CANCELLABLE_STATUSES = new Set<BookingStatus>(["pending", "confirmed"]);
 
@@ -109,6 +110,7 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
           <Caption>
             Sesión iniciada como <strong className="font-medium text-foreground">{session.user.email}</strong>
           </Caption>
+          <SignOutButton slug={slug} />
         </div>
 
         {bookings.length === 0 ? (

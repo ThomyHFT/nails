@@ -43,7 +43,7 @@ export default function LoginPage() {
   if (session) {
     return (
       <AuthCard title="Ya iniciaste sesión" description={`Estás dentro como ${session.user.email}.`}>
-        <BrandButton size="lg" fullWidth variant="outline" onClick={() => signOut({ redirect: false })}>
+        <BrandButton size="lg" fullWidth variant="outline" onClick={() => signOut({ callbackUrl: `/${params.slug}/login` })}>
           Cerrar sesión
         </BrandButton>
       </AuthCard>
