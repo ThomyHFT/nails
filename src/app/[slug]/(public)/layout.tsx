@@ -34,6 +34,7 @@ export default async function PublicLayout({
       <main className="flex flex-1 flex-col">{children}</main>
       <SiteFooter
         businessName={professional.businessName}
+        tagline={professional.tagline}
         links={[
           { label: "Servicios", href: `/${slug}/servicios` },
           { label: "Opiniones", href: `/${slug}/opiniones` },

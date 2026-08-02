@@ -152,52 +152,60 @@ export function ContactCard({
 
 /**
  * Pie de sitio del microsite del tenant.
+ *
+ * Antes era una sola franja `justify-between` (nombre · copyright · links) en
+ * `surface-4`, que se despegaba del crema del tenant y leía plano, con el
+ * copyright centrado pesando más que la marca. Pasa a dos columnas — marca +
+ * tagline, y navegación — sobre `surface-2`, con el copyright y la firma como
+ * cierre discreto abajo.
  */
 export function SiteFooter({
   businessName,
+  tagline,
   links,
   className,
 }: {
   businessName: string;
+  tagline?: string | null;
   links?: { label: string; href: string; external?: boolean }[];
   className?: string;
 }) {
+  const linkClasses =
+    "t-body rounded-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+
   return (
-    <footer
-      className={cn(
-        "flex flex-col items-center gap-4 border-t border-outline-variant bg-surface-4 px-5 py-8 text-center md:flex-row md:justify-between md:text-left",
-        className,
-      )}
-    >
-      <span className="t-title text-primary">{businessName}</span>
-      <Caption>
-        © {new Date().getFullYear()} {businessName}. Todos los derechos reservados.
-      </Caption>
-      {links && links.length > 0 && (
-        <nav className="flex gap-6">
-          {links.map((link) =>
-            link.external ? (
-              <a
-                key={link.href}
-                href={link.href}
-                target="_blank"
-                rel="noreferrer"
-                className="t-caption rounded-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                {link.label}
-              </a>
-            ) : (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="t-caption rounded-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                {link.label}
-              </Link>
-            ),
-          )}
-        </nav>
-      )}
+    <footer className={cn("border-t border-outline-variant bg-surface-2", className)}>
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-5 py-10 text-center sm:text-left md:flex-row md:justify-between md:py-12">
+        <div className="flex flex-col gap-1.5 items-center md:items-start">
+          <span className="t-title text-primary">{businessName}</span>
+          {tagline && <Caption className="max-w-xs">{tagline}</Caption>}
+        </div>
+
+        {links && links.length > 0 && (
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 md:justify-end">
+            {links.map((link) =>
+              link.external ? (
+                <a key={link.href} href={link.href} target="_blank" rel="noreferrer" className={linkClasses}>
+                  {link.label}
+                </a>
+              ) : (
+                <Link key={link.href} href={link.href} className={linkClasses}>
+                  {link.label}
+                </Link>
+              ),
+            )}
+          </nav>
+        )}
+      </div>
+
+      <div className="border-t border-outline-variant px-5 py-4">
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-2 sm:flex-row">
+          <Caption className="text-xs">
+            © {new Date().getFullYear()} {businessName}. Todos los derechos reservados.
+          </Caption>
+          <Caption className="text-xs">Hecho con Misuñas</Caption>
+        </div>
+      </div>
     </footer>
   );
 }
