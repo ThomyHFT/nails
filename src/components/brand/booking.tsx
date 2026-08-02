@@ -175,7 +175,7 @@ export function NoteField({
         rows={rows}
         placeholder={placeholder}
         defaultValue={defaultValue}
-        className="t-body w-full resize-y rounded-card border border-outline-variant bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
+        className="t-body w-full resize-y rounded-card border border-outline-variant bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       />
     </label>
   );

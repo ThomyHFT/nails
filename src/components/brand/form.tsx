@@ -11,7 +11,7 @@ import { Caption, Overline } from "@/components/brand/typography";
  */
 
 export const FIELD_CLASSES =
-  "t-body h-11 w-full rounded-lg border border-outline-variant bg-background px-4 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50";
+  "t-body h-11 w-full rounded-lg border border-outline-variant bg-background px-4 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50";
 
 export function TextField({
   label,

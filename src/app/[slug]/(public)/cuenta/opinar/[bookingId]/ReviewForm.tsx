@@ -79,7 +79,7 @@ export function ReviewForm({
             maxLength={BODY_MAX}
             rows={5}
             placeholder="Cuéntanos cómo fue tu experiencia…"
-            className="t-body w-full resize-y rounded-card border border-outline-variant bg-background px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
+            className="t-body w-full resize-y rounded-card border border-outline-variant bg-background px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
           <Caption className="self-end text-xs tabular-nums">
             {body.length}/{BODY_MAX}
@@ -102,7 +102,7 @@ export function ReviewForm({
             value={instagram}
             onChange={(event) => setInstagram(event.target.value)}
             placeholder="tu_usuario"
-            className="t-body h-11 w-full rounded-lg border border-outline-variant bg-background px-4 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
+            className="t-body h-11 w-full rounded-lg border border-outline-variant bg-background px-4 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
           <Caption className="text-xs">Se muestra junto a tu opinión si la profesional la publica.</Caption>
         </label>
