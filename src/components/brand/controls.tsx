@@ -49,9 +49,23 @@ export function SelectChip({
   );
 }
 
+// `mix-blend-difference` daba un check gris ilegible sobre colores medios
+// (el punto donde blanco-invertido y el propio color quedan casi iguales).
+// Con la luminancia del hex alcanza para elegir tick blanco o negro.
+function tickColorFor(hex: string): string {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return "white";
+  const value = parseInt(match[1], 16);
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? "#1a1a1a" : "white";
+}
+
 /**
- * Muestra de color del diseñador. El check invertido sobre el propio color es
- * lo que hace legible la selección sin depender de un borde fino.
+ * Muestra de color del diseñador. El check sobre el propio color es lo que
+ * hace legible la selección sin depender de un borde fino.
  */
 export function Swatch({
   color,
@@ -89,7 +103,7 @@ export function Swatch({
       )}
       {selected && !empty && (
         <span className="absolute inset-0 flex items-center justify-center">
-          <Check className="size-5 text-white mix-blend-difference" strokeWidth={3} />
+          <Check className="size-5" style={{ color: tickColorFor(color) }} strokeWidth={3} />
         </span>
       )}
     </button>

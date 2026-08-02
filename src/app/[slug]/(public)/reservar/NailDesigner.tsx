@@ -40,6 +40,28 @@ const SHAPES: { value: NailShape; label: string; radius: string }[] = [
   { value: "stiletto", label: "Stiletto", radius: "50% 50% 2px 2px / 70% 70% 2px 2px" },
 ];
 
+// Contorno de cada uña en la mano del lienzo, centrado en (17, 12) con el
+// mismo radio aproximado que la elipse que reemplazan (rx≈15, ry≈13). Antes
+// la forma elegida arriba (almendra, ataúd, stiletto...) no cambiaba nada acá:
+// las diez uñas eran siempre la misma elipse, la incoherencia más grande del
+// diseñador.
+const NAIL_SHAPE_PATHS: Record<NailShape, string> = {
+  round: "M17,-2 C25,-2 31,5 31,12 C31,20 25,25 17,25 C9,25 3,20 3,12 C3,5 9,-2 17,-2 Z",
+  almond: "M17,-6 C25,-6 30,3 30,12 C30,20 25,25 17,25 C9,25 4,20 4,12 C4,3 9,-6 17,-6 Z",
+  square: "M6,2 L28,2 Q31,2 31,6 L31,17 Q31,25 17,25 Q3,25 3,17 L3,6 Q3,2 6,2 Z",
+  coffin: "M10,1 L24,1 Q27,1 27,5 L27,15 Q27,25 17,25 Q7,25 7,15 L7,5 Q7,1 10,1 Z",
+  stiletto: "M17,-9 L28,14 Q30,21 24,24 L10,24 Q4,21 6,14 Z",
+};
+
+// Los códigos de acabado los define cada profesional en su propio catálogo
+// (SPEC 03), no hay un enum fijo "glossy | matte". Como heurística visual —no
+// una regla de negocio— cualquier acabado que no diga "mate" se dibuja con
+// brillo: cubre "Brillante", "Glitter", "Shine" y variantes sin adivinar cada
+// código posible.
+function looksMatte(finishCode: string): boolean {
+  return /mat/i.test(finishCode);
+}
+
 // Índices 0–4: mano izquierda, del pulgar al meñique. Índices 5–9: mano derecha, del pulgar al meñique.
 const FINGER_X = [0, 40, 75, 110, 145];
 const FINGER_HEIGHT = [70, 100, 110, 100, 85];
@@ -69,16 +91,20 @@ function buildPayload(shape: NailShape, technique: string | null, nails: NailSta
 function Hand({
   mirrored,
   nails,
+  shape,
   selectedIndex,
   indexBase,
   onSelectNail,
 }: {
   mirrored: boolean;
   nails: NailState[];
+  shape: NailShape;
   selectedIndex: number | null;
   indexBase: number;
   onSelectNail: (index: number) => void;
 }) {
+  const nailPath = NAIL_SHAPE_PATHS[shape];
+
   return (
     <g transform={mirrored ? "translate(390, 20) scale(-1, 1)" : "translate(10, 20)"}>
       {FINGER_X.map((x, i) => {
@@ -86,6 +112,8 @@ function Hand({
         const height = FINGER_HEIGHT[i];
         const nail = nails[nailIndex];
         const isSelected = selectedIndex === nailIndex;
+        const hasDecorations = nail.decorations.length > 0;
+        const isGlossy = nail.finish !== null && !looksMatte(nail.finish);
 
         return (
           <g key={nailIndex} transform={`translate(${x}, ${120 - height})`}>
@@ -111,16 +139,34 @@ function Hand({
                 }
               }}
             />
-            <ellipse
-              cx={17}
-              cy={12}
-              rx={15}
-              ry={13}
+            <path
+              d={nailPath}
               fill={nail.baseColorHex ?? "var(--card)"}
               stroke={isSelected ? "var(--primary)" : "var(--outline-variant)"}
               strokeWidth={isSelected ? 3 : 1}
+              strokeLinejoin="round"
               className="pointer-events-none"
             />
+            {/* Brillo de acabado: una elipse blanca traslúcida arriba a la
+                izquierda basta para leer "pintado y brillante" contra
+                cualquier forma; el mate se queda plano, sin esta capa. */}
+            {isGlossy && (
+              <ellipse cx={12} cy={5} rx={7} ry={4.5} fill="white" opacity={0.5} className="pointer-events-none" />
+            )}
+            {/* Marca de decoración: no intenta ilustrar francesa/degradé/
+                pedrería (son códigos libres que define cada profesional),
+                solo confirma que la uña lleva algo encima. */}
+            {hasDecorations && (
+              <circle
+                cx={23}
+                cy={5}
+                r={2.75}
+                fill="var(--accent)"
+                stroke="white"
+                strokeWidth={0.75}
+                className="pointer-events-none"
+              />
+            )}
           </g>
         );
       })}
@@ -200,6 +246,7 @@ export function NailDesigner({
           <Hand
             mirrored={false}
             nails={nails}
+            shape={shape}
             selectedIndex={selectedNailIndex}
             indexBase={0}
             onSelectNail={setSelectedNailIndex}
@@ -207,6 +254,7 @@ export function NailDesigner({
           <Hand
             mirrored
             nails={nails}
+            shape={shape}
             selectedIndex={selectedNailIndex}
             indexBase={5}
             onSelectNail={setSelectedNailIndex}
