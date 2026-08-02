@@ -40,6 +40,7 @@ export default function DisenoPage() {
   const [elements, setElements] = useState<DesignElement[]>([]);
   const [form, setForm] = useState(emptyForm());
   const [status, setStatus] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const loadElements = useCallback(async () => {
     const response = await fetch("/api/design-elements");
@@ -54,30 +55,36 @@ export default function DisenoPage() {
 
   async function createElement(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isCreating) return;
     setStatus(null);
+    setIsCreating(true);
 
-    const response = await fetch("/api/design-elements", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        category: form.category,
-        code: form.code,
-        label: form.label,
-        colorHex: form.category === "color" ? form.colorHex : null,
-        priceDeltaClp: form.priceDeltaClp,
-        extraMinutes: form.extraMinutes,
-      }),
-    });
+    try {
+      const response = await fetch("/api/design-elements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: form.category,
+          code: form.code,
+          label: form.label,
+          colorHex: form.category === "color" ? form.colorHex : null,
+          priceDeltaClp: form.priceDeltaClp,
+          extraMinutes: form.extraMinutes,
+        }),
+      });
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      setStatus(typeof data?.error === "string" ? data.error : "No se pudo crear el elemento.");
-      return;
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setStatus(typeof data?.error === "string" ? data.error : "No se pudo crear el elemento.");
+        return;
+      }
+
+      setForm(emptyForm());
+      setStatus("Elemento creado.");
+      loadElements();
+    } finally {
+      setIsCreating(false);
     }
-
-    setForm(emptyForm());
-    setStatus("Elemento creado.");
-    loadElements();
   }
 
   async function updatePrice(id: string, priceDeltaClp: number) {
@@ -204,8 +211,8 @@ export default function DisenoPage() {
             </div>
           </div>
 
-          <BrandButton type="submit" size="sm" className="w-fit">
-            Crear elemento
+          <BrandButton type="submit" size="sm" className="w-fit" disabled={isCreating}>
+            {isCreating ? "Creando…" : "Crear elemento"}
           </BrandButton>
         </form>
       </AdminCard>

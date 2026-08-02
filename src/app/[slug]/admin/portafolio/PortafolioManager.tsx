@@ -24,6 +24,7 @@ export function PortafolioManager({ slug }: { slug: string }) {
   const [newCaption, setNewCaption] = useState("");
   const [newServiceId, setNewServiceId] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const load = useCallback(async () => {
     const [itemsRes, servicesRes] = await Promise.all([fetch("/api/portfolio"), fetch("/api/services")]);
@@ -39,9 +40,18 @@ export function PortafolioManager({ slug }: { slug: string }) {
   }, [load]);
 
   async function createItem() {
-    if (!newImageUrl) return;
+    if (!newImageUrl || isCreating) return;
     setStatus(null);
+    setIsCreating(true);
 
+    try {
+      await createItemRequest();
+    } finally {
+      setIsCreating(false);
+    }
+  }
+
+  async function createItemRequest() {
     const response = await fetch("/api/portfolio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -129,8 +139,8 @@ export function PortafolioManager({ slug }: { slug: string }) {
           </select>
         </div>
 
-        <BrandButton size="sm" disabled={!newImageUrl} onClick={createItem} className="w-fit">
-          Guardar en el portafolio
+        <BrandButton size="sm" disabled={!newImageUrl || isCreating} onClick={createItem} className="w-fit">
+          {isCreating ? "Guardando…" : "Guardar en el portafolio"}
         </BrandButton>
       </AdminCard>
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { User } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { AppHeader } from "@/components/brand";
 
@@ -28,14 +28,27 @@ export function TenantHeader({
 
   const accountHref = status === "authenticated" ? `/${slug}/cuenta` : `/${slug}/login`;
 
+  const iconButtonClasses =
+    "inline-flex size-10 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 outline-none";
+
+  // Cerrar sesión vive acá y no solo en /cuenta: ir al perfil primero para
+  // salir era un paso extra innecesario en cualquier otra pantalla.
   const action = (
-    <Link
-      href={accountHref}
-      aria-label="Mi cuenta"
-      className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 outline-none"
-    >
-      <User className="size-5" />
-    </Link>
+    <div className="flex items-center gap-1">
+      <Link href={accountHref} aria-label="Mi cuenta" className={iconButtonClasses}>
+        <User className="size-5" />
+      </Link>
+      {status === "authenticated" && (
+        <button
+          type="button"
+          aria-label="Cerrar sesión"
+          onClick={() => signOut({ callbackUrl: `/${slug}/login` })}
+          className={iconButtonClasses}
+        >
+          <LogOut className="size-5" />
+        </button>
+      )}
+    </div>
   );
 
   return (

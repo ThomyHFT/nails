@@ -48,6 +48,8 @@ export default function ServiciosPage() {
   const [editingServiceName, setEditingServiceName] = useState("");
   const [confirmDeleteServiceId, setConfirmDeleteServiceId] = useState<string | null>(null);
   const [confirmDeleteVariantId, setConfirmDeleteVariantId] = useState<string | null>(null);
+  const [isCreatingService, setIsCreatingService] = useState(false);
+  const [isCreatingVariant, setIsCreatingVariant] = useState(false);
 
   const loadServices = useCallback(async () => {
     const response = await fetch("/api/services");
@@ -62,22 +64,28 @@ export default function ServiciosPage() {
 
   async function createService(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isCreatingService) return;
     setStatus(null);
+    setIsCreatingService(true);
 
-    const response = await fetch("/api/services", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newServiceName }),
-    });
+    try {
+      const response = await fetch("/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newServiceName }),
+      });
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      setStatus(typeof data?.error === "string" ? data.error : "No se pudo crear el servicio.");
-      return;
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setStatus(typeof data?.error === "string" ? data.error : "No se pudo crear el servicio.");
+        return;
+      }
+
+      setNewServiceName("");
+      loadServices();
+    } finally {
+      setIsCreatingService(false);
     }
-
-    setNewServiceName("");
-    loadServices();
   }
 
   async function toggleServiceActive(service: Service) {
@@ -151,23 +159,28 @@ export default function ServiciosPage() {
 
   async function createVariant(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!variantForm) return;
+    if (!variantForm || isCreatingVariant) return;
     setStatus(null);
+    setIsCreatingVariant(true);
 
-    const response = await fetch("/api/services/variants", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(variantForm),
-    });
+    try {
+      const response = await fetch("/api/services/variants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(variantForm),
+      });
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      setStatus(typeof data?.error === "string" ? data.error : "No se pudo crear la variante.");
-      return;
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setStatus(typeof data?.error === "string" ? data.error : "No se pudo crear la variante.");
+        return;
+      }
+
+      setVariantForm(null);
+      loadServices();
+    } finally {
+      setIsCreatingVariant(false);
     }
-
-    setVariantForm(null);
-    loadServices();
   }
 
   async function updateVariantPrice(variantId: string, priceClp: number) {
@@ -232,7 +245,9 @@ export default function ServiciosPage() {
             required
           />
         </div>
-        <Button type="submit">Crear</Button>
+        <Button type="submit" disabled={isCreatingService}>
+          {isCreatingService ? "Creando…" : "Crear"}
+        </Button>
       </form>
 
       <div className="flex flex-col gap-4">
@@ -395,8 +410,8 @@ export default function ServiciosPage() {
                         className="w-24"
                       />
                     </div>
-                    <Button type="submit" size="sm">
-                      Agregar
+                    <Button type="submit" size="sm" disabled={isCreatingVariant}>
+                      {isCreatingVariant ? "Agregando…" : "Agregar"}
                     </Button>
                     <Button type="button" variant="ghost" size="sm" onClick={() => setVariantForm(null)}>
                       Cancelar

@@ -89,6 +89,8 @@ export default function DisponibilidadPage() {
   const [exceptions, setExceptions] = useState<AvailabilityException[]>([]);
   const [bufferMinutes, setBufferMinutes] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
+  const [isSavingRules, setIsSavingRules] = useState(false);
+  const [isSavingBuffer, setIsSavingBuffer] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [extraStart, setExtraStart] = useState("09:00");
   const [extraEnd, setExtraEnd] = useState("18:00");
@@ -153,35 +155,47 @@ export default function DisponibilidadPage() {
   }
 
   async function saveRules() {
+    if (isSavingRules) return;
     setStatus(null);
+    setIsSavingRules(true);
     const rules = ruleRows
       .filter((r) => r.enabled)
       .map((r) => ({ weekday: r.weekday, startTime: r.startTime, endTime: r.endTime }));
 
-    const response = await fetch("/api/availability/rules", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ effectiveMonth: month, rules }),
-    });
+    try {
+      const response = await fetch("/api/availability/rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ effectiveMonth: month, rules }),
+      });
 
-    if (!response.ok) {
-      setStatus("No se pudo guardar el horario base.");
-      return;
+      if (!response.ok) {
+        setStatus("No se pudo guardar el horario base.");
+        return;
+      }
+
+      setStatus("Horario base guardado.");
+      loadRules();
+    } finally {
+      setIsSavingRules(false);
     }
-
-    setStatus("Horario base guardado.");
-    loadRules();
   }
 
   async function saveBuffer() {
+    if (isSavingBuffer) return;
     setStatus(null);
-    const response = await fetch("/api/availability/buffer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bufferMinutes }),
-    });
+    setIsSavingBuffer(true);
+    try {
+      const response = await fetch("/api/availability/buffer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bufferMinutes }),
+      });
 
-    setStatus(response.ok ? "Buffer guardado." : "No se pudo guardar el buffer.");
+      setStatus(response.ok ? "Buffer guardado." : "No se pudo guardar el buffer.");
+    } finally {
+      setIsSavingBuffer(false);
+    }
   }
 
   async function toggleBlocked(date: string, blockedExceptionId: string | null) {
@@ -320,8 +334,8 @@ export default function DisponibilidadPage() {
               />
             </div>
           ))}
-          <Button onClick={saveRules} className="w-fit">
-            Guardar horario base
+          <Button onClick={saveRules} disabled={isSavingRules} className="w-fit">
+            {isSavingRules ? "Guardando…" : "Guardar horario base"}
           </Button>
         </Panel>
       </details>
@@ -471,7 +485,9 @@ export default function DisponibilidadPage() {
             className="w-24"
           />
           <span>minutos</span>
-          <Button onClick={saveBuffer}>Guardar buffer</Button>
+          <Button onClick={saveBuffer} disabled={isSavingBuffer}>
+            {isSavingBuffer ? "Guardando…" : "Guardar buffer"}
+          </Button>
         </div>
       </section>
 
