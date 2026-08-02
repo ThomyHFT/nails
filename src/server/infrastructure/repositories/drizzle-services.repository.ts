@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
+import { bookings } from "@/server/infrastructure/db/schema/bookings";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import type { Service, ServiceWithVariants } from "@/server/domain/service/service.entity";
 import type { ServiceVariant } from "@/server/domain/service/service-variant.entity";
@@ -92,6 +93,10 @@ export class DrizzleServicesRepository implements ServicesRepository {
     return serviceToDomain(row);
   }
 
+  async deleteService(id: string, professionalId: string): Promise<void> {
+    await db.delete(services).where(and(eq(services.id, id), eq(services.professionalId, professionalId)));
+  }
+
   async createVariant(variant: NewServiceVariant): Promise<ServiceVariant> {
     const [row] = await db
       .insert(serviceVariants)
@@ -122,5 +127,26 @@ export class DrizzleServicesRepository implements ServicesRepository {
     }
     const [row] = await db.update(serviceVariants).set(patch).where(eq(serviceVariants.id, id)).returning();
     return variantToDomain(row);
+  }
+
+  async deleteVariant(id: string, professionalId: string): Promise<void> {
+    const rows = await db
+      .select({ id: serviceVariants.id })
+      .from(serviceVariants)
+      .innerJoin(services, eq(serviceVariants.serviceId, services.id))
+      .where(and(eq(serviceVariants.id, id), eq(services.professionalId, professionalId)))
+      .limit(1);
+    if (rows.length === 0) return;
+
+    await db.delete(serviceVariants).where(eq(serviceVariants.id, id));
+  }
+
+  async hasBookingsForVariant(variantId: string): Promise<boolean> {
+    const [row] = await db
+      .select({ id: bookings.id })
+      .from(bookings)
+      .where(eq(bookings.serviceVariantId, variantId))
+      .limit(1);
+    return Boolean(row);
   }
 }

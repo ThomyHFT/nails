@@ -7,6 +7,9 @@ import type {
   ServiceVariantPatch,
   ServicesRepository,
 } from "@/server/domain/service/services-repository.port";
+import { ServiceHasBookingsError, VariantHasBookingsError } from "@/server/domain/service/service-errors";
+
+export { ServiceHasBookingsError, VariantHasBookingsError };
 
 const NAIL_LENGTHS: NailLength[] = ["short", "medium", "long", "single"];
 
@@ -90,6 +93,24 @@ export class ConfigureServicesUseCase {
     return this.servicesRepository.updateService(id, professionalId, patch);
   }
 
+  async deleteService(id: string, professionalId: string): Promise<void> {
+    const existing = await this.servicesRepository.findById(id, professionalId);
+    if (!existing) {
+      throw new ServiceNotFoundError();
+    }
+
+    for (const variant of existing.variants) {
+      if (await this.servicesRepository.hasBookingsForVariant(variant.id)) {
+        throw new ServiceHasBookingsError();
+      }
+    }
+
+    for (const variant of existing.variants) {
+      await this.servicesRepository.deleteVariant(variant.id, professionalId);
+    }
+    await this.servicesRepository.deleteService(id, professionalId);
+  }
+
   async createVariant(input: CreateVariantInput): Promise<ServiceVariant> {
     if (!NAIL_LENGTHS.includes(input.nailLength)) {
       throw new InvalidNailLengthError();
@@ -125,5 +146,16 @@ export class ConfigureServicesUseCase {
       throw new VariantNotFoundError();
     }
     return this.servicesRepository.updateVariant(id, professionalId, patch);
+  }
+
+  async deleteVariant(id: string, professionalId: string): Promise<void> {
+    const existing = await this.servicesRepository.findVariantById(id, professionalId);
+    if (!existing) {
+      throw new VariantNotFoundError();
+    }
+    if (await this.servicesRepository.hasBookingsForVariant(id)) {
+      throw new VariantHasBookingsError();
+    }
+    await this.servicesRepository.deleteVariant(id, professionalId);
   }
 }

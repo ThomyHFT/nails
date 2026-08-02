@@ -11,6 +11,7 @@ import type {
 export class InMemoryServicesRepository implements ServicesRepository {
   readonly services: Service[] = [];
   readonly variants: ServiceVariant[] = [];
+  readonly bookedVariantIds = new Set<string>();
   private nextId = 1;
 
   async listByProfessional(professionalId: string): Promise<ServiceWithVariants[]> {
@@ -47,6 +48,11 @@ export class InMemoryServicesRepository implements ServicesRepository {
     return service;
   }
 
+  async deleteService(id: string, professionalId: string): Promise<void> {
+    const index = this.services.findIndex((s) => s.id === id && s.professionalId === professionalId);
+    if (index !== -1) this.services.splice(index, 1);
+  }
+
   async createVariant(variant: NewServiceVariant): Promise<ServiceVariant> {
     const created: ServiceVariant = {
       id: `variant-${this.nextId++}`,
@@ -72,5 +78,16 @@ export class InMemoryServicesRepository implements ServicesRepository {
     if (!variant) throw new Error("Variante no encontrada");
     Object.assign(variant, patch);
     return variant;
+  }
+
+  async deleteVariant(id: string, professionalId: string): Promise<void> {
+    const owned = await this.findVariantById(id, professionalId);
+    if (!owned) return;
+    const index = this.variants.findIndex((v) => v.id === id);
+    if (index !== -1) this.variants.splice(index, 1);
+  }
+
+  async hasBookingsForVariant(variantId: string): Promise<boolean> {
+    return this.bookedVariantIds.has(variantId);
   }
 }

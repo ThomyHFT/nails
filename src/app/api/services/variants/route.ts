@@ -8,6 +8,7 @@ import {
   InvalidNailLengthError,
   InvalidPriceError,
   ServiceNotFoundError,
+  VariantHasBookingsError,
   VariantNotFoundError,
 } from "@/server/application/service/configure-services.use-case";
 import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
@@ -55,6 +56,9 @@ function errorResponse(err: unknown) {
   if (err instanceof ServiceNotFoundError || err instanceof VariantNotFoundError) {
     return NextResponse.json({ error: err.message }, { status: 404 });
   }
+  if (err instanceof VariantHasBookingsError) {
+    return NextResponse.json({ error: err.message }, { status: 409 });
+  }
   throw err;
 }
 
@@ -92,6 +96,25 @@ export async function PATCH(request: Request) {
   try {
     const variant = await useCase.updateVariant(id, professional.id, patch);
     return NextResponse.json({ variant });
+  } catch (err) {
+    return errorResponse(err);
+  }
+}
+
+export async function DELETE(request: Request) {
+  const { professional, response } = await requireOwnedProfessional();
+  if (!professional) return response;
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ error: "id es requerido" }, { status: 400 });
+  }
+
+  const useCase = new ConfigureServicesUseCase(new DrizzleServicesRepository());
+  try {
+    await useCase.deleteVariant(id, professional.id);
+    return NextResponse.json({ ok: true });
   } catch (err) {
     return errorResponse(err);
   }

@@ -33,7 +33,10 @@ export interface ServicesRepository {
   findById(id: string, professionalId: string): Promise<ServiceWithVariants | null>;
   createService(service: NewService): Promise<Service>;
   updateService(id: string, professionalId: string, patch: ServicePatch): Promise<Service>;
+  deleteService(id: string, professionalId: string): Promise<void>;
   createVariant(variant: NewServiceVariant): Promise<ServiceVariant>;
   findVariantById(id: string, professionalId: string): Promise<ServiceVariant | null>;
   updateVariant(id: string, professionalId: string, patch: ServiceVariantPatch): Promise<ServiceVariant>;
+  deleteVariant(id: string, professionalId: string): Promise<void>;
+  hasBookingsForVariant(variantId: string): Promise<boolean>;
 }

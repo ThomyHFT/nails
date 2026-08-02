@@ -40,6 +40,10 @@ export default function ServiciosPage() {
   const [newServiceName, setNewServiceName] = useState("");
   const [variantForm, setVariantForm] = useState<ReturnType<typeof emptyVariantForm> | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [editingServiceName, setEditingServiceName] = useState("");
+  const [confirmDeleteServiceId, setConfirmDeleteServiceId] = useState<string | null>(null);
+  const [confirmDeleteVariantId, setConfirmDeleteVariantId] = useState<string | null>(null);
 
   const loadServices = useCallback(async () => {
     const response = await fetch("/api/services");
@@ -86,6 +90,46 @@ export default function ServiciosPage() {
     loadServices();
   }
 
+  async function saveServiceName(serviceId: string) {
+    setStatus(null);
+    const response = await fetch("/api/services", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: serviceId, name: editingServiceName }),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setStatus(typeof data?.error === "string" ? data.error : "No se pudo renombrar el servicio.");
+      return;
+    }
+    setEditingServiceId(null);
+    loadServices();
+  }
+
+  async function deleteService(serviceId: string) {
+    setStatus(null);
+    const response = await fetch(`/api/services?id=${serviceId}`, { method: "DELETE" });
+    setConfirmDeleteServiceId(null);
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setStatus(typeof data?.error === "string" ? data.error : "No se pudo eliminar el servicio.");
+      return;
+    }
+    loadServices();
+  }
+
+  async function deleteVariant(variantId: string) {
+    setStatus(null);
+    const response = await fetch(`/api/services/variants?id=${variantId}`, { method: "DELETE" });
+    setConfirmDeleteVariantId(null);
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setStatus(typeof data?.error === "string" ? data.error : "No se pudo eliminar la variante.");
+      return;
+    }
+    loadServices();
+  }
+
   async function createVariant(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!variantForm) return;
@@ -117,6 +161,21 @@ export default function ServiciosPage() {
     if (!response.ok) {
       const data = await response.json().catch(() => null);
       setStatus(typeof data?.error === "string" ? data.error : "No se pudo actualizar el precio.");
+      return;
+    }
+    loadServices();
+  }
+
+  async function updateVariantDuration(variantId: string, durationMinutes: number) {
+    setStatus(null);
+    const response = await fetch("/api/services/variants", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: variantId, durationMinutes }),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setStatus(typeof data?.error === "string" ? data.error : "No se pudo actualizar la duración.");
       return;
     }
     loadServices();
@@ -170,10 +229,54 @@ export default function ServiciosPage() {
             }}
           >
             <div className="flex items-center justify-between gap-3">
-              <span className={`font-medium ${service.active ? "" : "line-through"}`}>{service.name}</span>
-              <Button variant="ghost" size="sm" onClick={() => toggleServiceActive(service)}>
-                {service.active ? "Desactivar" : "Activar"}
-              </Button>
+              {editingServiceId === service.id ? (
+                <div className="flex flex-1 items-center gap-2">
+                  <Input
+                    value={editingServiceName}
+                    onChange={(e) => setEditingServiceName(e.target.value)}
+                    className="h-8"
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={() => saveServiceName(service.id)}>
+                    Guardar
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingServiceId(null)}>
+                    Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className={`font-medium ${service.active ? "" : "line-through"}`}
+                  onClick={() => {
+                    setEditingServiceId(service.id);
+                    setEditingServiceName(service.name);
+                  }}
+                >
+                  {service.name}
+                </button>
+              )}
+
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" onClick={() => toggleServiceActive(service)}>
+                  {service.active ? "Desactivar" : "Activar"}
+                </Button>
+                {confirmDeleteServiceId === service.id ? (
+                  <>
+                    <span className="text-sm">¿Eliminar?</span>
+                    <Button variant="destructive" size="sm" onClick={() => deleteService(service.id)}>
+                      Sí
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteServiceId(null)}>
+                      No
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteServiceId(service.id)}>
+                    Eliminar
+                  </Button>
+                )}
+              </div>
             </div>
 
             <ul className="flex flex-col gap-2">
@@ -192,10 +295,35 @@ export default function ServiciosPage() {
                     }}
                     className="w-28"
                   />
-                  <span style={{ color: "var(--muted-foreground)" }}>{variant.durationMinutes} min</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    defaultValue={variant.durationMinutes}
+                    onBlur={(e) => {
+                      const value = Number(e.target.value);
+                      if (value !== variant.durationMinutes) updateVariantDuration(variant.id, value);
+                    }}
+                    className="w-20"
+                  />
+                  <span style={{ color: "var(--muted-foreground)" }}>min</span>
                   <Button variant="ghost" size="sm" onClick={() => toggleVariantActive(variant)}>
                     {variant.active ? "Desactivar" : "Activar"}
                   </Button>
+                  {confirmDeleteVariantId === variant.id ? (
+                    <>
+                      <span>¿Eliminar?</span>
+                      <Button variant="destructive" size="sm" onClick={() => deleteVariant(variant.id)}>
+                        Sí
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteVariantId(null)}>
+                        No
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteVariantId(variant.id)}>
+                      Eliminar
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>

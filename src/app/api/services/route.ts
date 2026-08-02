@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import {
   ConfigureServicesUseCase,
   InvalidServiceNameError,
+  ServiceHasBookingsError,
   ServiceNotFoundError,
 } from "@/server/application/service/configure-services.use-case";
 import { ListServicesUseCase } from "@/server/application/service/list-services.use-case";
@@ -89,6 +90,31 @@ export async function PATCH(request: Request) {
     }
     if (err instanceof ServiceNotFoundError) {
       return NextResponse.json({ error: err.message }, { status: 404 });
+    }
+    throw err;
+  }
+}
+
+export async function DELETE(request: Request) {
+  const { professional, response } = await requireOwnedProfessional();
+  if (!professional) return response;
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ error: "id es requerido" }, { status: 400 });
+  }
+
+  const useCase = new ConfigureServicesUseCase(new DrizzleServicesRepository());
+  try {
+    await useCase.deleteService(id, professional.id);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (err instanceof ServiceNotFoundError) {
+      return NextResponse.json({ error: err.message }, { status: 404 });
+    }
+    if (err instanceof ServiceHasBookingsError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
     }
     throw err;
   }
