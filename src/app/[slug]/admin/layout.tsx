@@ -3,6 +3,9 @@ import { ListReviewsUseCase } from "@/server/application/review/list-reviews.use
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { DrizzleReviewsRepository } from "@/server/infrastructure/repositories/drizzle-reviews.repository";
 import { AdminNav } from "@/app/[slug]/admin/AdminNav";
+import { AccountBanners } from "@/app/[slug]/admin/AccountBanners";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default async function AdminLayout({
   children,
@@ -19,10 +22,20 @@ export default async function AdminLayout({
     ? await new ListReviewsUseCase(new DrizzleReviewsRepository()).countPending(professional.id)
     : 0;
 
+  const now = new Date();
+  const daysUntilTrialEnds = professional?.trialEndsAt
+    ? Math.ceil((professional.trialEndsAt.getTime() - now.getTime()) / DAY_MS)
+    : null;
+
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
       <AdminNav slug={slug} pendingReviewsCount={pendingReviewsCount} />
-      <main className="min-w-0 flex-1 px-6 py-8 lg:px-10">{children}</main>
+      <main className="flex min-w-0 flex-1 flex-col gap-6 px-6 py-8 lg:px-10">
+        {professional && (
+          <AccountBanners isPublished={professional.publishedAt !== null} daysUntilTrialEnds={daysUntilTrialEnds} />
+        )}
+        {children}
+      </main>
     </div>
   );
 }

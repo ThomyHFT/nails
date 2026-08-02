@@ -6,7 +6,7 @@ import type { EmailSender } from "@/server/domain/notification/email-sender.port
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_REQUESTS_PER_HOUR = 3;
 
-export type SendEmailVerificationResult = "sent" | "rate_limited" | "no_sender";
+export type SendEmailVerificationResult = "sent" | "rate_limited" | "no_sender" | "send_failed";
 
 /**
  * Envía (o reenvía) el correo de verificación. Se llama tanto justo después
@@ -45,8 +45,11 @@ export class SendEmailVerificationUseCase {
     const verifyUrl = `${input.baseUrl}/api/email-verification/confirm?token=${token}`;
     const template = buildEmailVerificationEmail({ businessName: input.businessName, verifyUrl });
 
-    await this.emailSender.send({ to: input.email, subject: template.subject, html: template.html });
+    // `send` no lanza: devuelve { ok: false } cuando Resend rechaza el envío
+    // (por ejemplo, dominio sin verificar). Ignorar ese resultado — como hacía
+    // antes— reportaba "sent" aunque el correo nunca saliera.
+    const result = await this.emailSender.send({ to: input.email, subject: template.subject, html: template.html });
 
-    return "sent";
+    return result.ok ? "sent" : "send_failed";
   }
 }

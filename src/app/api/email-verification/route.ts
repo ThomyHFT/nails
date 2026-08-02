@@ -44,8 +44,8 @@ export async function POST(request: Request) {
       status: 429,
     });
   }
-  if (result === "no_sender") {
-    return NextResponse.json({ error: "El envío de correos no está configurado todavía." }, { status: 503 });
+  if (result === "no_sender" || result === "send_failed") {
+    return NextResponse.json({ error: "No se pudo enviar el correo. Intenta de nuevo en un rato." }, { status: 503 });
   }
 
   return NextResponse.json({ ok: true });

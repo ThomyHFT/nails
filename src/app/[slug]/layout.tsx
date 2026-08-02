@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { FONT_PAIR_CSS_VARS } from "@/app/fonts";
 import { GetTenantBrandingUseCase } from "@/server/application/branding/get-tenant-branding.use-case";
-import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import type { BrandTokenSet } from "@/server/domain/branding/brand-tokens";
 import { resolveBrandTokens } from "@/server/domain/branding/resolve-brand-tokens";
 import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
@@ -19,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
 
-  const professional = await new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
+  const professional = await new DrizzleProfessionalRepository().findBySlug(slug);
   if (!professional) {
     notFound();
   }
@@ -44,7 +43,7 @@ export async function generateMetadata({
 export async function generateViewport({ params }: { params: Promise<{ slug: string }> }): Promise<Viewport> {
   const { slug } = await params;
 
-  const professional = await new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
+  const professional = await new DrizzleProfessionalRepository().findBySlug(slug);
   if (!professional) {
     return {};
   }
@@ -69,7 +68,12 @@ export default async function TenantLayout({
 }) {
   const { slug } = await params;
 
-  const professional = await new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
+  // Existencia, no visibilidad pública: este layout envuelve tanto (public)
+  // como admin. Un tenant recién registrado tiene publishedAt: null, y la
+  // profesional tiene que poder entrar a su panel igual — GetProfessionalBySlugUseCase
+  // (que sí filtra por publicación) ya se usa dentro de (public)/layout.tsx,
+  // que es el único lugar donde ese 404 corresponde.
+  const professional = await new DrizzleProfessionalRepository().findBySlug(slug);
   if (!professional) {
     notFound();
   }

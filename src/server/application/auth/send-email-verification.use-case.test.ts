@@ -45,6 +45,18 @@ describe("SendEmailVerificationUseCase", () => {
     expect(tokensRepository.tokens).toHaveLength(0);
   });
 
+  it("reports send_failed instead of a false sent when the sender rejects the email", async () => {
+    // El sender no lanza: devuelve { ok: false } (por ejemplo, Resend
+    // rechazando por dominio sin verificar). Ignorar ese resultado reportaba
+    // "sent" aunque el correo nunca saliera — este es el caso que lo cubre.
+    const { useCase, emailSender } = setup();
+    emailSender.failWith = "dominio sin verificar";
+
+    const result = await useCase.execute(input);
+
+    expect(result).toBe("send_failed");
+  });
+
   it("rate limits after three sends within an hour", async () => {
     const { useCase } = setup();
 
