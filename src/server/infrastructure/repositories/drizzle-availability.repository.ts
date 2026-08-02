@@ -9,13 +9,21 @@ import type {
   NewAvailabilityRule,
 } from "@/server/domain/availability/availability-repository.port";
 
+// Postgres devuelve las columnas `time` como "HH:MM:SS"; el dominio y la
+// validación de los route handlers usan "HH:MM" en todos lados.
+function toHourMinute(time: string): string;
+function toHourMinute(time: string | null): string | null;
+function toHourMinute(time: string | null): string | null {
+  return time ? time.slice(0, 5) : time;
+}
+
 function ruleToDomain(row: typeof availabilityRules.$inferSelect): AvailabilityRule {
   return {
     id: row.id,
     professionalId: row.professionalId,
     weekday: row.weekday,
-    startTime: row.startTime,
-    endTime: row.endTime,
+    startTime: toHourMinute(row.startTime),
+    endTime: toHourMinute(row.endTime),
     active: row.active,
     effectiveMonth: row.effectiveMonth,
   };
@@ -27,8 +35,8 @@ function exceptionToDomain(row: typeof availabilityExceptions.$inferSelect): Ava
     professionalId: row.professionalId,
     date: row.date,
     kind: row.kind,
-    startTime: row.startTime,
-    endTime: row.endTime,
+    startTime: toHourMinute(row.startTime),
+    endTime: toHourMinute(row.endTime),
     note: row.note,
   };
 }
