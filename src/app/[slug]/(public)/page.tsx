@@ -169,7 +169,7 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
                   href={instagramUrl(professional.instagramHandle)}
                   target="_blank"
                   rel="noreferrer"
-                  className="t-label hidden text-primary transition-colors hover:underline sm:inline-flex"
+                  className="hidden text-sm font-semibold text-primary transition-colors hover:underline sm:inline-flex"
                 >
                   Ver más
                 </a>

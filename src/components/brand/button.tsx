@@ -30,8 +30,12 @@ const SIZES: Record<BrandButtonSize, string> = {
   lg: "h-13 gap-2 px-8",
 };
 
+// Sentence case y no versalitas: `t-label` en cada botón de la vitrina hacía
+// que ocho bloques de la misma página compitieran en mayúsculas a la vez. Las
+// versalitas quedan reservadas a overlines y estados (ver `t-label` en
+// globals.css); el CTA se lee como frase, con el mismo peso.
 const BASE =
-  "t-label inline-flex items-center justify-center rounded-lg transition-all duration-200 [transition-timing-function:var(--ease-brand)] outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0";
+  "inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-all duration-200 [transition-timing-function:var(--ease-brand)] outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0";
 
 type CommonProps = {
   children: ReactNode;
@@ -161,7 +165,7 @@ export function ActionLink({
     <Link
       href={href}
       className={cn(
-        "t-label group inline-flex items-center gap-2 rounded-sm text-primary outline-none transition-colors hover:text-[var(--primary-hover)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "group inline-flex items-center gap-2 rounded-sm text-sm font-semibold text-primary outline-none transition-colors hover:text-[var(--primary-hover)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className,
       )}
     >
