@@ -24,7 +24,6 @@ import {
   Container,
   ContactCard,
   FloatingStat,
-  GalleryGrid,
   Hero,
   RatingSummary,
   ReviewCard,
@@ -33,6 +32,7 @@ import {
   ServiceCard,
 } from "@/components/brand";
 import { instagramLabel, instagramUrl, whatsAppUrl } from "@/app/[slug]/(public)/links";
+import { GalleryLightbox } from "@/app/[slug]/(public)/GalleryLightbox";
 
 const FEATURED_SERVICES_LIMIT = 4;
 const PORTFOLIO_PREVIEW_LIMIT = 8;
@@ -183,7 +183,7 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
               ) : undefined
             }
           />
-          <GalleryGrid items={portfolioItems.map((item) => ({ id: item.id, imageUrl: item.imageUrl, alt: "" }))} />
+          <GalleryLightbox items={portfolioItems.map((item) => ({ id: item.id, imageUrl: item.imageUrl, alt: "" }))} />
         </Section>
       )}
 
