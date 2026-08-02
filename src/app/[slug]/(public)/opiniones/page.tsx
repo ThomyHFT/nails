@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
 import { db } from "@/server/infrastructure/db/client";
 import { users } from "@/server/infrastructure/db/schema/users";
-import { ratingSummary } from "@/server/domain/review/rating-summary";
+import { ratingDistribution, ratingSummary } from "@/server/domain/review/rating-summary";
 import { reviewerDisplayName } from "@/server/domain/review/reviewer-display-name";
 import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import { ListReviewsUseCase } from "@/server/application/review/list-reviews.use-case";
@@ -14,6 +14,8 @@ import {
   Container,
   Display,
   EmptyState,
+  Panel,
+  RatingDistribution,
   RatingSummary,
   ReviewCard,
   Section,
@@ -33,6 +35,7 @@ export default async function OpinionesPage({ params }: { params: Promise<{ slug
 
   const reviews = await new ListReviewsUseCase(new DrizzleReviewsRepository()).listPublic(professional.id);
   const summary = ratingSummary(reviews);
+  const distribution = ratingDistribution(reviews);
 
   const clientIds = Array.from(new Set(reviews.map((review) => review.clientUserId)));
   const clientRows = clientIds.length
@@ -43,12 +46,22 @@ export default async function OpinionesPage({ params }: { params: Promise<{ slug
   return (
     <Container size="md">
       <Section className="flex flex-col gap-8">
-        <div className="flex flex-col gap-3">
-          <Display as="h1">Opiniones</Display>
-          {summary ? (
-            <RatingSummary average={summary.average} count={summary.count} size="lg" />
-          ) : (
-            <Caption>Las opiniones las escriben clientas con una reserva completada.</Caption>
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3">
+            <Display as="h1">Opiniones</Display>
+            {summary ? (
+              <RatingSummary average={summary.average} count={summary.count} size="lg" />
+            ) : (
+              <Caption>Las opiniones las escriben clientas con una reserva completada.</Caption>
+            )}
+          </div>
+
+          {/* La distribución le da peso al promedio: un 4,5 con casi todo en
+              5 estrellas no se lee igual que uno con la mitad en 3. */}
+          {summary && (
+            <Panel padding="sm" className="w-full sm:max-w-xs">
+              <RatingDistribution buckets={distribution} total={summary.count} />
+            </Panel>
           )}
         </div>
 

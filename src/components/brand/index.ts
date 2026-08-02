@@ -33,7 +33,7 @@ export { AuthCard, FIELD_CLASSES, TextField } from "@/components/brand/form";
 
 export { OptionCard, RatingInput, SegmentedControl, SelectChip, Swatch } from "@/components/brand/controls";
 
-export { RatingStars, RatingSummary, ReviewCard, ReviewStatusChip } from "@/components/brand/review";
+export { RatingDistribution, RatingStars, RatingSummary, ReviewCard, ReviewStatusChip } from "@/components/brand/review";
 
 export { ServiceCard, VariantRow, type ServiceCardData } from "@/components/brand/service-card";
 

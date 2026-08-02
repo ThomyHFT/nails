@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ratingSummary } from "@/server/domain/review/rating-summary";
+import { ratingDistribution, ratingSummary } from "@/server/domain/review/rating-summary";
 import type { Review } from "@/server/domain/review/review.entity";
 
 function review(overrides: Partial<Review> = {}): Review {
@@ -39,5 +39,33 @@ describe("ratingSummary", () => {
     const reviews = [review({ rating: 5 }), review({ rating: 5 }), review({ rating: 4 })];
     const result = ratingSummary(reviews);
     expect(result).toEqual({ average: 4.7, count: 3 });
+  });
+});
+
+describe("ratingDistribution", () => {
+  it("returns all five buckets at zero when there are no reviews", () => {
+    expect(ratingDistribution([])).toEqual([
+      { rating: 5, count: 0 },
+      { rating: 4, count: 0 },
+      { rating: 3, count: 0 },
+      { rating: 2, count: 0 },
+      { rating: 1, count: 0 },
+    ]);
+  });
+
+  it("counts reviews per rating, descending from 5 a 1", () => {
+    const reviews = [
+      review({ rating: 5 }),
+      review({ rating: 5 }),
+      review({ rating: 3 }),
+      review({ rating: 1 }),
+    ];
+    expect(ratingDistribution(reviews)).toEqual([
+      { rating: 5, count: 2 },
+      { rating: 4, count: 0 },
+      { rating: 3, count: 1 },
+      { rating: 2, count: 0 },
+      { rating: 1, count: 1 },
+    ]);
   });
 });

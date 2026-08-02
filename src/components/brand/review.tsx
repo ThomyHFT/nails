@@ -77,6 +77,44 @@ export function RatingSummary({
 }
 
 /**
+ * Distribución de notas (5★···1★), la barra que le da peso al promedio: un
+ * 4,5 con la mayoría en 5 estrellas no se lee igual que uno con la mitad en
+ * 3. `total` es el conteo general, no la suma de `buckets`, para no repetir
+ * el cálculo en cada fila.
+ */
+export function RatingDistribution({
+  buckets,
+  total,
+  className,
+}: {
+  buckets: { rating: number; count: number }[];
+  total: number;
+  className?: string;
+}) {
+  const max = Math.max(1, ...buckets.map((b) => b.count));
+
+  return (
+    <div className={cn("flex flex-col gap-1.5", className)}>
+      {buckets.map((bucket) => (
+        <div key={bucket.rating} className="flex items-center gap-3">
+          <span className="t-caption w-4 shrink-0 text-right text-muted-foreground">{bucket.rating}</span>
+          <Star className="size-3.5 shrink-0 fill-accent text-accent" aria-hidden />
+          <div className="h-2 flex-1 overflow-hidden rounded-pill bg-surface-3">
+            <div
+              className="h-full rounded-pill bg-accent transition-[width] duration-500 [transition-timing-function:var(--ease-brand)]"
+              style={{ width: total > 0 ? `${(bucket.count / max) * 100}%` : "0%" }}
+            />
+          </div>
+          <span className="t-caption w-6 shrink-0 text-right tabular-nums text-muted-foreground">
+            {bucket.count}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Tarjeta de opinión publicada. La foto es opcional y ocupa una franja propia:
  * la clienta que sube foto está mostrando el trabajo, no ilustrando el texto.
  */
