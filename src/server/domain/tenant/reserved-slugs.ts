@@ -1,7 +1,8 @@
 /**
  * Validación del slug de un tenant.
  *
- * El slug es la URL del micrositio (`agendauñas.cl/<slug>`) y vive en la raíz del
+ * El slug es la URL del micrositio (`agendaunas.cl/<slug>` — sin ñ a propósito:
+ * la ñ complica DNS, punycode y tipeo) y vive en la raíz del
  * router, así que compite con las rutas reales de la app: sin esta lista,
  * alguien podría registrarse como `api` o `admin` y dejar esas rutas
  * inalcanzables para todos.
