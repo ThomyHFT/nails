@@ -7,7 +7,11 @@ export async function requireProfessional(slug: string): Promise<Session> {
   const session = await auth();
 
   if (!session) {
-    redirect(`/${slug}/login`);
+    // "next" apunta al panel, no a la sub-ruta exacta que se pidió: no hay
+    // forma confiable de leer el pathname completo desde un Server Component
+    // sin middleware, y volver al resumen es mejor que el callejón sin salida
+    // de antes (loguearse y quedar sin ningún link hacia el panel).
+    redirect(`/${slug}/login?next=${encodeURIComponent(`/${slug}/admin`)}`);
   }
 
   if (session.user.role !== "professional") {

@@ -16,7 +16,7 @@ export function TenantHeader({
   logoUrl: string | null;
 }) {
   const pathname = usePathname();
-  const { status } = useSession();
+  const { status, data: session } = useSession();
 
   // La navegación de escritorio lleva a los mismos destinos que la barra
   // inferior de móvil: son una anatomía distinta del mismo mapa, no dos mapas.
@@ -26,7 +26,16 @@ export function TenantHeader({
     { href: `/${slug}/opiniones`, label: "Opiniones", active: pathname?.startsWith(`/${slug}/opiniones`) ?? false },
   ];
 
-  const accountHref = status === "authenticated" ? `/${slug}/cuenta` : `/${slug}/login`;
+  // La dueña del tenant también navega su propio micrositio público (para
+  // ver cómo se ve, revisar reseñas, etc.); el ícono de cuenta tiene que
+  // llevarla a su panel, no a /cuenta — esa pantalla es de clientas y ni
+  // siquiera resuelve sus reservas.
+  const accountHref =
+    status === "authenticated"
+      ? session?.user.role === "professional"
+        ? `/${slug}/admin`
+        : `/${slug}/cuenta`
+      : `/${slug}/login`;
 
   const iconButtonClasses =
     "inline-flex size-10 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 outline-none";

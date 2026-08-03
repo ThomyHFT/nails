@@ -16,7 +16,15 @@ export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request, secret: env.AUTH_SECRET, secureCookie });
 
   if (!token) {
-    return NextResponse.redirect(new URL(`/${slug}/login`, request.url));
+    // "next" apunta al panel: sin esto, loguearse desde acá dejaba a la
+    // profesional sin ningún link de vuelta a /admin (guards.ts tiene el
+    // mismo redirect para cuando el Server Component es el que corta, pero
+    // este middleware corre antes y es el que de hecho se dispara para las
+    // rutas /admin).
+    const nextPath = `/${slug}/admin${match[2] ?? ""}`;
+    const loginUrl = new URL(`/${slug}/login`, request.url);
+    loginUrl.searchParams.set("next", nextPath);
+    return NextResponse.redirect(loginUrl);
   }
 
   if (token.role !== "professional") {
