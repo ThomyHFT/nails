@@ -58,7 +58,7 @@ const brandFontVariables = [
 ].join(" ");
 
 export const metadata: Metadata = {
-  title: "Misuñas",
+  title: "AgendaUñas",
   description: "Agenda tu hora de uñas y diseña tu manicure antes de llegar.",
 };
 

@@ -42,8 +42,14 @@ describe("validateSlug", () => {
   });
 
   it("rejects brand and generic slugs", () => {
-    expect(validateSlug("misunas")).toBe("reserved");
+    expect(validateSlug("agendaunas")).toBe("reserved");
     expect(validateSlug("soporte")).toBe("reserved");
+  });
+
+  it("keeps the abandoned brand name reserved too", () => {
+    // "misunas" era el nombre original, abandonado al descubrir que ya lo
+    // tenía registrado otro sitio. Se queda bloqueado igual.
+    expect(validateSlug("misunas")).toBe("reserved");
   });
 });
 

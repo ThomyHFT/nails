@@ -12,7 +12,7 @@ function setup() {
   return { tokensRepository, tokenGenerator, emailSender, useCase };
 }
 
-const input = { userId: "user-1", email: "karla@example.com", businessName: "Uñas por Karla", baseUrl: "https://misunas.cl" };
+const input = { userId: "user-1", email: "karla@example.com", businessName: "Uñas por Karla", baseUrl: "https://agendaunas.cl" };
 
 describe("SendEmailVerificationUseCase", () => {
   it("sends the email and stores a token", async () => {

@@ -1,7 +1,7 @@
 /**
  * Validación del slug de un tenant.
  *
- * El slug es la URL del micrositio (`misunas.cl/<slug>`) y vive en la raíz del
+ * El slug es la URL del micrositio (`agendauñas.cl/<slug>`) y vive en la raíz del
  * router, así que compite con las rutas reales de la app: sin esta lista,
  * alguien podría registrarse como `api` o `admin` y dejar esas rutas
  * inalcanzables para todos.
@@ -34,8 +34,12 @@ const APP_ROUTES = [
   "_next",
 ];
 
-/** Marca del producto: no se regala aunque hoy no resuelvan a nada. */
-const BRAND = ["misunas", "misunas-app", "app", "www"];
+/**
+ * Marca del producto: no se regala aunque hoy no resuelvan a nada.
+ * "misunas"/"misuñas" quedan bloqueados aposta — es el nombre que se abandonó
+ * al descubrir que ya lo tenía registrado otro sitio.
+ */
+const BRAND = ["agendaunas", "agendaunas-app", "misunas", "misunas-app", "app", "www"];
 
 /** Genéricos que vamos a querer para el sitio del producto más adelante. */
 const GENERIC = [

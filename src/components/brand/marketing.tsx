@@ -203,7 +203,7 @@ export function SiteFooter({
           <Caption className="text-xs">
             © {new Date().getFullYear()} {businessName}. Todos los derechos reservados.
           </Caption>
-          <Caption className="text-xs">Hecho con Misuñas</Caption>
+          <Caption className="text-xs">Hecho con AgendaUñas</Caption>
         </div>
       </div>
     </footer>
