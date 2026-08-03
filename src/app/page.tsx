@@ -1,10 +1,12 @@
-import { notFound, redirect } from "next/navigation";
-import { env } from "@/server/infrastructure/config/env";
+import type { Metadata } from "next";
+import { LandingExperience } from "@/app/landing-experience";
 
-export default function Home() {
-  if (!env.DEMO_TENANT_SLUG) {
-    notFound();
-  }
+export const metadata: Metadata = {
+  title: "AgendaUñas — tu propio sitio de reservas de uñas",
+  description:
+    "Micrositio de reservas con tu marca para manicuristas independientes. Tus clientas agendan y diseñan su manicure antes de llegar. Sin comisiones, pago presencial.",
+};
 
-  redirect(`/${env.DEMO_TENANT_SLUG}`);
+export default function HomePage() {
+  return <LandingExperience />;
 }
