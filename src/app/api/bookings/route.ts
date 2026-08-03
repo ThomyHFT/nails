@@ -6,12 +6,18 @@ import { db } from "@/server/infrastructure/db/client";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { CreateBookingUseCase, SlotNotAvailableError } from "@/server/application/booking/create-booking.use-case";
 import { GenerateAvailableSlotsUseCase } from "@/server/application/booking/generate-available-slots.use-case";
+import { SendBookingNotificationUseCase } from "@/server/application/notification/send-booking-notification.use-case";
 import { calculateDesignQuote, InvalidDesignElementError } from "@/server/domain/design/calculate-design-quote";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
 import { DrizzleAvailabilityRepository } from "@/server/infrastructure/repositories/drizzle-availability.repository";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
+import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
 import { DrizzleDesignRepository } from "@/server/infrastructure/repositories/drizzle-design.repository";
+import { DrizzleEmailNotificationRepository } from "@/server/infrastructure/repositories/drizzle-email-notification.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
+import { DrizzleUserRepository } from "@/server/infrastructure/repositories/drizzle-user.repository";
+import { ResendEmailSender } from "@/server/infrastructure/email/resend-email-sender";
+import { env } from "@/server/infrastructure/config/env";
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -179,6 +185,23 @@ export async function POST(request: Request) {
       designReferenceImageUrl: parsed.data.design?.referenceImageUrl ?? null,
       clientNote: parsed.data.clientNote,
     });
+
+    try {
+      const notificationUseCase = new SendBookingNotificationUseCase(
+        new DrizzleBookingRepository(),
+        new DrizzleUserRepository(),
+        new DrizzleProfessionalRepository(),
+        new DrizzleBrandingRepository(),
+        env.RESEND_API_KEY
+          ? new ResendEmailSender(env.RESEND_API_KEY, env.EMAIL_FROM_ADDRESS ?? "onboarding@resend.dev")
+          : null,
+        new DrizzleEmailNotificationRepository(),
+      );
+      await notificationUseCase.execute({ bookingId: booking.id, type: "pending" });
+    } catch {
+      // Un fallo al notificar nunca debe cambiar la respuesta de crear la reserva.
+    }
+
     return NextResponse.json({ booking }, { status: 201 });
   } catch (err) {
     if (err instanceof SlotNotAvailableError) {

@@ -45,6 +45,7 @@ export const brandFontPairEnum = pgEnum("brand_font_pair", [
 export const emailNotificationTypeEnum = pgEnum("email_notification_type", [
   "confirmation",
   "cancellation",
+  "pending",
 ]);
 
 export const emailNotificationStatusEnum = pgEnum("email_notification_status", ["sent", "failed"]);

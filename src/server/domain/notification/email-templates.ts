@@ -40,6 +40,19 @@ function renderShell(input: EmailTemplateInput, title: string, body: string): st
   `.trim();
 }
 
+export function buildPendingEmail(input: EmailTemplateInput): EmailTemplate {
+  const { booking, professionalName } = input;
+  const subject = `Recibimos tu solicitud de reserva con ${professionalName}`;
+  const body = `
+    <p>Hola, recibimos tu solicitud de reserva con <strong>${professionalName}</strong>. Está pendiente de
+    confirmación — te vamos a avisar por correo apenas la profesional la confirme.</p>
+    <p><strong>Fecha:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
+    <p><strong>Duración:</strong> ${booking.durationMinutes} minutos</p>
+    <p><strong>Precio:</strong> ${formatClp(booking.priceClp)}</p>
+  `.trim();
+  return { subject, html: renderShell(input, "Solicitud recibida", body) };
+}
+
 export function buildConfirmationEmail(input: EmailTemplateInput): EmailTemplate {
   const { booking, professionalName } = input;
   const subject = `Tu reserva con ${professionalName} está confirmada`;

@@ -3,11 +3,11 @@ import type { BrandingRepository } from "@/server/domain/branding/branding-repos
 import type { TenantBranding } from "@/server/domain/branding/tenant-branding.entity";
 import type { EmailNotificationRepository } from "@/server/domain/notification/email-notification-repository.port";
 import type { EmailSender } from "@/server/domain/notification/email-sender.port";
-import { buildCancellationEmail, buildConfirmationEmail } from "@/server/domain/notification/email-templates";
+import { buildCancellationEmail, buildConfirmationEmail, buildPendingEmail } from "@/server/domain/notification/email-templates";
 import type { ProfessionalRepository } from "@/server/domain/professional/professional-repository.port";
 import type { UserRepository } from "@/server/domain/user/user-repository.port";
 
-export type BookingNotificationType = "confirmation" | "cancellation";
+export type BookingNotificationType = "confirmation" | "cancellation" | "pending";
 
 function defaultBranding(professionalId: string): TenantBranding {
   return {
@@ -69,7 +69,9 @@ export class SendBookingNotificationUseCase {
       const template =
         input.type === "confirmation"
           ? buildConfirmationEmail(templateInput)
-          : buildCancellationEmail(templateInput);
+          : input.type === "pending"
+            ? buildPendingEmail(templateInput)
+            : buildCancellationEmail(templateInput);
 
       const result = await this.emailSender.send({
         to: client.email,

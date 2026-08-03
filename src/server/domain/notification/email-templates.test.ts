@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Booking } from "@/server/domain/booking/booking.entity";
 import type { TenantBranding } from "@/server/domain/branding/tenant-branding.entity";
-import { buildCancellationEmail, buildConfirmationEmail } from "@/server/domain/notification/email-templates";
+import { buildCancellationEmail, buildConfirmationEmail, buildPendingEmail } from "@/server/domain/notification/email-templates";
 
 function booking(overrides: Partial<Booking> = {}): Booking {
   return {
@@ -65,6 +65,20 @@ describe("buildConfirmationEmail", () => {
     expect(email.html).toContain("Glam Nails");
     expect(email.html).toContain("#7A1F3D");
     expect(email.html).not.toContain("<img");
+  });
+});
+
+describe("buildPendingEmail", () => {
+  it("includes the professional's name, the date and says it's pending confirmation", () => {
+    const email = buildPendingEmail({
+      booking: booking(),
+      branding: branding({ primaryColorHex: "#111111" }),
+      professionalName: "Fran Uñas",
+    });
+
+    expect(email.html).toContain("Fran Uñas");
+    expect(email.html).toContain("pendiente de");
+    expect(email.subject).toContain("solicitud");
   });
 });
 
