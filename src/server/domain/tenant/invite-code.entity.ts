@@ -23,3 +23,29 @@ export function checkInviteCode(code: InviteCode | null, now: Date = new Date())
   if (code.expiresAt !== null && code.expiresAt <= now) return "expired";
   return "ok";
 }
+
+export type InviteCodeStatus = "available" | "used" | "expired";
+
+/**
+ * Estado de un código para el panel de superadmin. Distinto de
+ * `checkInviteCode`: ese decide si un código sirve para registrarse (y oculta
+ * a propósito si existe); este describe un código que el admin ya sabe que
+ * existe, así que puede ser explícito.
+ */
+export function inviteCodeStatus(code: InviteCode, now: Date = new Date()): InviteCodeStatus {
+  if (code.usedAt !== null || code.usedByProfessionalId !== null) return "used";
+  if (code.expiresAt !== null && code.expiresAt <= now) return "expired";
+  return "available";
+}
+
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sin 0/O/1/I: se leen en voz alta o se copian a mano
+
+/**
+ * Código de invitación legible: 8 caracteres, sin ambigüedad visual. Usa
+ * `crypto.getRandomValues` (Web Crypto, disponible en Node y en el runtime de
+ * Vercel) en vez de `Math.random()` porque es lo que da de alta una cuenta.
+ */
+export function generateInviteCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return Array.from(bytes, (byte) => CODE_ALPHABET[byte % CODE_ALPHABET.length]).join("");
+}

@@ -47,6 +47,11 @@ export class DrizzleProfessionalRepository implements ProfessionalRepository {
     return row ? toDomain(row) : null;
   }
 
+  async findAll(): Promise<Professional[]> {
+    const rows = await db.select().from(professionals).orderBy(professionals.createdAt);
+    return rows.map(toDomain);
+  }
+
   async updateBufferMinutes(professionalId: string, bufferMinutes: number): Promise<Professional> {
     const [row] = await db
       .update(professionals)
@@ -78,6 +83,24 @@ export class DrizzleProfessionalRepository implements ProfessionalRepository {
     const [row] = await db
       .update(professionals)
       .set({ publishedAt: new Date(), updatedAt: new Date() })
+      .where(eq(professionals.id, professionalId))
+      .returning();
+    return toDomain(row);
+  }
+
+  async setActive(professionalId: string, active: boolean): Promise<Professional> {
+    const [row] = await db
+      .update(professionals)
+      .set({ active, updatedAt: new Date() })
+      .where(eq(professionals.id, professionalId))
+      .returning();
+    return toDomain(row);
+  }
+
+  async setTrialEndsAt(professionalId: string, trialEndsAt: Date | null): Promise<Professional> {
+    const [row] = await db
+      .update(professionals)
+      .set({ trialEndsAt, updatedAt: new Date() })
       .where(eq(professionals.id, professionalId))
       .returning();
     return toDomain(row);

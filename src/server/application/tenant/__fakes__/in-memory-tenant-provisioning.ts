@@ -27,6 +27,14 @@ export class InMemoryInviteCodesRepository implements InviteCodesRepository {
   async findByCode(code: string): Promise<InviteCode | null> {
     return this.codes.find((candidate) => candidate.code === code) ?? null;
   }
+
+  async findAll(): Promise<InviteCode[]> {
+    return [...this.codes];
+  }
+
+  async create(input: { code: string; note: string | null; expiresAt: Date | null }): Promise<InviteCode> {
+    return this.add(input);
+  }
 }
 
 export class InMemoryTenantProvisioningRepository implements TenantProvisioningRepository {

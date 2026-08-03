@@ -43,4 +43,22 @@ export class InMemoryProfessionalRepository implements ProfessionalRepository {
     professional.publishedAt = new Date();
     return professional;
   }
+
+  async findAll(): Promise<Professional[]> {
+    return [...this.professionals];
+  }
+
+  async setActive(professionalId: string, active: boolean): Promise<Professional> {
+    const professional = this.professionals.find((p) => p.id === professionalId);
+    if (!professional) throw new Error("Profesional no encontrada");
+    professional.active = active;
+    return professional;
+  }
+
+  async setTrialEndsAt(professionalId: string, trialEndsAt: Date | null): Promise<Professional> {
+    const professional = this.professionals.find((p) => p.id === professionalId);
+    if (!professional) throw new Error("Profesional no encontrada");
+    professional.trialEndsAt = trialEndsAt;
+    return professional;
+  }
 }

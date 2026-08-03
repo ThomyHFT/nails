@@ -22,8 +22,17 @@ export interface ProvisionTenantResult {
   professional: Professional;
 }
 
+export interface CreateInviteCodeInput {
+  code: string;
+  note: string | null;
+  expiresAt: Date | null;
+}
+
 export interface InviteCodesRepository {
   findByCode(code: string): Promise<InviteCode | null>;
+  /** Todos los códigos, para el panel de superadmin. Sin paginación. */
+  findAll(): Promise<InviteCode[]>;
+  create(input: CreateInviteCodeInput): Promise<InviteCode>;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
-export const userRoleEnum = pgEnum("user_role", ["client", "professional"]);
+export const userRoleEnum = pgEnum("user_role", ["client", "professional", "admin"]);
 
 export const nailLengthEnum = pgEnum("nail_length", ["short", "medium", "long", "single"]);
 

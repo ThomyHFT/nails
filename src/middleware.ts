@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { env } from "@/server/infrastructure/config/env";
+import { isReservedSlug } from "@/server/domain/tenant/reserved-slugs";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 
 export async function middleware(request: NextRequest) {
   const match = request.nextUrl.pathname.match(/^\/([^/]+)\/admin(\/.*)?$/);
 
-  if (!match) {
+  // `/:slug/admin/:path*` también matchea `/api/admin/...`: "api" es una
+  // ruta reservada, no un slug de tenant. Sin este corte, el panel de
+  // superadmin quedaba redirigido a `/api/login`.
+  if (!match || isReservedSlug(match[1])) {
     return NextResponse.next();
   }
 

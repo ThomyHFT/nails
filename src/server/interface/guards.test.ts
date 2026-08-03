@@ -16,7 +16,7 @@ vi.mock("@/server/infrastructure/repositories/drizzle-professional.repository", 
   }),
 }));
 
-const { requireProfessional, requireTenantOwner } = await import("@/server/interface/guards");
+const { requireProfessional, requireTenantOwner, requireAdmin } = await import("@/server/interface/guards");
 
 function makeSession(id: string, role: UserRole) {
   return {
@@ -76,5 +76,28 @@ describe("requireTenantOwner", () => {
     findBySlugMock.mockResolvedValue({ id: "prof-1", ownerUserId: "owner-a" });
 
     await expect(requireTenantOwner("karla")).resolves.toBe(session);
+  });
+});
+
+describe("requireAdmin", () => {
+  it("redirects to /admin/login when there is no session", async () => {
+    authMock.mockResolvedValue(null);
+
+    const error = await requireAdmin().catch((err) => err);
+    expect(isRedirectError(error)).toBe(true);
+  });
+
+  it("redirects to /admin/login when the session role is not admin", async () => {
+    authMock.mockResolvedValue(makeSession("prof-1", "professional"));
+
+    const error = await requireAdmin().catch((err) => err);
+    expect(isRedirectError(error)).toBe(true);
+  });
+
+  it("returns the session when the role is admin", async () => {
+    const session = makeSession("admin-1", "admin");
+    authMock.mockResolvedValue(session);
+
+    await expect(requireAdmin()).resolves.toBe(session);
   });
 });

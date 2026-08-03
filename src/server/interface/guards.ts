@@ -21,6 +21,20 @@ export async function requireProfessional(slug: string): Promise<Session> {
   return session;
 }
 
+/**
+ * Guard del panel de superadmin. Sin lógica de tenant: el admin no tiene
+ * `professional_id`, así que no hay slug que verificar.
+ */
+export async function requireAdmin(): Promise<Session> {
+  const session = await auth();
+
+  if (!session || session.user.role !== "admin") {
+    redirect(`/admin/login`);
+  }
+
+  return session;
+}
+
 export async function requireTenantOwner(slug: string): Promise<Session> {
   const session = await requireProfessional(slug);
 

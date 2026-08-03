@@ -1,8 +1,11 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { inviteCodes } from "@/server/infrastructure/db/schema/invites";
 import type { InviteCode } from "@/server/domain/tenant/invite-code.entity";
-import type { InviteCodesRepository } from "@/server/domain/tenant/tenant-provisioning-repository.port";
+import type {
+  CreateInviteCodeInput,
+  InviteCodesRepository,
+} from "@/server/domain/tenant/tenant-provisioning-repository.port";
 
 function toDomain(row: typeof inviteCodes.$inferSelect): InviteCode {
   return {
@@ -20,5 +23,18 @@ export class DrizzleInviteCodesRepository implements InviteCodesRepository {
   async findByCode(code: string): Promise<InviteCode | null> {
     const [row] = await db.select().from(inviteCodes).where(eq(inviteCodes.code, code)).limit(1);
     return row ? toDomain(row) : null;
+  }
+
+  async findAll(): Promise<InviteCode[]> {
+    const rows = await db.select().from(inviteCodes).orderBy(desc(inviteCodes.createdAt));
+    return rows.map(toDomain);
+  }
+
+  async create(input: CreateInviteCodeInput): Promise<InviteCode> {
+    const [row] = await db
+      .insert(inviteCodes)
+      .values({ code: input.code, note: input.note, expiresAt: input.expiresAt })
+      .returning();
+    return toDomain(row);
   }
 }
