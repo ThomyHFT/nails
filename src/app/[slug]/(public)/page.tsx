@@ -1,6 +1,6 @@
 import { inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { ArrowRight, CalendarDays, MessageCircle, Star } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin, MessageCircle, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import { GetTenantBrandingUseCase } from "@/server/application/branding/get-tenant-branding.use-case";
@@ -8,6 +8,7 @@ import { ListPortfolioUseCase } from "@/server/application/portfolio/list-portfo
 import { ListReviewsUseCase } from "@/server/application/review/list-reviews.use-case";
 import { ListServicesUseCase } from "@/server/application/service/list-services.use-case";
 import { priceFromClp } from "@/server/domain/service/price-from";
+import { isAddressVisible, isPhoneVisible } from "@/server/domain/professional/professional.entity";
 import { ratingSummary } from "@/server/domain/review/rating-summary";
 import { reviewerDisplayName } from "@/server/domain/review/reviewer-display-name";
 import { db } from "@/server/infrastructure/db/client";
@@ -99,8 +100,8 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
           </BrandButton>
         }
         secondaryAction={
-          professional.phone ? (
-            <BrandButton size="lg" variant="outline" fullWidth href={whatsAppUrl(professional.phone)}>
+          isPhoneVisible(professional) ? (
+            <BrandButton size="lg" variant="outline" fullWidth href={whatsAppUrl(professional.phone!)}>
               Contactar
             </BrandButton>
           ) : undefined
@@ -228,18 +229,23 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
         </Section>
       )}
 
-      {professional.phone && (
-        <Section>
-          <ContactCard
-            icon={<MessageCircle className="size-7" />}
-            title="¿Tienes alguna duda especial?"
-            description="Escríbeme directamente por WhatsApp. Estaré feliz de asesorarte sobre qué servicio es el ideal para ti."
-            action={
-              <BrandButton size="lg" href={whatsAppUrl(professional.phone)}>
-                Contactar por WhatsApp
-              </BrandButton>
-            }
-          />
+      {(isPhoneVisible(professional) || isAddressVisible(professional)) && (
+        <Section className="flex flex-col gap-4">
+          {isPhoneVisible(professional) && (
+            <ContactCard
+              icon={<MessageCircle className="size-7" />}
+              title="¿Tienes alguna duda especial?"
+              description="Escríbeme directamente por WhatsApp. Estaré feliz de asesorarte sobre qué servicio es el ideal para ti."
+              action={
+                <BrandButton size="lg" href={whatsAppUrl(professional.phone!)}>
+                  Contactar por WhatsApp
+                </BrandButton>
+              }
+            />
+          )}
+          {isAddressVisible(professional) && (
+            <ContactCard icon={<MapPin className="size-7" />} title="¿Dónde estamos?" description={professional.address} />
+          )}
         </Section>
       )}
     </Container>

@@ -1,4 +1,4 @@
-import type { ProfessionalRepository } from "@/server/domain/professional/professional-repository.port";
+import type { ContactInfoInput, ProfessionalRepository } from "@/server/domain/professional/professional-repository.port";
 import type { Professional } from "@/server/domain/professional/professional.entity";
 
 export class InMemoryProfessionalRepository implements ProfessionalRepository {
@@ -27,6 +27,13 @@ export class InMemoryProfessionalRepository implements ProfessionalRepository {
     const professional = this.professionals.find((p) => p.id === professionalId);
     if (!professional) throw new Error("Profesional no encontrada");
     professional.tagline = tagline;
+    return professional;
+  }
+
+  async updateContactInfo(professionalId: string, input: ContactInfoInput): Promise<Professional> {
+    const professional = this.professionals.find((p) => p.id === professionalId);
+    if (!professional) throw new Error("Profesional no encontrada");
+    Object.assign(professional, input);
     return professional;
   }
 

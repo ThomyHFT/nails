@@ -6,6 +6,9 @@ export interface Professional {
   bio: string | null;
   tagline: string | null;
   phone: string | null;
+  phoneVisible: boolean;
+  address: string | null;
+  addressVisible: boolean;
   instagramHandle: string | null;
   timezone: string;
   active: boolean;
@@ -32,4 +35,14 @@ export function isPubliclyVisible(professional: Professional, now: Date = new Da
   if (professional.publishedAt === null) return false;
   if (professional.trialEndsAt !== null && professional.trialEndsAt <= now) return false;
   return true;
+}
+
+/** El teléfono se muestra en el sitio público solo si existe y la profesional no lo ocultó. */
+export function isPhoneVisible(professional: Professional): boolean {
+  return professional.phone !== null && professional.phoneVisible;
+}
+
+/** La dirección se muestra en el sitio público solo si existe y la profesional no la ocultó. */
+export function isAddressVisible(professional: Professional): boolean {
+  return professional.address !== null && professional.addressVisible;
 }

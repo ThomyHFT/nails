@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isPubliclyVisible, type Professional } from "@/server/domain/professional/professional.entity";
+import {
+  isAddressVisible,
+  isPhoneVisible,
+  isPubliclyVisible,
+  type Professional,
+} from "@/server/domain/professional/professional.entity";
 
 function professional(overrides: Partial<Professional> = {}): Professional {
   return {
@@ -10,6 +15,9 @@ function professional(overrides: Partial<Professional> = {}): Professional {
     bio: null,
     tagline: null,
     phone: null,
+    phoneVisible: true,
+    address: null,
+    addressVisible: true,
     instagramHandle: null,
     timezone: "America/Santiago",
     active: true,
@@ -69,5 +77,33 @@ describe("isPubliclyVisible", () => {
     expect(isPubliclyVisible(professional({ active: false, publishedAt: null, trialEndsAt: expired }), now)).toBe(
       false,
     );
+  });
+});
+
+describe("isPhoneVisible", () => {
+  it("shows the phone when it exists and is not hidden", () => {
+    expect(isPhoneVisible(professional({ phone: "+56911111111", phoneVisible: true }))).toBe(true);
+  });
+
+  it("hides it when there is no phone even if the toggle is on", () => {
+    expect(isPhoneVisible(professional({ phone: null, phoneVisible: true }))).toBe(false);
+  });
+
+  it("hides it when the professional turned it off", () => {
+    expect(isPhoneVisible(professional({ phone: "+56911111111", phoneVisible: false }))).toBe(false);
+  });
+});
+
+describe("isAddressVisible", () => {
+  it("shows the address when it exists and is not hidden", () => {
+    expect(isAddressVisible(professional({ address: "Av. Siempre Viva 742", addressVisible: true }))).toBe(true);
+  });
+
+  it("hides it when there is no address even if the toggle is on", () => {
+    expect(isAddressVisible(professional({ address: null, addressVisible: true }))).toBe(false);
+  });
+
+  it("hides it when the professional turned it off", () => {
+    expect(isAddressVisible(professional({ address: "Av. Siempre Viva 742", addressVisible: false }))).toBe(false);
   });
 });

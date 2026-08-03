@@ -23,9 +23,20 @@ type FormState = {
   logoUrl: string;
   coverImageUrl: string;
   tagline: string;
+  phone: string;
+  phoneVisible: boolean;
+  address: string;
+  addressVisible: boolean;
 };
 
-function toFormState(branding: TenantBranding | null, tagline: string | null): FormState {
+type ContactInfo = {
+  phone: string | null;
+  phoneVisible: boolean;
+  address: string | null;
+  addressVisible: boolean;
+};
+
+function toFormState(branding: TenantBranding | null, tagline: string | null, contact: ContactInfo | null): FormState {
   return {
     archetype: branding?.archetype ?? "minimal_nude",
     primaryColorHex: branding?.primaryColorHex ?? "",
@@ -34,6 +45,10 @@ function toFormState(branding: TenantBranding | null, tagline: string | null): F
     logoUrl: branding?.logoUrl ?? "",
     coverImageUrl: branding?.coverImageUrl ?? "",
     tagline: tagline ?? "",
+    phone: contact?.phone ?? "",
+    phoneVisible: contact?.phoneVisible ?? true,
+    address: contact?.address ?? "",
+    addressVisible: contact?.addressVisible ?? true,
   };
 }
 
@@ -43,13 +58,15 @@ export function MarcaForm({ slug }: { slug: string }) {
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    const [brandingResponse, taglineResponse] = await Promise.all([
+    const [brandingResponse, taglineResponse, contactoResponse] = await Promise.all([
       fetch("/api/branding"),
       fetch("/api/professional/tagline"),
+      fetch("/api/professional/contacto"),
     ]);
     const brandingData = await brandingResponse.json();
     const taglineData = await taglineResponse.json();
-    setForm(toFormState(brandingData.branding ?? null, taglineData.tagline ?? null));
+    const contactoData = await contactoResponse.json();
+    setForm(toFormState(brandingData.branding ?? null, taglineData.tagline ?? null, contactoResponse.ok ? contactoData : null));
   }, []);
 
   useEffect(() => {
@@ -81,7 +98,7 @@ export function MarcaForm({ slug }: { slug: string }) {
     setSaving(true);
     setStatus(null);
 
-    const [brandingResponse, taglineResponse] = await Promise.all([
+    const [brandingResponse, taglineResponse, contactoResponse] = await Promise.all([
       fetch("/api/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -99,11 +116,22 @@ export function MarcaForm({ slug }: { slug: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tagline: form.tagline || null }),
       }),
+      fetch("/api/professional/contacto", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: form.phone || null,
+          phoneVisible: form.phoneVisible,
+          address: form.address || null,
+          addressVisible: form.addressVisible,
+        }),
+      }),
     ]);
 
     setSaving(false);
-    if (!brandingResponse.ok || !taglineResponse.ok) {
-      const data = await (!brandingResponse.ok ? brandingResponse : taglineResponse).json().catch(() => null);
+    if (!brandingResponse.ok || !taglineResponse.ok || !contactoResponse.ok) {
+      const failed = [brandingResponse, taglineResponse, contactoResponse].find((r) => !r.ok);
+      const data = await failed?.json().catch(() => null);
       setStatus(typeof data?.error === "string" ? data.error : "No se pudo guardar la marca.");
       return;
     }
@@ -243,6 +271,54 @@ export function MarcaForm({ slug }: { slug: string }) {
               className="mt-2"
             />
           </details>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="phone">Teléfono de contacto</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="phone"
+              placeholder="+56 9 1234 5678"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setForm({ ...form, phoneVisible: !form.phoneVisible })}
+            >
+              {form.phoneVisible ? "Visible" : "Oculto"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Se usa para el botón de WhatsApp. Si lo ocultas, no aparece en el sitio público aunque esté cargado.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="address">Dirección</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="address"
+              placeholder="Ej: Av. Siempre Viva 742, Santiago"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setForm({ ...form, addressVisible: !form.addressVisible })}
+            >
+              {form.addressVisible ? "Visible" : "Oculta"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Si la ocultas, no aparece en el sitio público aunque esté cargada.
+          </p>
         </div>
 
         <Button type="submit" disabled={saving} className="w-fit">

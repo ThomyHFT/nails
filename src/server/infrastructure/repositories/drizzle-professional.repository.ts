@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { professionals } from "@/server/infrastructure/db/schema/users";
 import type { Professional } from "@/server/domain/professional/professional.entity";
-import type { ProfessionalRepository } from "@/server/domain/professional/professional-repository.port";
+import type { ContactInfoInput, ProfessionalRepository } from "@/server/domain/professional/professional-repository.port";
 
 function toDomain(row: typeof professionals.$inferSelect): Professional {
   return {
@@ -13,6 +13,9 @@ function toDomain(row: typeof professionals.$inferSelect): Professional {
     bio: row.bio,
     tagline: row.tagline,
     phone: row.phone,
+    phoneVisible: row.phoneVisible,
+    address: row.address,
+    addressVisible: row.addressVisible,
     instagramHandle: row.instagramHandle,
     timezone: row.timezone,
     active: row.active,
@@ -57,6 +60,15 @@ export class DrizzleProfessionalRepository implements ProfessionalRepository {
     const [row] = await db
       .update(professionals)
       .set({ tagline, updatedAt: new Date() })
+      .where(eq(professionals.id, professionalId))
+      .returning();
+    return toDomain(row);
+  }
+
+  async updateContactInfo(professionalId: string, input: ContactInfoInput): Promise<Professional> {
+    const [row] = await db
+      .update(professionals)
+      .set({ ...input, updatedAt: new Date() })
       .where(eq(professionals.id, professionalId))
       .returning();
     return toDomain(row);
