@@ -159,7 +159,9 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
           ) : undefined
         }
       />
-      <GalleryLightbox items={portfolioItems.map((item) => ({ id: item.id, imageUrl: item.imageUrl, alt: "" }))} />
+      <GalleryLightbox
+        items={portfolioItems.map((item) => ({ id: item.id, imageUrl: item.imageUrl, caption: item.caption }))}
+      />
     </Section>
   );
 

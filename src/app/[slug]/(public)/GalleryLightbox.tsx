@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaFrame } from "@/components/brand";
 
-type GalleryItem = { id: string; imageUrl: string; alt?: string };
+type GalleryItem = { id: string; imageUrl: string; caption?: string | null };
 
 /**
  * Galería de portafolio con ampliación a pantalla completa. Antes las fotos
@@ -58,7 +58,7 @@ export function GalleryLightbox({ items, className }: { items: GalleryItem[]; cl
             onClick={() => setOpenIndex(index)}
             className="rounded-card text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            <MediaFrame src={item.imageUrl} alt={item.alt ?? ""} ratio="square" />
+            <MediaFrame src={item.imageUrl} alt={item.caption ?? ""} ratio="square" />
           </button>
         ))}
       </div>
@@ -107,13 +107,15 @@ export function GalleryLightbox({ items, className }: { items: GalleryItem[]; cl
             </>
           )}
 
-          {/* eslint-disable-next-line @next/next/no-img-element -- URL de Vercel Blob, no un asset local optimizable */}
-          <img
-            src={current.imageUrl}
-            alt={current.alt ?? ""}
-            onClick={(event) => event.stopPropagation()}
-            className="max-h-full max-w-full rounded-card object-contain shadow-e3"
-          />
+          <div className="flex max-h-full max-w-full flex-col items-center gap-3" onClick={(event) => event.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- URL de Vercel Blob, no un asset local optimizable */}
+            <img
+              src={current.imageUrl}
+              alt={current.caption ?? ""}
+              className="max-h-[80vh] max-w-full rounded-card object-contain shadow-e3"
+            />
+            {current.caption && <p className="text-center text-sm text-background">{current.caption}</p>}
+          </div>
         </div>
       )}
     </>
