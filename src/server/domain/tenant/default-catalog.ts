@@ -1,23 +1,25 @@
 import type { ElementCategory } from "@/server/domain/design/design-element.entity";
 import type { NailLength } from "@/server/domain/service/service-variant.entity";
+import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 
 /**
- * Catálogo con el que arranca un tenant nuevo.
+ * Catálogo con el que arranca un tenant nuevo, por rubro (SPEC 13).
  *
- * Existe porque el diseñador de uñas no tolera un catálogo vacío: para cotizar
- * necesita color y acabado en las diez uñas, así que una cuenta sin colores
- * deja la función diferenciadora del producto inutilizable desde el primer
- * minuto. Sembrar una paleta razonable convierte la configuración inicial en
- * "editar lo que ya está" en vez de "crear todo desde cero".
+ * Para uñas existe porque el diseñador no tolera un catálogo vacío: para
+ * cotizar necesita color y acabado en las diez uñas, así que una cuenta sin
+ * colores deja la función diferenciadora del producto inutilizable desde el
+ * primer minuto. Para el resto de los rubros, sembrar un catálogo razonable
+ * convierte la configuración inicial en "editar lo que ya está" en vez de
+ * "crear todo desde cero" — el mismo criterio, sin diseñador de por medio.
  *
  * Son funciones puras que devuelven data sin ids ni `professionalId`: quien
  * inserta decide esos valores. Las consumen el registro de profesionales y
  * `scripts/seed.ts`, para que ambos produzcan exactamente el mismo punto de
  * partida.
  *
- * Los precios están en CLP y salen de tarifas corrientes de manicuristas
- * independientes en Chile. Son un borrador para que la profesional los ajuste,
- * no una recomendación.
+ * Los precios están en CLP y salen de tarifas corrientes en Chile para cada
+ * rubro. Son un borrador para que la profesional los ajuste, no una
+ * recomendación.
  */
 
 export interface DefaultDesignElement {
@@ -75,7 +77,16 @@ const DECORATIONS: { code: string; label: string; priceDeltaClp: number; extraMi
   { code: "hand-art", label: "Diseño a mano alzada", priceDeltaClp: 6000, extraMinutes: 20 },
 ];
 
-export function defaultDesignElements(): DefaultDesignElement[] {
+/**
+ * Catálogo de diseño de arranque. `[]` para un rubro sin diseñador: no hay
+ * nada que sembrar, y el aprovisionamiento se salta la inserción entera en
+ * vez de insertar una lista vacía.
+ */
+export function defaultDesignElements(vertical: Vertical): DefaultDesignElement[] {
+  if (!verticalModules(vertical).designer) {
+    return [];
+  }
+
   return [
     ...COLORS.map((color, index) => ({
       category: "color" as ElementCategory,
@@ -107,30 +118,87 @@ export function defaultDesignElements(): DefaultDesignElement[] {
   ];
 }
 
-export function defaultServices(): DefaultService[] {
-  return [
-    {
-      name: "Manicure clásica",
-      sortOrder: 0,
-      variants: [
-        { nailLength: "short", priceClp: 12000, durationMinutes: 45 },
-        { nailLength: "medium", priceClp: 15000, durationMinutes: 60 },
-        { nailLength: "long", priceClp: 18000, durationMinutes: 75 },
-      ],
-    },
-    {
-      name: "Uñas acrílicas",
-      sortOrder: 1,
-      variants: [
-        { nailLength: "short", priceClp: 20000, durationMinutes: 90 },
-        { nailLength: "medium", priceClp: 25000, durationMinutes: 105 },
-        { nailLength: "long", priceClp: 30000, durationMinutes: 120 },
-      ],
-    },
-    {
-      name: "Retiro de esmalte",
-      sortOrder: 2,
-      variants: [{ nailLength: "single", priceClp: 5000, durationMinutes: 20 }],
-    },
-  ];
+const NAILS_SERVICES: DefaultService[] = [
+  {
+    name: "Manicure clásica",
+    sortOrder: 0,
+    variants: [
+      { nailLength: "short", priceClp: 12000, durationMinutes: 45 },
+      { nailLength: "medium", priceClp: 15000, durationMinutes: 60 },
+      { nailLength: "long", priceClp: 18000, durationMinutes: 75 },
+    ],
+  },
+  {
+    name: "Uñas acrílicas",
+    sortOrder: 1,
+    variants: [
+      { nailLength: "short", priceClp: 20000, durationMinutes: 90 },
+      { nailLength: "medium", priceClp: 25000, durationMinutes: 105 },
+      { nailLength: "long", priceClp: 30000, durationMinutes: 120 },
+    ],
+  },
+  {
+    name: "Retiro de esmalte",
+    sortOrder: 2,
+    variants: [{ nailLength: "single", priceClp: 5000, durationMinutes: 20 }],
+  },
+];
+
+// Rubros sin eje de largo usan la variante "single" que ya existe en el
+// enum (SPEC 13 §1): un servicio, un precio, sin ventana de migración.
+const BARBERSHOP_SERVICES: DefaultService[] = [
+  {
+    name: "Corte",
+    sortOrder: 0,
+    variants: [{ nailLength: "single", priceClp: 8000, durationMinutes: 30 }],
+  },
+  {
+    name: "Corte + barba",
+    sortOrder: 1,
+    variants: [{ nailLength: "single", priceClp: 12000, durationMinutes: 45 }],
+  },
+  {
+    name: "Barba",
+    sortOrder: 2,
+    variants: [{ nailLength: "single", priceClp: 6000, durationMinutes: 20 }],
+  },
+  {
+    name: "Corte de niño",
+    sortOrder: 3,
+    variants: [{ nailLength: "single", priceClp: 7000, durationMinutes: 30 }],
+  },
+];
+
+const WELLNESS_SERVICES: DefaultService[] = [
+  {
+    name: "Masaje descontracturante 60 min",
+    sortOrder: 0,
+    variants: [{ nailLength: "single", priceClp: 25000, durationMinutes: 60 }],
+  },
+  {
+    name: "Masaje descontracturante 90 min",
+    sortOrder: 1,
+    variants: [{ nailLength: "single", priceClp: 35000, durationMinutes: 90 }],
+  },
+  {
+    name: "Podología clínica",
+    sortOrder: 2,
+    variants: [{ nailLength: "single", priceClp: 20000, durationMinutes: 45 }],
+  },
+  {
+    name: "Masaje relajante",
+    sortOrder: 3,
+    variants: [{ nailLength: "single", priceClp: 22000, durationMinutes: 50 }],
+  },
+];
+
+export function defaultServices(vertical: Vertical): DefaultService[] {
+  switch (vertical) {
+    case "nails":
+      return NAILS_SERVICES;
+    case "barbershop":
+      return BARBERSHOP_SERVICES;
+    case "wellness":
+      return WELLNESS_SERVICES;
+  }
 }

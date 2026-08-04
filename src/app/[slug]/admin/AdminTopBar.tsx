@@ -3,18 +3,21 @@
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { getAdminNavItems } from "@/app/[slug]/admin/admin-nav-items";
+import type { Vertical } from "@/server/domain/tenant/vertical";
 
 export function AdminTopBar({
   slug,
+  vertical,
   pendingReviewsCount = 0,
   onOpen,
 }: {
   slug: string;
+  vertical: Vertical;
   pendingReviewsCount?: number;
   onOpen: () => void;
 }) {
   const pathname = usePathname();
-  const items = getAdminNavItems(slug, pendingReviewsCount);
+  const items = getAdminNavItems(slug, vertical, pendingReviewsCount);
   const current = items.find((item) => (item.exact ? pathname === item.href : (pathname?.startsWith(item.href) ?? false)));
 
   return (

@@ -6,6 +6,7 @@ export function makeProfessional(overrides: Partial<Professional> = {}): Profess
     slug: "unas-por-karla",
     ownerUserId: "user-1",
     businessName: "Uñas por Karla",
+    vertical: "nails",
     bio: null,
     tagline: null,
     phone: null,

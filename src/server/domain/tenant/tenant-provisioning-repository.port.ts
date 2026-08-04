@@ -1,5 +1,6 @@
 import type { InviteCode } from "@/server/domain/tenant/invite-code.entity";
 import type { Professional } from "@/server/domain/professional/professional.entity";
+import type { Vertical } from "@/server/domain/tenant/vertical";
 
 export interface ProvisionTenantInput {
   /** Usuario dueño del tenant. La contraseña llega ya hasheada. */
@@ -11,6 +12,7 @@ export interface ProvisionTenantInput {
   professional: {
     slug: string;
     businessName: string;
+    vertical: Vertical;
     trialEndsAt: Date | null;
   };
   /** Código a marcar como usado en la misma operación. */

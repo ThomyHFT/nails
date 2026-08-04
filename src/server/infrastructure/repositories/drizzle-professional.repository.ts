@@ -10,6 +10,7 @@ function toDomain(row: typeof professionals.$inferSelect): Professional {
     slug: row.slug,
     ownerUserId: row.ownerUserId,
     businessName: row.businessName,
+    vertical: row.vertical,
     bio: row.bio,
     tagline: row.tagline,
     phone: row.phone,

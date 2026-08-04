@@ -2,6 +2,8 @@ import { pgEnum } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["client", "professional", "admin"]);
 
+export const verticalEnum = pgEnum("vertical", ["nails", "barbershop", "wellness"]);
+
 export const nailLengthEnum = pgEnum("nail_length", ["short", "medium", "long", "single"]);
 
 export const exceptionKindEnum = pgEnum("exception_kind", ["blocked", "extra"]);

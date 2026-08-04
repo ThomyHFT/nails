@@ -22,6 +22,7 @@ export default async function SuperadminPage() {
           id: p.id,
           slug: p.slug,
           businessName: p.businessName,
+          vertical: p.vertical,
           active: p.active,
           publishedAt: p.publishedAt ? p.publishedAt.toISOString() : null,
           trialEndsAt: p.trialEndsAt ? p.trialEndsAt.toISOString() : null,

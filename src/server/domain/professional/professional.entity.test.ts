@@ -12,6 +12,7 @@ function professional(overrides: Partial<Professional> = {}): Professional {
     slug: "karla",
     ownerUserId: "user-1",
     businessName: "Uñas por Karla",
+    vertical: "nails",
     bio: null,
     tagline: null,
     phone: null,

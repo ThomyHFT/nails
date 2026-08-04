@@ -1,8 +1,11 @@
+import type { Vertical } from "@/server/domain/tenant/vertical";
+
 export interface Professional {
   id: string;
   slug: string;
   ownerUserId: string;
   businessName: string;
+  vertical: Vertical;
   bio: string | null;
   tagline: string | null;
   phone: string | null;

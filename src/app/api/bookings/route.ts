@@ -4,7 +4,11 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { db } from "@/server/infrastructure/db/client";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
-import { CreateBookingUseCase, SlotNotAvailableError } from "@/server/application/booking/create-booking.use-case";
+import {
+  CreateBookingUseCase,
+  DesignerNotAvailableError,
+  SlotNotAvailableError,
+} from "@/server/application/booking/create-booking.use-case";
 import { GenerateAvailableSlotsUseCase } from "@/server/application/booking/generate-available-slots.use-case";
 import { SendBookingNotificationUseCase } from "@/server/application/notification/send-booking-notification.use-case";
 import { calculateDesignQuote, InvalidDesignElementError } from "@/server/domain/design/calculate-design-quote";
@@ -173,6 +177,7 @@ export async function POST(request: Request) {
   try {
     const booking = await useCase.execute({
       professionalId: professional.id,
+      professionalVertical: professional.vertical,
       timezone: professional.timezone,
       bufferMinutes: professional.bufferMinutes,
       clientUserId: session.user.id,
@@ -206,6 +211,9 @@ export async function POST(request: Request) {
   } catch (err) {
     if (err instanceof SlotNotAvailableError) {
       return NextResponse.json({ error: err.message }, { status: 409 });
+    }
+    if (err instanceof DesignerNotAvailableError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
     }
     throw err;
   }

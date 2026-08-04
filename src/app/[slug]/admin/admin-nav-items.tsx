@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CalendarClock, Images, LayoutDashboard, Palette, Sparkles, Star, Tag } from "lucide-react";
+import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 
 export type AdminNavItem = {
   href: string;
@@ -9,7 +10,7 @@ export type AdminNavItem = {
   badge?: number;
 };
 
-export function getAdminNavItems(slug: string, pendingReviewsCount = 0): AdminNavItem[] {
+export function getAdminNavItems(slug: string, vertical: Vertical, pendingReviewsCount = 0): AdminNavItem[] {
   const base = `/${slug}/admin`;
 
   return [
@@ -17,7 +18,11 @@ export function getAdminNavItems(slug: string, pendingReviewsCount = 0): AdminNa
     { href: `${base}/reservas`, label: "Reservas", icon: <CalendarClock />, exact: false },
     { href: `${base}/disponibilidad`, label: "Disponibilidad", icon: <CalendarClock />, exact: false },
     { href: `${base}/servicios`, label: "Servicios", icon: <Tag />, exact: false },
-    { href: `${base}/diseno`, label: "Catálogo de diseño", icon: <Sparkles />, exact: false },
+    // Esconder el link no alcanza como protección — la ruta /admin/diseno
+    // también corta con notFound() para estos rubros (ver SPEC 13).
+    ...(verticalModules(vertical).designer
+      ? [{ href: `${base}/diseno`, label: "Catálogo de diseño", icon: <Sparkles />, exact: false }]
+      : []),
     { href: `${base}/portafolio`, label: "Portafolio", icon: <Images />, exact: false },
     {
       href: `${base}/opiniones`,

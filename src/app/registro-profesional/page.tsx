@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Check, X } from "lucide-react";
 import { suggestSlug } from "@/server/domain/tenant/reserved-slugs";
-import { ActionLink, AuthCard, BrandButton, Caption, TextField } from "@/components/brand";
+import { VERTICALS, type Vertical } from "@/server/domain/tenant/vertical";
+import { ActionLink, AuthCard, BrandButton, Caption, OptionCard, TextField } from "@/components/brand";
 
 type SlugStatus = "idle" | "checking" | "available" | "taken";
 
 export default function RegistroProfesionalPage() {
   const router = useRouter();
+  const [vertical, setVertical] = useState<Vertical>("nails");
   const [inviteCode, setInviteCode] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [slug, setSlug] = useState("");
@@ -66,7 +68,7 @@ export default function RegistroProfesionalPage() {
       const response = await fetch("/api/professionals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteCode, slug, businessName, name, email, password }),
+        body: JSON.stringify({ inviteCode, slug, businessName, vertical, name, email, password }),
       });
 
       const data = await response.json().catch(() => null);
@@ -91,6 +93,22 @@ export default function RegistroProfesionalPage() {
         footer={<ActionLink href="/">¿Ya tienes cuenta? Inicia sesión desde tu sitio</ActionLink>}
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {/* Primero: decide qué catálogo recibe la cuenta, así que va antes
+              que slug o contraseña — no al final como un trámite extra. */}
+          <div className="flex flex-col gap-2">
+            <span className="t-label text-muted-foreground">¿A qué te dedicas?</span>
+            <div className="grid grid-cols-3 gap-2">
+              {VERTICALS.map((option) => (
+                <OptionCard
+                  key={option.value}
+                  label={option.label}
+                  selected={vertical === option.value}
+                  onSelect={() => setVertical(option.value)}
+                />
+              ))}
+            </div>
+          </div>
+
           <TextField
             label="Código de invitación"
             value={inviteCode}

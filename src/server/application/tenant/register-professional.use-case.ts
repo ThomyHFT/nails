@@ -7,6 +7,7 @@ import type {
   TenantProvisioningRepository,
 } from "@/server/domain/tenant/tenant-provisioning-repository.port";
 import { validateSlug } from "@/server/domain/tenant/reserved-slugs";
+import type { Vertical } from "@/server/domain/tenant/vertical";
 import type { UserRepository } from "@/server/domain/user/user-repository.port";
 
 export const TRIAL_DAYS = 30;
@@ -62,6 +63,7 @@ export interface RegisterProfessionalInput {
   inviteCode: string;
   slug: string;
   businessName: string;
+  vertical: Vertical;
   name: string;
   email: string;
   password: string;
@@ -127,7 +129,7 @@ export class RegisterProfessionalUseCase {
 
     return this.tenantProvisioningRepository.provision({
       owner: { email, passwordHash, name: input.name.trim() },
-      professional: { slug, businessName: input.businessName.trim(), trialEndsAt },
+      professional: { slug, businessName: input.businessName.trim(), vertical: input.vertical, trialEndsAt },
       inviteCodeId: inviteCode.id,
     });
   }

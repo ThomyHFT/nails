@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { InMemoryAvailabilityRepository } from "@/server/application/booking/__fakes__/in-memory-availability-repository";
 import { InMemoryBookingRepository } from "@/server/application/booking/__fakes__/in-memory-booking-repository";
 import { InMemoryDesignRepository } from "@/server/application/design/__fakes__/in-memory-design-repository";
-import { CreateBookingUseCase, SlotNotAvailableError } from "@/server/application/booking/create-booking.use-case";
+import {
+  CreateBookingUseCase,
+  DesignerNotAvailableError,
+  SlotNotAvailableError,
+} from "@/server/application/booking/create-booking.use-case";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
 
 const PROFESSIONAL_ID = "prof-1";
@@ -34,6 +38,7 @@ describe("CreateBookingUseCase", () => {
 
     const booking = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
       clientUserId: "client-1",
@@ -55,6 +60,7 @@ describe("CreateBookingUseCase", () => {
 
     await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
       clientUserId: "client-1",
@@ -68,6 +74,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        professionalVertical: "nails",
         timezone: "UTC",
         bufferMinutes: 0,
         clientUserId: "client-2",
@@ -87,6 +94,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        professionalVertical: "nails",
         timezone: "UTC",
         bufferMinutes: 0,
         clientUserId: "client-1",
@@ -107,6 +115,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        professionalVertical: "nails",
         timezone: "UTC",
         bufferMinutes: 0,
         clientUserId: "client-1",
@@ -159,6 +168,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        professionalVertical: "nails",
         timezone: "UTC",
         bufferMinutes: 0,
         clientUserId: "client-1",
@@ -173,6 +183,7 @@ describe("CreateBookingUseCase", () => {
 
     const booking = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
       clientUserId: "client-1",
@@ -217,6 +228,7 @@ describe("CreateBookingUseCase", () => {
 
     const booking = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
       clientUserId: "client-1",
@@ -264,6 +276,7 @@ describe("CreateBookingUseCase", () => {
 
     const booking = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
       clientUserId: "client-1",
@@ -277,5 +290,38 @@ describe("CreateBookingUseCase", () => {
 
     const savedDesign = bookingRepository.designs.find((d) => d.id === booking.designId);
     expect(savedDesign?.referenceImageUrl).toBeNull();
+  });
+
+  it("rejects a designPayload for a professional whose vertical has no designer", async () => {
+    const { useCase, availabilityRepository } = makeUseCase();
+    await withMondayRule(availabilityRepository);
+
+    const payload: NailDesignPayload = {
+      version: 2,
+      shape: "almond",
+      technique: null,
+      nails: Array.from({ length: 10 }, () => ({
+        baseColorCode: "red",
+        baseColorHex: "#FF0000",
+        finish: "matte",
+        decorations: [],
+      })),
+    };
+
+    await expect(
+      useCase.execute({
+        professionalId: PROFESSIONAL_ID,
+        professionalVertical: "barbershop",
+        timezone: "UTC",
+        bufferMinutes: 0,
+        clientUserId: "client-1",
+        serviceVariantId: "variant-1",
+        date: MONDAY,
+        startsAt: "2026-08-10T09:00:00.000Z",
+        priceClp: 15_000,
+        durationMinutes: 60,
+        designPayload: payload,
+      }),
+    ).rejects.toBeInstanceOf(DesignerNotAvailableError);
   });
 });

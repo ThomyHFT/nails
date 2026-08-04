@@ -71,6 +71,7 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [10](specs/10-pulido-admin.md) | Pulido admin | Implemented |
 | [11](specs/11-registro-profesionales.md) | Auto-registro de profesionales, código de invitación, verificación de correo, período de prueba | Implemented |
 | [12](specs/12-panel-superadmin.md) | Panel `/admin`: activar/desactivar cuentas, extender prueba, generar y listar códigos de invitación | Implemented |
+| [13](specs/13-multi-rubro.md) | Multi-rubro: `professionals.vertical`, diseñador como módulo opcional, eje de variantes genérico, marca neutra | Fase 1 implementada |
 
 El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` solo tiene filas de seed; `designs` ya tiene escritor real desde el SPEC 07 (`reference_image_url`). `professionals.tagline` existe desde el SPEC 08.
 

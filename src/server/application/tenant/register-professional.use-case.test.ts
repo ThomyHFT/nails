@@ -40,6 +40,7 @@ function validInput(overrides: Partial<Parameters<RegisterProfessionalUseCase["e
     inviteCode: "WELCOME1",
     slug: "unas-por-karla",
     businessName: "Uñas por Karla",
+    vertical: "nails" as const,
     name: "Karla",
     email: "karla@example.com",
     password: "password123",
@@ -58,6 +59,15 @@ describe("RegisterProfessionalUseCase", () => {
     expect(result.professional.slug).toBe("unas-por-karla");
     expect(result.professional.publishedAt).toBeNull();
     expect(tenantProvisioningRepository.provisioned).toHaveLength(1);
+  });
+
+  it("passes the chosen vertical through to provisioning", async () => {
+    const { inviteCodesRepository, useCase, tenantProvisioningRepository } = setup();
+    inviteCodesRepository.add({ code: "WELCOME1" });
+
+    await useCase.execute(validInput({ vertical: "barbershop" }));
+
+    expect(tenantProvisioningRepository.provisioned[0].professional.vertical).toBe("barbershop");
   });
 
   it("sets the trial to expire TRIAL_DAYS from now", async () => {
@@ -157,6 +167,7 @@ describe("RegisterProfessionalUseCase", () => {
       slug: "unas-por-karla",
       ownerUserId: "owner-existing",
       businessName: "Otra",
+      vertical: "nails",
       bio: null,
       tagline: null,
       phone: null,

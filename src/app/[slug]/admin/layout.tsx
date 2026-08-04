@@ -29,7 +29,7 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <AdminNav slug={slug} pendingReviewsCount={pendingReviewsCount} />
+      <AdminNav slug={slug} vertical={professional?.vertical ?? "nails"} pendingReviewsCount={pendingReviewsCount} />
       <main className="flex min-w-0 flex-1 flex-col gap-6 px-6 py-8 lg:px-10">
         {professional && (
           <AccountBanners isPublished={professional.publishedAt !== null} daysUntilTrialEnds={daysUntilTrialEnds} />

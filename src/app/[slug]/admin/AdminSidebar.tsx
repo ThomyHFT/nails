@@ -6,20 +6,23 @@ import { LogOut } from "lucide-react";
 import { SidebarItem } from "@/components/brand";
 import { cn } from "@/lib/utils";
 import { getAdminNavItems } from "@/app/[slug]/admin/admin-nav-items";
+import type { Vertical } from "@/server/domain/tenant/vertical";
 
 export function AdminSidebar({
   slug,
+  vertical,
   pendingReviewsCount = 0,
   open = false,
   onClose,
 }: {
   slug: string;
+  vertical: Vertical;
   pendingReviewsCount?: number;
   open?: boolean;
   onClose?: () => void;
 }) {
   const pathname = usePathname();
-  const items = getAdminNavItems(slug, pendingReviewsCount);
+  const items = getAdminNavItems(slug, vertical, pendingReviewsCount);
 
   const nav = (
     <nav className="flex h-full w-60 shrink-0 flex-col gap-1 px-3 py-6">

@@ -18,6 +18,7 @@ function professionalToDomain(row: typeof professionals.$inferSelect): Professio
     slug: row.slug,
     ownerUserId: row.ownerUserId,
     businessName: row.businessName,
+    vertical: row.vertical,
     bio: row.bio,
     tagline: row.tagline,
     phone: row.phone,
@@ -48,13 +49,13 @@ export class DrizzleTenantProvisioningRepository implements TenantProvisioningRe
     const userId = crypto.randomUUID();
     const professionalId = crypto.randomUUID();
 
-    const catalogElements = defaultDesignElements().map((element) => ({
+    const catalogElements = defaultDesignElements(input.professional.vertical).map((element) => ({
       id: crypto.randomUUID(),
       professionalId,
       ...element,
     }));
 
-    const catalogServices = defaultServices().map((service) => ({
+    const catalogServices = defaultServices(input.professional.vertical).map((service) => ({
       id: crypto.randomUUID(),
       professionalId,
       name: service.name,
@@ -77,11 +78,14 @@ export class DrizzleTenantProvisioningRepository implements TenantProvisioningRe
           slug: input.professional.slug,
           ownerUserId: userId,
           businessName: input.professional.businessName,
+          vertical: input.professional.vertical,
           publishedAt: null,
           trialEndsAt: input.professional.trialEndsAt,
         })
         .returning(),
-      db.insert(designElements).values(catalogElements),
+      // Sin diseñador (verticalModules) no hay catálogo que sembrar: se omite
+      // la inserción entera en vez de insertar una lista vacía.
+      ...(catalogElements.length > 0 ? [db.insert(designElements).values(catalogElements)] : []),
       ...catalogServices.map((service) =>
         db.insert(services).values({
           id: service.id,

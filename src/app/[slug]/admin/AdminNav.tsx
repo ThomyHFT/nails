@@ -2,10 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import type { Vertical } from "@/server/domain/tenant/vertical";
 import { AdminTopBar } from "@/app/[slug]/admin/AdminTopBar";
 import { AdminSidebar } from "@/app/[slug]/admin/AdminSidebar";
 
-export function AdminNav({ slug, pendingReviewsCount = 0 }: { slug: string; pendingReviewsCount?: number }) {
+export function AdminNav({
+  slug,
+  vertical,
+  pendingReviewsCount = 0,
+}: {
+  slug: string;
+  vertical: Vertical;
+  pendingReviewsCount?: number;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const [lastPathname, setLastPathname] = useState(pathname);
@@ -28,9 +37,10 @@ export function AdminNav({ slug, pendingReviewsCount = 0 }: { slug: string; pend
 
   return (
     <>
-      <AdminTopBar slug={slug} pendingReviewsCount={pendingReviewsCount} onOpen={() => setIsOpen(true)} />
+      <AdminTopBar slug={slug} vertical={vertical} pendingReviewsCount={pendingReviewsCount} onOpen={() => setIsOpen(true)} />
       <AdminSidebar
         slug={slug}
+        vertical={vertical}
         pendingReviewsCount={pendingReviewsCount}
         open={isOpen}
         onClose={() => setIsOpen(false)}

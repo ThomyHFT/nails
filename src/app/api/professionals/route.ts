@@ -24,6 +24,7 @@ const registerSchema = z.object({
   inviteCode: z.string().min(1),
   slug: z.string().min(1),
   businessName: z.string().min(1),
+  vertical: z.enum(["nails", "barbershop", "wellness"]),
   name: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(1),

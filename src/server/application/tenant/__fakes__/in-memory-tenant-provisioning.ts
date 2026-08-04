@@ -50,6 +50,7 @@ export class InMemoryTenantProvisioningRepository implements TenantProvisioningR
       slug: input.professional.slug,
       ownerUserId: `user-${id}`,
       businessName: input.professional.businessName,
+      vertical: input.professional.vertical,
       bio: null,
       tagline: null,
       phone: null,

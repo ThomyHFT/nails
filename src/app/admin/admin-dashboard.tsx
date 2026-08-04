@@ -7,11 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminCard, Chip, Overline } from "@/components/brand";
 import { inviteCodeStatus, type InviteCode } from "@/server/domain/tenant/invite-code.entity";
+import { VERTICALS, type Vertical } from "@/server/domain/tenant/vertical";
+
+const VERTICAL_LABELS: Record<Vertical, string> = Object.fromEntries(
+  VERTICALS.map((v) => [v.value, v.label]),
+) as Record<Vertical, string>;
 
 interface ProfessionalRow {
   id: string;
   slug: string;
   businessName: string;
+  vertical: Vertical;
   active: boolean;
   publishedAt: string | null;
   trialEndsAt: string | null;
@@ -139,6 +145,9 @@ export function AdminDashboard({
                   <Overline>Negocio</Overline>
                 </th>
                 <th className="p-2">
+                  <Overline>Rubro</Overline>
+                </th>
+                <th className="p-2">
                   <Overline>Estado</Overline>
                 </th>
                 <th className="p-2">
@@ -164,6 +173,7 @@ export function AdminDashboard({
                       </Link>
                       <div className="text-sm text-muted-foreground">/{professional.slug}</div>
                     </td>
+                    <td className="p-2 text-sm text-muted-foreground">{VERTICAL_LABELS[professional.vertical]}</td>
                     <td className="p-2">
                       <Chip tone={professional.active ? "success" : "danger"}>
                         {professional.active ? "Activo" : "Inactivo"}

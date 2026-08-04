@@ -27,6 +27,7 @@ async function setup({ withEmailSender = true }: { withEmailSender?: boolean } =
     slug: "fran-unas",
     ownerUserId: "owner-1",
     businessName: "Fran Uñas",
+    vertical: "nails",
     bio: null,
     tagline: null,
     phone: null,

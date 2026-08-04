@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 import {
   ActionLink,
   BookingSummaryCard,
@@ -57,7 +58,7 @@ const NAIL_LENGTH_LABELS: Record<string, string> = {
   single: "Única",
 };
 
-const STEPS: { id: Step; label: string }[] = [
+const ALL_STEPS: { id: Step; label: string }[] = [
   { id: "select", label: "Servicio" },
   { id: "design", label: "Diseño" },
   { id: "schedule", label: "Fecha y hora" },
@@ -114,12 +115,12 @@ function dateAt(month: string, day: number): string {
 const WEEKDAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 /** Barra de progreso de los tres pasos. Da contexto de dónde estoy y cuánto falta. */
-function StepIndicator({ current }: { current: Step }) {
-  const currentIndex = STEPS.findIndex((step) => step.id === current);
+function StepIndicator({ current, steps }: { current: Step; steps: typeof ALL_STEPS }) {
+  const currentIndex = steps.findIndex((step) => step.id === current);
 
   return (
     <ol className="flex items-center gap-2">
-      {STEPS.map((step, index) => {
+      {steps.map((step, index) => {
         const done = index < currentIndex;
         const active = index === currentIndex;
         return (
@@ -144,22 +145,29 @@ export function ReservarForm({
   services,
   initialServiceId,
   initialVariantId,
+  vertical,
 }: {
   slug: string;
   services: ServiceOption[];
   initialServiceId?: string;
   initialVariantId?: string;
+  vertical: Vertical;
 }) {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
   const [step, setStep] = useState<Step>("select");
 
-  function goToDesignStep() {
+  const hasDesigner = verticalModules(vertical).designer;
+  const steps = hasDesigner ? ALL_STEPS : ALL_STEPS.filter((s) => s.id !== "design");
+
+  // Sin diseñador el flujo salta directo a agendar: el paso "design" no
+  // existe para este rubro, así que no hay nada que mostrar en el medio.
+  function goToNextStep() {
     if (sessionStatus !== "authenticated") {
       router.push(`/${slug}/login?next=${encodeURIComponent(`/${slug}/reservar`)}`);
       return;
     }
-    setStep("design");
+    setStep(hasDesigner ? "design" : "schedule");
   }
 
   const [serviceId, setServiceId] = useState(initialServiceId ?? services[0]?.id ?? "");
@@ -295,7 +303,7 @@ export function ReservarForm({
       <Container size="md" className="flex flex-col gap-8 px-5 py-10">
         <div className="flex flex-col gap-5">
           <Display as="h1">Reservar hora</Display>
-          <StepIndicator current="select" />
+          <StepIndicator current="select" steps={steps} />
         </div>
 
         {/* El rótulo no repite "Servicio" del indicador de pasos: dos veces la
@@ -380,7 +388,7 @@ export function ReservarForm({
         <BrandButton
           size="lg"
           disabled={!variantId}
-          onClick={goToDesignStep}
+          onClick={goToNextStep}
           icon={<ArrowRight className="size-4" />}
         >
           Continuar
@@ -394,7 +402,7 @@ export function ReservarForm({
       <Container size="md" className="flex flex-col gap-8 px-5 py-10">
         <div className="flex flex-col gap-5">
           <Display as="h1">Diseña tus uñas</Display>
-          <StepIndicator current="design" />
+          <StepIndicator current="design" steps={steps} />
         </div>
 
         <NailDesigner slug={slug} onChange={setDesign} />
@@ -481,18 +489,20 @@ export function ReservarForm({
     <Container size="md" className="flex flex-col">
       <div className="flex flex-col gap-8 px-5 py-10">
         <div className="flex flex-col gap-5">
-          <BrandButton
-            variant="ghost"
-            size="sm"
-            className="-ml-4 self-start"
-            onClick={() => setStep("design")}
-            icon={<ArrowLeft className="size-4" />}
-            iconPosition="start"
-          >
-            Editar diseño
-          </BrandButton>
+          {hasDesigner && (
+            <BrandButton
+              variant="ghost"
+              size="sm"
+              className="-ml-4 self-start"
+              onClick={() => setStep("design")}
+              icon={<ArrowLeft className="size-4" />}
+              iconPosition="start"
+            >
+              Editar diseño
+            </BrandButton>
+          )}
           <Display as="h1">Casi listo, elige la hora.</Display>
-          <StepIndicator current="schedule" />
+          <StepIndicator current="schedule" steps={steps} />
         </div>
 
         <div className="flex flex-col gap-3">

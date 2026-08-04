@@ -64,6 +64,7 @@ export default async function ReservarPage({
       services={serviceOptions}
       initialServiceId={initialService?.id}
       initialVariantId={initialVariantId}
+      vertical={professional.vertical}
     />
   );
 }

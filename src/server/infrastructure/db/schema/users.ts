@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { userRoleEnum } from "@/server/infrastructure/db/schema/enums";
+import { userRoleEnum, verticalEnum } from "@/server/infrastructure/db/schema/enums";
 
 export const users = pgTable("users", {
   id: uuid("id")
@@ -58,6 +58,9 @@ export const professionals = pgTable("professionals", {
     .unique()
     .references(() => users.id),
   businessName: text("business_name").notNull(),
+  // Default 'nails' porque los tenants que existen hoy son de uñas y esta
+  // columna nace sin backfill (ver SPEC 13).
+  vertical: verticalEnum("vertical").notNull().default("nails"),
   bio: text("bio"),
   tagline: text("tagline"),
   phone: text("phone"),

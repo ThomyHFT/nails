@@ -4,6 +4,7 @@ import type { Booking } from "@/server/domain/booking/booking.entity";
 import { calculateDesignQuote } from "@/server/domain/design/calculate-design-quote";
 import type { DesignRepository } from "@/server/domain/design/design-repository.port";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
+import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 import { GenerateAvailableSlotsUseCase } from "@/server/application/booking/generate-available-slots.use-case";
 
 export class SlotNotAvailableError extends Error {
@@ -13,8 +14,16 @@ export class SlotNotAvailableError extends Error {
   }
 }
 
+export class DesignerNotAvailableError extends Error {
+  constructor() {
+    super("Este negocio no tiene diseñador de uñas");
+    this.name = "DesignerNotAvailableError";
+  }
+}
+
 export interface CreateBookingInput {
   professionalId: string;
+  professionalVertical: Vertical;
   timezone: string;
   bufferMinutes: number;
   clientUserId: string;
@@ -37,6 +46,10 @@ export class CreateBookingUseCase {
   ) {}
 
   async execute(input: CreateBookingInput): Promise<Booking> {
+    if (input.designPayload && !verticalModules(input.professionalVertical).designer) {
+      throw new DesignerNotAvailableError();
+    }
+
     let extraPriceClp = 0;
     let extraMinutes = 0;
 

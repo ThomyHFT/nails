@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { defaultDesignElements, defaultServices } from "@/server/domain/tenant/default-catalog";
+import { VERTICALS, verticalModules } from "@/server/domain/tenant/vertical";
 
 const HEX = /^#[0-9a-f]{6}$/;
 
 describe("defaultDesignElements", () => {
-  const elements = defaultDesignElements();
+  const elements = defaultDesignElements("nails");
 
   it("ships colors, finishes and decorations", () => {
     const categories = new Set(elements.map((element) => element.category));
@@ -57,33 +58,44 @@ describe("defaultDesignElements", () => {
       expect(orders).toEqual(orders.map((_, index) => index));
     }
   });
+
+  it("is empty for verticals without a designer", () => {
+    for (const { value } of VERTICALS) {
+      if (verticalModules(value).designer) continue;
+      expect(defaultDesignElements(value)).toEqual([]);
+    }
+  });
 });
 
 describe("defaultServices", () => {
-  const services = defaultServices();
+  for (const { value, label } of VERTICALS) {
+    describe(label, () => {
+      const services = defaultServices(value);
 
-  it("ships at least one service with variants", () => {
-    expect(services.length).toBeGreaterThan(0);
-    expect(services.every((service) => service.variants.length > 0)).toBe(true);
-  });
+      it("ships at least one service with variants", () => {
+        expect(services.length).toBeGreaterThan(0);
+        expect(services.every((service) => service.variants.length > 0)).toBe(true);
+      });
 
-  it("uses positive integers for price and duration", () => {
-    for (const service of services) {
-      for (const variant of service.variants) {
-        expect(Number.isInteger(variant.priceClp)).toBe(true);
-        expect(variant.priceClp).toBeGreaterThan(0);
-        expect(Number.isInteger(variant.durationMinutes)).toBe(true);
-        expect(variant.durationMinutes).toBeGreaterThan(0);
-      }
-    }
-  });
+      it("uses positive integers for price and duration", () => {
+        for (const service of services) {
+          for (const variant of service.variants) {
+            expect(Number.isInteger(variant.priceClp)).toBe(true);
+            expect(variant.priceClp).toBeGreaterThan(0);
+            expect(Number.isInteger(variant.durationMinutes)).toBe(true);
+            expect(variant.durationMinutes).toBeGreaterThan(0);
+          }
+        }
+      });
 
-  it("never repeats a nail length within a service", () => {
-    // El esquema tiene un índice único (service_id, nail_length): un duplicado
-    // reventaría la inserción del registro.
-    for (const service of services) {
-      const lengths = service.variants.map((variant) => variant.nailLength);
-      expect(new Set(lengths).size, `largos repetidos en ${service.name}`).toBe(lengths.length);
-    }
-  });
+      it("never repeats a nail length within a service", () => {
+        // El esquema tiene un índice único (service_id, nail_length): un
+        // duplicado reventaría la inserción del registro.
+        for (const service of services) {
+          const lengths = service.variants.map((variant) => variant.nailLength);
+          expect(new Set(lengths).size, `largos repetidos en ${service.name}`).toBe(lengths.length);
+        }
+      });
+    });
+  }
 });
