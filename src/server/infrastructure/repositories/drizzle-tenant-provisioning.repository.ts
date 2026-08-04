@@ -5,6 +5,12 @@ import { professionals, users } from "@/server/infrastructure/db/schema/users";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { designElements } from "@/server/infrastructure/db/schema/designs";
 import { defaultDesignElements, defaultServices } from "@/server/domain/tenant/default-catalog";
+
+// SPEC 13 fase 2, paso 3: cada variante sembrada necesita un valor del enum
+// legado `nail_length` para no violar su índice único mientras la columna
+// sigue NOT NULL. La posición dentro del servicio alcanza — el catálogo por
+// defecto nunca siembra más de 4 variantes por servicio.
+const LEGACY_NAIL_LENGTHS = ["short", "medium", "long", "single"] as const;
 import type { Professional } from "@/server/domain/professional/professional.entity";
 import type {
   ProvisionTenantInput,
@@ -95,11 +101,12 @@ export class DrizzleTenantProvisioningRepository implements TenantProvisioningRe
         }),
       ),
       ...catalogServices.flatMap((service) =>
-        service.variants.map((variant) =>
+        service.variants.map((variant, index) =>
           db.insert(serviceVariants).values({
             id: variant.id,
             serviceId: service.id,
-            nailLength: variant.nailLength,
+            nailLength: LEGACY_NAIL_LENGTHS[index],
+            label: variant.label,
             priceClp: variant.priceClp,
             durationMinutes: variant.durationMinutes,
           }),

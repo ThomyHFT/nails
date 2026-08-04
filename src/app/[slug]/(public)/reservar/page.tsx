@@ -27,7 +27,7 @@ export default async function ReservarPage({
       serviceId: services.id,
       serviceName: services.name,
       variantId: serviceVariants.id,
-      nailLength: serviceVariants.nailLength,
+      label: serviceVariants.label,
       priceClp: serviceVariants.priceClp,
       durationMinutes: serviceVariants.durationMinutes,
     })
@@ -44,7 +44,7 @@ export default async function ReservarPage({
     }
     serviceMap.get(row.serviceId)!.variants.push({
       id: row.variantId,
-      nailLength: row.nailLength,
+      label: row.label ?? "—",
       priceClp: row.priceClp,
       durationMinutes: row.durationMinutes,
     });

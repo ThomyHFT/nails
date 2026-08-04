@@ -1,5 +1,5 @@
 import type { Service, ServiceWithVariants } from "@/server/domain/service/service.entity";
-import type { NailLength, ServiceVariant } from "@/server/domain/service/service-variant.entity";
+import type { ServiceVariant } from "@/server/domain/service/service-variant.entity";
 
 export interface NewService {
   professionalId: string;
@@ -19,7 +19,7 @@ export interface ServicePatch {
 
 export interface NewServiceVariant {
   serviceId: string;
-  nailLength: NailLength;
+  label: string;
   priceClp: number;
   durationMinutes: number;
 }

@@ -15,7 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
+import { verticalCopy, verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 import {
   ActionLink,
   BookingSummaryCard,
@@ -37,7 +37,7 @@ import { NailDesigner, type NailDesignerResult } from "@/app/[slug]/(public)/res
 
 export type VariantOption = {
   id: string;
-  nailLength: string;
+  label: string;
   priceClp: number;
   durationMinutes: number;
 };
@@ -50,13 +50,6 @@ export type ServiceOption = {
 
 type Slot = { startsAt: string; endsAt: string };
 type Step = "select" | "design" | "schedule" | "confirmed";
-
-const NAIL_LENGTH_LABELS: Record<string, string> = {
-  short: "Corta",
-  medium: "Media",
-  long: "Larga",
-  single: "Única",
-};
 
 const ALL_STEPS: { id: Step; label: string }[] = [
   { id: "select", label: "Servicio" },
@@ -158,6 +151,7 @@ export function ReservarForm({
   const [step, setStep] = useState<Step>("select");
 
   const hasDesigner = verticalModules(vertical).designer;
+  const variantAxisLabel = verticalCopy(vertical).variantAxisLabel;
   const steps = hasDesigner ? ALL_STEPS : ALL_STEPS.filter((s) => s.id !== "design");
 
   // Sin diseñador el flujo salta directo a agendar: el paso "design" no
@@ -347,7 +341,7 @@ export function ReservarForm({
 
         {service && service.variants.length > 0 && (
           <div className="flex flex-col gap-3">
-            <Overline>Largo</Overline>
+            <Overline>{variantAxisLabel}</Overline>
             <div className="flex flex-wrap gap-2">
               {service.variants.map((v) => (
                 <SelectChip
@@ -358,7 +352,7 @@ export function ReservarForm({
                     loadDaysWithSlots(v.id);
                   }}
                 >
-                  {NAIL_LENGTH_LABELS[v.nailLength] ?? v.nailLength} · ${v.priceClp.toLocaleString("es-CL")} ·{" "}
+                  {v.label} · ${v.priceClp.toLocaleString("es-CL")} ·{" "}
                   {v.durationMinutes} min
                 </SelectChip>
               ))}
@@ -454,7 +448,7 @@ export function ReservarForm({
           serviceName={service?.name ?? "Servicio"}
           variantLabel={
             variant
-              ? `Largo ${NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength} · ${totalMinutes} min`
+              ? `${variantAxisLabel} ${variant.label} · ${totalMinutes} min`
               : undefined
           }
           priceClp={totalPriceClp}
@@ -616,7 +610,7 @@ export function ReservarForm({
               serviceName={service?.name ?? "Servicio"}
               variantLabel={
                 variant
-                  ? `Largo ${NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength} · ${totalMinutes} min`
+                  ? `${variantAxisLabel} ${variant.label} · ${totalMinutes} min`
                   : undefined
               }
               priceClp={totalPriceClp}

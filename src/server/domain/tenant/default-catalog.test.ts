@@ -88,12 +88,12 @@ describe("defaultServices", () => {
         }
       });
 
-      it("never repeats a nail length within a service", () => {
-        // El esquema tiene un índice único (service_id, nail_length): un
-        // duplicado reventaría la inserción del registro.
+      it("never repeats a label within a service", () => {
+        // ConfigureServicesUseCase rechaza una etiqueta repetida dentro del
+        // mismo servicio (DuplicateVariantLabelError).
         for (const service of services) {
-          const lengths = service.variants.map((variant) => variant.nailLength);
-          expect(new Set(lengths).size, `largos repetidos en ${service.name}`).toBe(lengths.length);
+          const labels = service.variants.map((variant) => variant.label);
+          expect(new Set(labels).size, `etiquetas repetidas en ${service.name}`).toBe(labels.length);
         }
       });
     });

@@ -1,5 +1,5 @@
 import type { Service } from "@/server/domain/service/service.entity";
-import type { NailLength, ServiceVariant } from "@/server/domain/service/service-variant.entity";
+import type { ServiceVariant } from "@/server/domain/service/service-variant.entity";
 import type {
   NewService,
   NewServiceVariant,
@@ -7,11 +7,13 @@ import type {
   ServiceVariantPatch,
   ServicesRepository,
 } from "@/server/domain/service/services-repository.port";
-import { ServiceHasBookingsError, VariantHasBookingsError } from "@/server/domain/service/service-errors";
+import {
+  ServiceHasBookingsError,
+  VariantHasBookingsError,
+  VariantLimitDuringMigrationError,
+} from "@/server/domain/service/service-errors";
 
-export { ServiceHasBookingsError, VariantHasBookingsError };
-
-const NAIL_LENGTHS: NailLength[] = ["short", "medium", "long", "single"];
+export { ServiceHasBookingsError, VariantHasBookingsError, VariantLimitDuringMigrationError };
 
 export class InvalidServiceNameError extends Error {
   constructor() {
@@ -34,17 +36,17 @@ export class InvalidDurationError extends Error {
   }
 }
 
-export class InvalidNailLengthError extends Error {
+export class InvalidVariantLabelError extends Error {
   constructor() {
-    super("nail_length no existe");
-    this.name = "InvalidNailLengthError";
+    super("El nombre de la variante no puede estar vacío");
+    this.name = "InvalidVariantLabelError";
   }
 }
 
-export class DuplicateNailLengthError extends Error {
+export class DuplicateVariantLabelError extends Error {
   constructor() {
-    super("Ya existe una variante con este largo para este servicio");
-    this.name = "DuplicateNailLengthError";
+    super("Ya existe una variante con ese nombre para este servicio");
+    this.name = "DuplicateVariantLabelError";
   }
 }
 
@@ -112,8 +114,9 @@ export class ConfigureServicesUseCase {
   }
 
   async createVariant(input: CreateVariantInput): Promise<ServiceVariant> {
-    if (!NAIL_LENGTHS.includes(input.nailLength)) {
-      throw new InvalidNailLengthError();
+    const label = input.label.trim();
+    if (!label) {
+      throw new InvalidVariantLabelError();
     }
     assertPositiveInteger(input.priceClp, InvalidPriceError);
     assertPositiveInteger(input.durationMinutes, InvalidDurationError);
@@ -122,13 +125,13 @@ export class ConfigureServicesUseCase {
     if (!service) {
       throw new ServiceNotFoundError();
     }
-    if (service.variants.some((v) => v.nailLength === input.nailLength)) {
-      throw new DuplicateNailLengthError();
+    if (service.variants.some((v) => v.label === label)) {
+      throw new DuplicateVariantLabelError();
     }
 
     return this.servicesRepository.createVariant({
       serviceId: input.serviceId,
-      nailLength: input.nailLength,
+      label,
       priceClp: input.priceClp,
       durationMinutes: input.durationMinutes,
     });

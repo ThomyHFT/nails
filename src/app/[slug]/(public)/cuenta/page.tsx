@@ -7,7 +7,9 @@ import type { BookingStatus } from "@/server/domain/booking/booking.entity";
 import type { Review } from "@/server/domain/review/review.entity";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
+import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { DrizzleReviewsRepository } from "@/server/infrastructure/repositories/drizzle-reviews.repository";
+import { verticalCopy } from "@/server/domain/tenant/vertical";
 import {
   BrandButton,
   Caption,
@@ -33,13 +35,6 @@ const BOOKING_STATUS: Record<BookingStatus, { label: string; tone: "success" | "
   completed: { label: "Completada", tone: "neutral" },
   cancelled: { label: "Cancelada", tone: "danger" },
   no_show: { label: "No asististe", tone: "danger" },
-};
-
-const NAIL_LENGTH_LABELS: Record<string, string> = {
-  short: "Corta",
-  medium: "Media",
-  long: "Larga",
-  single: "Única",
 };
 
 function formatDateTime(date: Date) {
@@ -82,13 +77,16 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
     redirect(`/${slug}/login`);
   }
 
+  const professional = await new DrizzleProfessionalRepository().findBySlug(slug);
+  const variantAxisLabel = verticalCopy(professional?.vertical ?? "nails").variantAxisLabel;
+
   const bookingRepository = new DrizzleBookingRepository();
   const bookings = await bookingRepository.listByClient(session.user.id);
 
   const variantIds = Array.from(new Set(bookings.map((b) => b.serviceVariantId)));
   const variantRows = variantIds.length
     ? await db
-        .select({ id: serviceVariants.id, nailLength: serviceVariants.nailLength, serviceName: services.name })
+        .select({ id: serviceVariants.id, label: serviceVariants.label, serviceName: services.name })
         .from(serviceVariants)
         .innerJoin(services, eq(serviceVariants.serviceId, services.id))
         .where(inArray(serviceVariants.id, variantIds))
@@ -131,7 +129,9 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
                     <div className="flex flex-col gap-1">
                       <Title>{variant ? variant.serviceName : "Servicio"}</Title>
                       {variant && (
-                        <Caption>Largo {NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength}</Caption>
+                        <Caption>
+                          {variantAxisLabel} {variant.label ?? "—"}
+                        </Caption>
                       )}
                     </div>
                     <StatusBadge tone={status.tone}>{status.label}</StatusBadge>

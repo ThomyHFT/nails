@@ -49,12 +49,6 @@ const STATUS_TONES: Record<BookingStatus, "success" | "warning" | "danger" | "ne
 
 const STATUS_ORDER: BookingStatus[] = ["pending", "confirmed", "completed", "no_show", "cancelled"];
 
-const NAIL_LENGTH_LABELS: Record<string, string> = {
-  short: "Corta",
-  medium: "Media",
-  long: "Larga",
-  single: "Única",
-};
 
 function formatDateTime(date: Date) {
   return date.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
@@ -81,7 +75,7 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
       : Promise.resolve([]),
     variantIds.length
       ? db
-          .select({ id: serviceVariants.id, nailLength: serviceVariants.nailLength, serviceName: services.name })
+          .select({ id: serviceVariants.id, label: serviceVariants.label, serviceName: services.name })
           .from(serviceVariants)
           .innerJoin(services, eq(serviceVariants.serviceId, services.id))
           .where(inArray(serviceVariants.id, variantIds))
@@ -156,7 +150,7 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
 
                     <Caption>
                       {variant
-                        ? `${variant.serviceName} · ${NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength}`
+                        ? `${variant.serviceName} · ${variant.label ?? "—"}`
                         : booking.serviceVariantId}
                     </Caption>
 

@@ -15,12 +15,6 @@ import {
   StatCard,
 } from "@/components/brand";
 
-const NAIL_LENGTH_LABELS: Record<string, string> = {
-  short: "Corta",
-  medium: "Media",
-  long: "Larga",
-  single: "Única",
-};
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
@@ -66,7 +60,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
       : Promise.resolve([]),
     variantIds.length
       ? db
-          .select({ id: serviceVariants.id, nailLength: serviceVariants.nailLength, serviceName: services.name })
+          .select({ id: serviceVariants.id, label: serviceVariants.label, serviceName: services.name })
           .from(serviceVariants)
           .innerJoin(services, eq(serviceVariants.serviceId, services.id))
           .where(inArray(serviceVariants.id, variantIds))
@@ -126,7 +120,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                   statusTone={booking.status === "confirmed" ? "success" : "warning"}
                   serviceName={
                     variant
-                      ? `${variant.serviceName} · ${NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength}`
+                      ? `${variant.serviceName} · ${variant.label ?? "—"}`
                       : "Servicio"
                   }
                   clientName={client?.name ?? "Clienta"}

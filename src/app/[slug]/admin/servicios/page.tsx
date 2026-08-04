@@ -7,12 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AdminCard, AdminPageHeader, BrandButton, Caption } from "@/components/brand";
 import { ImageUploader } from "@/components/ImageUploader";
-
-type NailLength = "short" | "medium" | "long" | "single";
+import { verticalCopy, type Vertical } from "@/server/domain/tenant/vertical";
 
 type ServiceVariant = {
   id: string;
-  nailLength: NailLength;
+  label: string;
   priceClp: number;
   durationMinutes: number;
   active: boolean;
@@ -27,20 +26,14 @@ type Service = {
   variants: ServiceVariant[];
 };
 
-const NAIL_LENGTHS: { value: NailLength; label: string }[] = [
-  { value: "short", label: "Corta" },
-  { value: "medium", label: "Media" },
-  { value: "long", label: "Larga" },
-  { value: "single", label: "Única" },
-];
-
 function emptyVariantForm(serviceId: string) {
-  return { serviceId, nailLength: "short" as NailLength, priceClp: 0, durationMinutes: 30 };
+  return { serviceId, label: "", priceClp: 0, durationMinutes: 30 };
 }
 
 export default function ServiciosPage() {
   const params = useParams<{ slug: string }>();
   const [services, setServices] = useState<Service[]>([]);
+  const [vertical, setVertical] = useState<Vertical>("nails");
   const [newServiceName, setNewServiceName] = useState("");
   const [variantForm, setVariantForm] = useState<ReturnType<typeof emptyVariantForm> | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -51,10 +44,13 @@ export default function ServiciosPage() {
   const [isCreatingService, setIsCreatingService] = useState(false);
   const [isCreatingVariant, setIsCreatingVariant] = useState(false);
 
+  const variantAxisLabel = verticalCopy(vertical).variantAxisLabel;
+
   const loadServices = useCallback(async () => {
     const response = await fetch("/api/services");
     const data = await response.json();
     setServices(data.services ?? []);
+    if (data.vertical) setVertical(data.vertical);
   }, []);
 
   useEffect(() => {
@@ -231,7 +227,7 @@ export default function ServiciosPage() {
     <div className="flex max-w-2xl flex-col gap-8">
       <AdminPageHeader
         title="Servicios"
-        description="Cada servicio tiene variantes por largo de uña, con su precio y duración."
+        description={`Cada servicio tiene variantes por ${variantAxisLabel.toLowerCase()}, con su precio y duración.`}
       />
 
       <form onSubmit={createService} className="flex items-end gap-3">
@@ -321,7 +317,7 @@ export default function ServiciosPage() {
                   {service.variants.map((variant) => (
                     <li key={variant.id} className="flex flex-wrap items-center gap-2 text-sm">
                       <span className={`w-16 ${variant.active ? "" : "text-muted-foreground line-through"}`}>
-                        {NAIL_LENGTHS.find((n) => n.value === variant.nailLength)?.label}
+                        {variant.label}
                       </span>
                       <span className="flex items-center gap-1">
                         <Caption className="text-xs">$</Caption>
@@ -374,19 +370,15 @@ export default function ServiciosPage() {
                 {variantForm?.serviceId === service.id ? (
                   <form onSubmit={createVariant} className="flex flex-wrap items-end gap-3">
                     <div className="flex flex-col gap-1">
-                      <Label htmlFor={`nail-length-${service.id}`}>Largo</Label>
-                      <select
-                        id={`nail-length-${service.id}`}
-                        value={variantForm.nailLength}
-                        onChange={(e) => setVariantForm({ ...variantForm, nailLength: e.target.value as NailLength })}
-                        className="h-8 rounded-lg border border-outline-variant bg-background px-2 text-sm"
-                      >
-                        {NAIL_LENGTHS.map((n) => (
-                          <option key={n.value} value={n.value}>
-                            {n.label}
-                          </option>
-                        ))}
-                      </select>
+                      <Label htmlFor={`variant-label-${service.id}`}>{variantAxisLabel}</Label>
+                      <Input
+                        id={`variant-label-${service.id}`}
+                        value={variantForm.label}
+                        onChange={(e) => setVariantForm({ ...variantForm, label: e.target.value })}
+                        placeholder="Ej: Única"
+                        className="w-32"
+                        required
+                      />
                     </div>
                     <div className="flex flex-col gap-1">
                       <Label htmlFor={`price-${service.id}`}>Precio (CLP)</Label>

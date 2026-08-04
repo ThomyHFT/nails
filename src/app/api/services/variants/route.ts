@@ -3,12 +3,13 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import {
   ConfigureServicesUseCase,
-  DuplicateNailLengthError,
+  DuplicateVariantLabelError,
   InvalidDurationError,
-  InvalidNailLengthError,
   InvalidPriceError,
+  InvalidVariantLabelError,
   ServiceNotFoundError,
   VariantHasBookingsError,
+  VariantLimitDuringMigrationError,
   VariantNotFoundError,
 } from "@/server/application/service/configure-services.use-case";
 import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
@@ -28,11 +29,9 @@ async function requireOwnedProfessional() {
   return { professional, response: null };
 }
 
-const nailLengthSchema = z.enum(["short", "medium", "long", "single"]);
-
 const createVariantSchema = z.object({
   serviceId: z.string().uuid(),
-  nailLength: nailLengthSchema,
+  label: z.string().min(1),
   priceClp: z.number(),
   durationMinutes: z.number(),
 });
@@ -48,8 +47,9 @@ function errorResponse(err: unknown) {
   if (
     err instanceof InvalidPriceError ||
     err instanceof InvalidDurationError ||
-    err instanceof InvalidNailLengthError ||
-    err instanceof DuplicateNailLengthError
+    err instanceof InvalidVariantLabelError ||
+    err instanceof DuplicateVariantLabelError ||
+    err instanceof VariantLimitDuringMigrationError
   ) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }

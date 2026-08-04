@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { InMemoryServicesRepository } from "@/server/application/service/__fakes__/in-memory-services-repository";
 import {
   ConfigureServicesUseCase,
-  DuplicateNailLengthError,
+  DuplicateVariantLabelError,
   InvalidDurationError,
-  InvalidNailLengthError,
   InvalidPriceError,
   InvalidServiceNameError,
+  InvalidVariantLabelError,
   ServiceHasBookingsError,
   ServiceNotFoundError,
   VariantHasBookingsError,
@@ -41,7 +41,7 @@ describe("ConfigureServicesUseCase", () => {
       useCase.createVariant({
         professionalId: PROFESSIONAL_ID,
         serviceId: service.id,
-        nailLength: "short",
+        label: "Corta",
         priceClp: 0,
         durationMinutes: 30,
       }),
@@ -57,14 +57,14 @@ describe("ConfigureServicesUseCase", () => {
       useCase.createVariant({
         professionalId: PROFESSIONAL_ID,
         serviceId: service.id,
-        nailLength: "short",
+        label: "Corta",
         priceClp: 10_000,
         durationMinutes: 0,
       }),
     ).rejects.toThrow(InvalidDurationError);
   });
 
-  it("rejects a nail_length outside the enum", async () => {
+  it("rejects an empty label", async () => {
     const repository = new InMemoryServicesRepository();
     const useCase = new ConfigureServicesUseCase(repository);
     const service = await useCase.createService({ professionalId: PROFESSIONAL_ID, name: "Manicure" });
@@ -73,15 +73,14 @@ describe("ConfigureServicesUseCase", () => {
       useCase.createVariant({
         professionalId: PROFESSIONAL_ID,
         serviceId: service.id,
-        // @ts-expect-error probando un valor fuera del enum
-        nailLength: "giant",
+        label: "   ",
         priceClp: 10_000,
         durationMinutes: 30,
       }),
-    ).rejects.toThrow(InvalidNailLengthError);
+    ).rejects.toThrow(InvalidVariantLabelError);
   });
 
-  it("rejects a duplicate nail_length for the same service", async () => {
+  it("rejects a duplicate label for the same service", async () => {
     const repository = new InMemoryServicesRepository();
     const useCase = new ConfigureServicesUseCase(repository);
     const service = await useCase.createService({ professionalId: PROFESSIONAL_ID, name: "Manicure" });
@@ -89,7 +88,7 @@ describe("ConfigureServicesUseCase", () => {
     await useCase.createVariant({
       professionalId: PROFESSIONAL_ID,
       serviceId: service.id,
-      nailLength: "short",
+      label: "Corta",
       priceClp: 10_000,
       durationMinutes: 30,
     });
@@ -98,11 +97,11 @@ describe("ConfigureServicesUseCase", () => {
       useCase.createVariant({
         professionalId: PROFESSIONAL_ID,
         serviceId: service.id,
-        nailLength: "short",
+        label: "Corta",
         priceClp: 12_000,
         durationMinutes: 40,
       }),
-    ).rejects.toThrow(DuplicateNailLengthError);
+    ).rejects.toThrow(DuplicateVariantLabelError);
   });
 
   it("rejects creating a variant for a service from another professional", async () => {
@@ -114,7 +113,7 @@ describe("ConfigureServicesUseCase", () => {
       useCase.createVariant({
         professionalId: "other-prof",
         serviceId: service.id,
-        nailLength: "short",
+        label: "Corta",
         priceClp: 10_000,
         durationMinutes: 30,
       }),
@@ -128,7 +127,7 @@ describe("ConfigureServicesUseCase", () => {
     const variant = await useCase.createVariant({
       professionalId: PROFESSIONAL_ID,
       serviceId: service.id,
-      nailLength: "short",
+      label: "Corta",
       priceClp: 10_000,
       durationMinutes: 30,
     });
@@ -145,7 +144,7 @@ describe("ConfigureServicesUseCase", () => {
     const variant = await useCase.createVariant({
       professionalId: PROFESSIONAL_ID,
       serviceId: service.id,
-      nailLength: "short",
+      label: "Corta",
       priceClp: 10_000,
       durationMinutes: 30,
     });
@@ -168,7 +167,7 @@ describe("ConfigureServicesUseCase", () => {
     await useCase.createVariant({
       professionalId: PROFESSIONAL_ID,
       serviceId: service.id,
-      nailLength: "short",
+      label: "Corta",
       priceClp: 10_000,
       durationMinutes: 30,
     });
@@ -186,7 +185,7 @@ describe("ConfigureServicesUseCase", () => {
     const variant = await useCase.createVariant({
       professionalId: PROFESSIONAL_ID,
       serviceId: service.id,
-      nailLength: "short",
+      label: "Corta",
       priceClp: 10_000,
       durationMinutes: 30,
     });

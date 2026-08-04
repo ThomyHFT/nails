@@ -19,13 +19,6 @@ import {
   VariantRow,
 } from "@/components/brand";
 
-const NAIL_LENGTH_LABELS: Record<string, string> = {
-  short: "Corta",
-  medium: "Media",
-  long: "Larga",
-  single: "Única",
-};
-
 export default async function ServiciosPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
@@ -86,7 +79,7 @@ export default async function ServiciosPage({ params }: { params: Promise<{ slug
                     {activeVariants.map((variant) => (
                       <VariantRow
                         key={variant.id}
-                        label={NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength}
+                        label={variant.label}
                         durationMinutes={variant.durationMinutes}
                         priceClp={variant.priceClp}
                         href={`/${slug}/reservar?service=${service.id}&variant=${variant.id}`}

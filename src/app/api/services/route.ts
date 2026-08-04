@@ -46,7 +46,7 @@ export async function GET() {
   if (!professional) return response;
 
   const services = await new ListServicesUseCase(new DrizzleServicesRepository()).execute(professional.id);
-  return NextResponse.json({ services });
+  return NextResponse.json({ services, vertical: professional.vertical });
 }
 
 export async function POST(request: Request) {

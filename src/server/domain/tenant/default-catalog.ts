@@ -1,5 +1,4 @@
 import type { ElementCategory } from "@/server/domain/design/design-element.entity";
-import type { NailLength } from "@/server/domain/service/service-variant.entity";
 import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 
 /**
@@ -33,7 +32,7 @@ export interface DefaultDesignElement {
 }
 
 export interface DefaultServiceVariant {
-  nailLength: NailLength;
+  label: string;
   priceClp: number;
   durationMinutes: number;
 }
@@ -123,49 +122,50 @@ const NAILS_SERVICES: DefaultService[] = [
     name: "Manicure clásica",
     sortOrder: 0,
     variants: [
-      { nailLength: "short", priceClp: 12000, durationMinutes: 45 },
-      { nailLength: "medium", priceClp: 15000, durationMinutes: 60 },
-      { nailLength: "long", priceClp: 18000, durationMinutes: 75 },
+      { label: "Corta", priceClp: 12000, durationMinutes: 45 },
+      { label: "Media", priceClp: 15000, durationMinutes: 60 },
+      { label: "Larga", priceClp: 18000, durationMinutes: 75 },
     ],
   },
   {
     name: "Uñas acrílicas",
     sortOrder: 1,
     variants: [
-      { nailLength: "short", priceClp: 20000, durationMinutes: 90 },
-      { nailLength: "medium", priceClp: 25000, durationMinutes: 105 },
-      { nailLength: "long", priceClp: 30000, durationMinutes: 120 },
+      { label: "Corta", priceClp: 20000, durationMinutes: 90 },
+      { label: "Media", priceClp: 25000, durationMinutes: 105 },
+      { label: "Larga", priceClp: 30000, durationMinutes: 120 },
     ],
   },
   {
     name: "Retiro de esmalte",
     sortOrder: 2,
-    variants: [{ nailLength: "single", priceClp: 5000, durationMinutes: 20 }],
+    variants: [{ label: "Única", priceClp: 5000, durationMinutes: 20 }],
   },
 ];
 
-// Rubros sin eje de largo usan la variante "single" que ya existe en el
-// enum (SPEC 13 §1): un servicio, un precio, sin ventana de migración.
+// Rubros sin eje de largo llevan un único variante por servicio: el nombre
+// del servicio ya dice de qué se trata, la variante solo carga precio y
+// duración.
 const BARBERSHOP_SERVICES: DefaultService[] = [
   {
     name: "Corte",
     sortOrder: 0,
-    variants: [{ nailLength: "single", priceClp: 8000, durationMinutes: 30 }],
+    variants: [{ label: "Única", priceClp: 8000, durationMinutes: 30 }],
   },
   {
     name: "Corte + barba",
     sortOrder: 1,
-    variants: [{ nailLength: "single", priceClp: 12000, durationMinutes: 45 }],
+    variants: [{ label: "Única", priceClp: 12000, durationMinutes: 45 }],
   },
   {
     name: "Barba",
     sortOrder: 2,
-    variants: [{ nailLength: "single", priceClp: 6000, durationMinutes: 20 }],
+    variants: [{ label: "Única", priceClp: 6000, durationMinutes: 20 }],
   },
   {
     name: "Corte de niño",
     sortOrder: 3,
-    variants: [{ nailLength: "single", priceClp: 7000, durationMinutes: 30 }],
+    variants: [{ label: "Única", priceClp: 7000, durationMinutes: 30 }],
   },
 ];
 
@@ -173,22 +173,22 @@ const WELLNESS_SERVICES: DefaultService[] = [
   {
     name: "Masaje descontracturante 60 min",
     sortOrder: 0,
-    variants: [{ nailLength: "single", priceClp: 25000, durationMinutes: 60 }],
+    variants: [{ label: "Única", priceClp: 25000, durationMinutes: 60 }],
   },
   {
     name: "Masaje descontracturante 90 min",
     sortOrder: 1,
-    variants: [{ nailLength: "single", priceClp: 35000, durationMinutes: 90 }],
+    variants: [{ label: "Única", priceClp: 35000, durationMinutes: 90 }],
   },
   {
     name: "Podología clínica",
     sortOrder: 2,
-    variants: [{ nailLength: "single", priceClp: 20000, durationMinutes: 45 }],
+    variants: [{ label: "Única", priceClp: 20000, durationMinutes: 45 }],
   },
   {
     name: "Masaje relajante",
     sortOrder: 3,
-    variants: [{ nailLength: "single", priceClp: 22000, durationMinutes: 50 }],
+    variants: [{ label: "Única", priceClp: 22000, durationMinutes: 50 }],
   },
 ];
 

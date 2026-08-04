@@ -6,7 +6,7 @@ function variant(overrides: Partial<ServiceVariant> = {}): ServiceVariant {
   return {
     id: "v1",
     serviceId: "s1",
-    nailLength: "short",
+    label: "Corta",
     priceClp: 10_000,
     durationMinutes: 45,
     active: true,

@@ -11,12 +11,6 @@ import { DrizzleReviewsRepository } from "@/server/infrastructure/repositories/d
 import { ReviewModerationActions } from "@/app/[slug]/admin/opiniones/ReviewModerationActions";
 import { AdminPageHeader, Chip, EmptyState, Overline, ReviewCard, ReviewStatusChip } from "@/components/brand";
 
-const NAIL_LENGTH_LABELS: Record<string, string> = {
-  short: "Corta",
-  medium: "Media",
-  long: "Larga",
-  single: "Única",
-};
 
 function formatDateTime(date: Date) {
   return date.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
@@ -43,7 +37,7 @@ export default async function OpinionesAdminPage({ params }: { params: Promise<{
   const variantIds = Array.from(new Set(Array.from(bookingById.values()).map((booking) => booking.serviceVariantId)));
   const variantRows = variantIds.length
     ? await db
-        .select({ id: serviceVariants.id, nailLength: serviceVariants.nailLength, serviceName: services.name })
+        .select({ id: serviceVariants.id, label: serviceVariants.label, serviceName: services.name })
         .from(serviceVariants)
         .innerJoin(services, eq(serviceVariants.serviceId, services.id))
         .where(inArray(serviceVariants.id, variantIds))
@@ -57,7 +51,7 @@ export default async function OpinionesAdminPage({ params }: { params: Promise<{
     const booking = bookingById.get(review.bookingId);
     const variant = booking ? variantById.get(booking.serviceVariantId) : undefined;
     const serviceLabel = variant
-      ? `${variant.serviceName} · ${NAIL_LENGTH_LABELS[variant.nailLength] ?? variant.nailLength}`
+      ? `${variant.serviceName} · ${variant.label ?? "—"}`
       : null;
 
     return (

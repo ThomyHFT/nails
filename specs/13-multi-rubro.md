@@ -1,6 +1,6 @@
 # SPEC 13 — Multi-rubro
 
-**Estado:** Draft (Fase 1 implementada; Fases 2 y 3 pendientes)
+**Estado:** Draft (Fase 1 implementada; Fase 2 pasos 1-3 implementados, paso 4 pendiente de confirmar en producción; Fase 3 pendiente)
 **Alcance:** convertir el producto de "agenda para manicuristas" en "agenda para profesionales independientes que atienden por hora", sin bifurcar el código, sin una base por rubro y sin un dominio por rubro. Tres fases: rubro y módulos opcionales, vocabulario y eje de variantes, marca neutra.
 
 Aparecieron un barbero y una masajista podóloga interesados en lo mismo que ya existe. El producto que necesitan es el que ya está construido —agenda, reservas, micrositio con su marca, opiniones, portafolio, correos— salvo por tres puntos donde el oficio de las uñas quedó incrustado. Este spec los desincrusta.
@@ -102,6 +102,19 @@ Cuatro pasos, cada uno deployable solo:
 4. `label NOT NULL`, índice único a `(service_id, label)`, y recién ahí se dropea `nail_length` y su índice.
 
 El paso 4 va **después** de confirmar en producción que el 3 quedó bien. Es la única parte de este spec que puede perder datos si se apura.
+
+**Estado (implementado):** pasos 1-3 en producción (migración `0018_mushy_aqueduct.sql`). Mientras el paso 4 no corra, `nail_length` sigue `NOT NULL` con su índice único, así que crear una variante todavía ocupa uno de sus 4 valores por debajo — invisible para quien la crea, vía `DrizzleServicesRepository.createVariant` y el mismo cálculo por posición en `DrizzleTenantProvisioningRepository`. Un quinto variante por servicio no cabe hasta el paso 4 y devuelve `VariantLimitDuringMigrationError`; no es una regresión, es el mismo techo de 4 que ya existía con el enum visible.
+
+**Paso 4 pendiente** — ejecutar cuando se confirme que el paso 3 no tuvo incidentes:
+
+```sql
+ALTER TABLE service_variants ALTER COLUMN label SET NOT NULL;
+DROP INDEX service_variants_service_id_nail_length_idx;
+CREATE UNIQUE INDEX service_variants_service_id_label_idx ON service_variants (service_id, label);
+ALTER TABLE service_variants DROP COLUMN nail_length;
+```
+
+Junto con el esquema: quitar `nailLengthEnum` de `enums.ts`, la columna `nailLength` de `services.ts`, `LEGACY_NAIL_LENGTHS`/`LEGACY_LABEL_FALLBACK` de `drizzle-services.repository.ts`, y `LEGACY_NAIL_LENGTHS` de `drizzle-tenant-provisioning.repository.ts` — en ese momento `VariantLimitDuringMigrationError` deja de ser alcanzable y el límite de 4 variantes por servicio desaparece.
 
 ### 2.6 La marca neutra es el bloqueo comercial, no técnico
 
@@ -212,8 +225,8 @@ Conmutador de rubro junto al de estilo, cambiando el micrositio de demostración
 
 **Fase 2**
 
-7. Un servicio de barbería muestra su variante como "Servicio" y uno de uñas como "Largo".
-8. Terminado el paso 4, ninguna consulta referencia `nail_length` y las variantes existentes conservan su etiqueta y su precio.
+7. Un servicio de barbería muestra su variante como "Servicio" y uno de uñas como "Largo". ✅ (`verticalCopy().variantAxisLabel`, aplicado en `/admin/servicios`, `/reservar` y `/cuenta`)
+8. Terminado el paso 4, ninguna consulta referencia `nail_length` y las variantes existentes conservan su etiqueta y su precio. — pendiente del paso 4.
 
 **Fase 3**
 

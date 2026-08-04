@@ -58,7 +58,7 @@ export class InMemoryServicesRepository implements ServicesRepository {
     const created: ServiceVariant = {
       id: `variant-${this.nextId++}`,
       serviceId: variant.serviceId,
-      nailLength: variant.nailLength,
+      label: variant.label,
       priceClp: variant.priceClp,
       durationMinutes: variant.durationMinutes,
       active: true,

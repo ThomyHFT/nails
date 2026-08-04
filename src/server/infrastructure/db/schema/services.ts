@@ -28,7 +28,12 @@ export const serviceVariants = pgTable(
     serviceId: uuid("service_id")
       .notNull()
       .references(() => services.id),
+    // `nail_length` es el eje heredado, solo de uñas (enum de 4 valores).
+    // `label` es el reemplazo genérico por rubro (SPEC 13 fase 2): texto
+    // libre puesto por la profesional. Mientras dura la migración
+    // expand/contract, se escriben los dos; nail_length ya no se lee.
     nailLength: nailLengthEnum("nail_length").notNull(),
+    label: text("label"),
     priceClp: integer("price_clp").notNull(),
     durationMinutes: integer("duration_minutes").notNull(),
     active: boolean("active").notNull().default(true),
