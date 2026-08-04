@@ -286,7 +286,9 @@ export function AdminDashboard({
                       <Chip tone={tone}>{label}</Chip>
                     </td>
                     <td className="p-2 text-sm text-muted-foreground">
-                      {row.expiresAt ? new Date(row.expiresAt).toLocaleDateString("es-CL") : "Sin vencimiento"}
+                      {row.expiresAt
+                        ? new Date(row.expiresAt).toLocaleDateString("es-CL", { timeZone: "America/Santiago" })
+                        : "Sin vencimiento"}
                     </td>
                   </tr>
                 );

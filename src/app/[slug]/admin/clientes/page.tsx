@@ -9,7 +9,7 @@ import { ListClientStatsUseCase } from "@/server/application/booking/list-client
 import { AdminPageHeader, Caption, Chip, EmptyState, Overline, Panel, Price } from "@/components/brand";
 
 function formatDate(date: Date) {
-  return date.toLocaleDateString("es-CL", { dateStyle: "medium" });
+  return date.toLocaleDateString("es-CL", { dateStyle: "medium", timeZone: "America/Santiago" });
 }
 
 export default async function ClientesAdminPage({ params }: { params: Promise<{ slug: string }> }) {

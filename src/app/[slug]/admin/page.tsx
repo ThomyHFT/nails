@@ -6,6 +6,7 @@ import { serviceVariants, services } from "@/server/infrastructure/db/schema/ser
 import { users } from "@/server/infrastructure/db/schema/users";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
+import { startOfDayInZone } from "@/server/application/booking/zoned-time";
 import {
   ActionLink,
   AdminPageHeader,
@@ -16,8 +17,11 @@ import {
 } from "@/components/brand";
 
 
+// Sin timeZone explícito, un Server Component formatea con la hora del
+// runtime (UTC en Vercel), no la de Chile: una reserva a las 10:00 le
+// aparecía a la profesional como 14:00.
 function formatTime(date: Date) {
-  return date.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", timeZone: "America/Santiago" });
 }
 
 export default async function AdminPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -31,7 +35,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
   const bookings = await new DrizzleBookingRepository().listByProfessional(professional.id);
 
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayStart = startOfDayInZone(now, "America/Santiago");
   const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
   const weekStart = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
 
@@ -74,7 +78,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
     <div className="flex max-w-5xl flex-col gap-8">
       <AdminPageHeader
         title="Resumen del día"
-        description={now.toLocaleDateString("es-CL", { dateStyle: "full" })}
+        description={now.toLocaleDateString("es-CL", { dateStyle: "full", timeZone: "America/Santiago" })}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">

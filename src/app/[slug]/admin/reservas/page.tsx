@@ -51,7 +51,7 @@ const STATUS_ORDER: BookingStatus[] = ["pending", "confirmed", "completed", "no_
 
 
 function formatDateTime(date: Date) {
-  return date.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
+  return date.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Santiago" });
 }
 
 export default async function ReservasAdminPage({ params }: { params: Promise<{ slug: string }> }) {

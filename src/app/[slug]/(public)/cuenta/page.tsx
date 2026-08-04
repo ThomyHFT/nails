@@ -38,7 +38,7 @@ const BOOKING_STATUS: Record<BookingStatus, { label: string; tone: "success" | "
 };
 
 function formatDateTime(date: Date) {
-  return date.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
+  return date.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Santiago" });
 }
 
 /**

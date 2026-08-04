@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Loader2,
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -176,7 +177,11 @@ export function ReservarForm({
   const [date, setDate] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(currentMonth());
   const [calendarDays, setCalendarDays] = useState<string[]>([]);
-  const [isLoadingCalendarDays, setIsLoadingCalendarDays] = useState(false);
+  // Empieza en `true`: el useEffect que carga el mes siempre dispara al
+  // entrar al paso de horario, y arrancar en `false` dejaba una fracción de
+  // segundo con el grid vacío mostrando "sin cupo" antes de que el fetch
+  // partiera.
+  const [isLoadingCalendarDays, setIsLoadingCalendarDays] = useState(true);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -531,46 +536,58 @@ export function ReservarForm({
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: leadingBlanks(calendarMonth) }, (_, i) => (
-                <div key={`blank-${i}`} />
-              ))}
-              {Array.from({ length: daysInMonth(calendarMonth) }, (_, i) => {
-                const day = i + 1;
-                const cellDate = dateAt(calendarMonth, day);
-                const hasSlots = calendarDays.includes(cellDate);
-                const isPast = cellDate < todayISO();
-                const isSelected = date === cellDate;
-                const disabled = isPast || (!hasSlots && !isLoadingCalendarDays);
+            {isLoadingCalendarDays ? (
+              // Antes el grid entero se pintaba clickeable mientras cargaba
+              // (disabled dependía de !isLoadingCalendarDays), así que por un
+              // instante se veía el mes completo disponible. Un spinner en su
+              // lugar evita prometer cupo que todavía no se confirmó.
+              <div className="flex min-h-48 flex-col items-center justify-center gap-2 py-8">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+                <Caption>Cargando días disponibles…</Caption>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-7 gap-1">
+                  {Array.from({ length: leadingBlanks(calendarMonth) }, (_, i) => (
+                    <div key={`blank-${i}`} />
+                  ))}
+                  {Array.from({ length: daysInMonth(calendarMonth) }, (_, i) => {
+                    const day = i + 1;
+                    const cellDate = dateAt(calendarMonth, day);
+                    const hasSlots = calendarDays.includes(cellDate);
+                    const isPast = cellDate < todayISO();
+                    const isSelected = date === cellDate;
+                    const disabled = isPast || !hasSlots;
 
-                return (
-                  <button
-                    key={cellDate}
-                    type="button"
-                    disabled={disabled}
-                    aria-pressed={isSelected}
-                    onClick={() => {
-                      setDate(cellDate);
-                      loadSlots(cellDate);
-                    }}
-                    className={cn(
-                      "flex aspect-square items-center justify-center rounded-lg text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      isSelected
-                        ? "bg-primary text-primary-foreground"
-                        : disabled
-                          ? "text-muted-foreground/40"
-                          : "text-foreground hover:bg-surface-2",
-                    )}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
+                    return (
+                      <button
+                        key={cellDate}
+                        type="button"
+                        disabled={disabled}
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          setDate(cellDate);
+                          loadSlots(cellDate);
+                        }}
+                        className={cn(
+                          "flex aspect-square items-center justify-center rounded-lg text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : disabled
+                              ? "text-muted-foreground/40"
+                              : "text-foreground hover:bg-surface-2",
+                        )}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
 
-            {isLoadingCalendarDays && <Caption>Cargando días disponibles…</Caption>}
-            {!isLoadingCalendarDays && calendarDays.length === 0 && (
-              <Caption>No hay días con cupo en {monthLabel(calendarMonth).toLowerCase()}.</Caption>
+                {calendarDays.length === 0 && (
+                  <Caption>No hay días con cupo en {monthLabel(calendarMonth).toLowerCase()}.</Caption>
+                )}
+              </>
             )}
           </Panel>
         </div>

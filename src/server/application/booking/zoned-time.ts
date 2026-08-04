@@ -43,6 +43,17 @@ export function zonedDateTimeToUtc(date: string, time: string, timeZone: string)
   return new Date(naiveUtc - offsetMinutes * 60_000);
 }
 
+/**
+ * Medianoche de `timeZone`, como instante UTC. Antes de esto, páginas del
+ * admin calculaban "hoy" con `now.getFullYear()/getMonth()/getDate()`, que
+ * leen la hora del runtime (UTC en Vercel) y no la de Chile: entre las 20:00
+ * y las 23:59 en Santiago, esas páginas ya pensaban que era el día siguiente.
+ */
+export function startOfDayInZone(instant: Date, timeZone: string): Date {
+  const dateInZone = new Intl.DateTimeFormat("en-CA", { timeZone }).format(instant);
+  return zonedDateTimeToUtc(dateInZone, "00:00", timeZone);
+}
+
 export function utcToZonedMinutesOfDay(instant: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,

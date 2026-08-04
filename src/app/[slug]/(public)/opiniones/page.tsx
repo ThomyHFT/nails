@@ -22,7 +22,7 @@ import {
 } from "@/components/brand";
 
 function formatDate(date: Date) {
-  return date.toLocaleDateString("es-CL", { dateStyle: "medium" });
+  return date.toLocaleDateString("es-CL", { dateStyle: "medium", timeZone: "America/Santiago" });
 }
 
 export default async function OpinionesPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -13,7 +13,7 @@ import { AdminPageHeader, Chip, EmptyState, Overline, ReviewCard, ReviewStatusCh
 
 
 function formatDateTime(date: Date) {
-  return date.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
+  return date.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Santiago" });
 }
 
 export default async function OpinionesAdminPage({ params }: { params: Promise<{ slug: string }> }) {
