@@ -51,18 +51,24 @@ export function GalleryLightbox({ items, className }: { items: GalleryItem[]; cl
     <>
       <div className={cn("grid grid-cols-2 gap-3 md:gap-4", desktopCols, items.length === 1 && "max-w-sm", className)}>
         {items.map((item, index) => (
-          <Panel key={item.id} padding="none" className="flex h-full flex-col overflow-hidden">
+          <Panel key={item.id} padding="sm" className="flex h-full flex-col gap-3">
             <button
               type="button"
               aria-label={`Ampliar foto ${index + 1} de ${items.length}`}
               onClick={() => setOpenIndex(index)}
-              className="block w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="block w-full overflow-hidden rounded-card text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <MediaFrame src={item.imageUrl} alt={item.caption ?? ""} ratio="square" />
             </button>
-            <div className="flex min-h-16 flex-1 items-center justify-center px-4 py-3">
+            <Panel
+              level={2}
+              bordered={false}
+              elevation="none"
+              padding="sm"
+              className="flex min-h-16 flex-1 items-center justify-center"
+            >
               {item.caption && <Title className="text-center text-balance">{item.caption}</Title>}
-            </div>
+            </Panel>
           </Panel>
         ))}
       </div>
