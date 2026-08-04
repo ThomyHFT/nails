@@ -1,4 +1,5 @@
 import type { Booking, BookingActor, BookingStatus } from "@/server/domain/booking/booking.entity";
+import type { ClientBookingStats } from "@/server/domain/booking/client-booking-stats.entity";
 import type {
   BookingRepository,
   NewBooking,
@@ -102,5 +103,38 @@ export class InMemoryBookingRepository implements BookingRepository {
         booking.clientUserId === clientUserId &&
         booking.cancelledBy === "client",
     ).length;
+  }
+
+  async listClientStats(professionalId: string): Promise<ClientBookingStats[]> {
+    const byClient = new Map<string, ClientBookingStats>();
+
+    for (const booking of this.bookings) {
+      if (booking.professionalId !== professionalId) continue;
+
+      const stats = byClient.get(booking.clientUserId) ?? {
+        clientUserId: booking.clientUserId,
+        totalBookings: 0,
+        completedBookings: 0,
+        totalSpentClp: 0,
+        lastBookingAt: booking.startsAt,
+        strikes: 0,
+      };
+
+      stats.totalBookings += 1;
+      if (booking.status === "completed") {
+        stats.completedBookings += 1;
+        stats.totalSpentClp += booking.priceClp;
+      }
+      if (booking.cancelledBy === "client") {
+        stats.strikes += 1;
+      }
+      if (booking.startsAt > stats.lastBookingAt) {
+        stats.lastBookingAt = booking.startsAt;
+      }
+
+      byClient.set(booking.clientUserId, stats);
+    }
+
+    return [...byClient.values()].sort((a, b) => b.lastBookingAt.getTime() - a.lastBookingAt.getTime());
   }
 }

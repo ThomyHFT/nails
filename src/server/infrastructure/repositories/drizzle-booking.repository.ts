@@ -3,6 +3,7 @@ import { db } from "@/server/infrastructure/db/client";
 import { bookings } from "@/server/infrastructure/db/schema/bookings";
 import { designs } from "@/server/infrastructure/db/schema/designs";
 import type { Booking, BookingActor, BookingStatus } from "@/server/domain/booking/booking.entity";
+import type { ClientBookingStats } from "@/server/domain/booking/client-booking-stats.entity";
 import type {
   BookingRepository,
   NewBooking,
@@ -165,5 +166,25 @@ export class DrizzleBookingRepository implements BookingRepository {
         ),
       );
     return row?.count ?? 0;
+  }
+
+  async listClientStats(professionalId: string): Promise<ClientBookingStats[]> {
+    const rows = await db
+      .select({
+        clientUserId: bookings.clientUserId,
+        totalBookings: sql<number>`count(*)::int`,
+        completedBookings: sql<number>`count(*) filter (where ${bookings.status} = 'completed')::int`,
+        totalSpentClp: sql<number>`coalesce(sum(${bookings.priceClp}) filter (where ${bookings.status} = 'completed'), 0)::int`,
+        // string y no Date: el driver http de neon no parsea las expresiones
+        // sql crudas al tipo de la columna, a diferencia de un select directo.
+        lastBookingAt: sql<string>`max(${bookings.startsAt})`,
+        strikes: sql<number>`count(*) filter (where ${bookings.cancelledBy} = 'client')::int`,
+      })
+      .from(bookings)
+      .where(eq(bookings.professionalId, professionalId))
+      .groupBy(bookings.clientUserId)
+      .orderBy(desc(sql`max(${bookings.startsAt})`));
+
+    return rows.map((row) => ({ ...row, lastBookingAt: new Date(row.lastBookingAt) }));
   }
 }

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CalendarClock, Images, LayoutDashboard, Palette, Sparkles, Star, Tag } from "lucide-react";
+import { CalendarClock, Images, LayoutDashboard, Palette, Sparkles, Star, Tag, Users } from "lucide-react";
 import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 
 export type AdminNavItem = {
@@ -16,6 +16,7 @@ export function getAdminNavItems(slug: string, vertical: Vertical, pendingReview
   return [
     { href: base, label: "Resumen", icon: <LayoutDashboard />, exact: true },
     { href: `${base}/reservas`, label: "Reservas", icon: <CalendarClock />, exact: false },
+    { href: `${base}/clientes`, label: "Clientes", icon: <Users />, exact: false },
     { href: `${base}/disponibilidad`, label: "Disponibilidad", icon: <CalendarClock />, exact: false },
     { href: `${base}/servicios`, label: "Servicios", icon: <Tag />, exact: false },
     // Esconder el link no alcanza como protección — la ruta /admin/diseno

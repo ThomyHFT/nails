@@ -1,4 +1,5 @@
 import type { Booking, BookingActor, BookingStatus } from "@/server/domain/booking/booking.entity";
+import type { ClientBookingStats } from "@/server/domain/booking/client-booking-stats.entity";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
 
 export interface NewBooking {
@@ -40,4 +41,6 @@ export interface BookingRepository {
   updateStatus(id: string, status: BookingStatus): Promise<Booking>;
   cancel(id: string, cancelledBy: BookingActor): Promise<Booking>;
   countClientStrikes(professionalId: string, clientUserId: string): Promise<number>;
+  /** Una fila por clienta con reservas en este tenant, ordenada por la más reciente primero. */
+  listClientStats(professionalId: string): Promise<ClientBookingStats[]>;
 }
