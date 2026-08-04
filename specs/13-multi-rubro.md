@@ -1,6 +1,6 @@
 # SPEC 13 — Multi-rubro
 
-**Estado:** Draft (Fase 1 implementada; Fase 2 pasos 1-3 implementados, paso 4 pendiente de confirmar en producción; Fase 3 pendiente)
+**Estado:** Draft (Fase 1 implementada; Fase 2 pasos 1-3 implementados, paso 4 pendiente de confirmar en producción; Fase 3 — portada conmuta rubro implementada, dominio/marca pausado a la espera de la decisión del dueño)
 **Alcance:** convertir el producto de "agenda para manicuristas" en "agenda para profesionales independientes que atienden por hora", sin bifurcar el código, sin una base por rubro y sin un dominio por rubro. Tres fases: rubro y módulos opcionales, vocabulario y eje de variantes, marca neutra.
 
 Aparecieron un barbero y una masajista podóloga interesados en lo mismo que ya existe. El producto que necesitan es el que ya está construido —agenda, reservas, micrositio con su marca, opiniones, portafolio, correos— salvo por tres puntos donde el oficio de las uñas quedó incrustado. Este spec los desincrusta.
@@ -230,9 +230,9 @@ Conmutador de rubro junto al de estilo, cambiando el micrositio de demostración
 
 **Fase 3**
 
-9. El dominio nuevo sirve la app y `agendaunas.cl` redirige con 301 permanente.
-10. Los correos salen del remitente del dominio nuevo y con la marca nueva.
-11. La portada conmuta rubro y el micrositio de demostración cambia con él.
+9. El dominio nuevo sirve la app y `agendaunas.cl` redirige con 301 permanente. — pausado: requiere que el dueño elija y compre el dominio (§2.6).
+10. Los correos salen del remitente del dominio nuevo y con la marca nueva. — mismo bloqueo que el criterio 9.
+11. La portada conmuta rubro y el micrositio de demostración cambia con él. ✅ (conmutador junto al eyebrow del hero; cambia copy del hero, el subtítulo de beneficios, el segundo beneficio, el tagline del pie y `LandingPreview` — nombre, servicio, precio y si muestra o no la chip de diseño)
 
 ---
 

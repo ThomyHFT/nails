@@ -5,8 +5,10 @@ import {
   ArrowRight,
   CalendarClock,
   Check,
+  HeartPulse,
   Moon,
   Palette,
+  Scissors,
   Smartphone,
   Sparkles,
   Sun,
@@ -30,6 +32,7 @@ import {
   Title,
 } from "@/components/brand";
 import type { BrandArchetype } from "@/server/domain/branding/brand-tokens";
+import { VERTICALS, type Vertical } from "@/server/domain/tenant/vertical";
 import {
   ARCHETYPE_CHOICES,
   PLAYGROUND_COLORS,
@@ -41,32 +44,85 @@ import { LandingPreview } from "@/app/landing-preview";
 
 const REGISTER_HREF = "/registro-profesional";
 
-const FEATURES = [
-  {
-    icon: <CalendarClock aria-hidden />,
-    title: "Agenda que trabaja sola",
+/**
+ * Copy que sí depende del rubro (SPEC 13 fase 3): a quién le habla el hero y
+ * el segundo beneficio, que en uñas es el diseñador y en el resto no existe.
+ * El resto de la página (agenda, panel, comisiones) es igual para los tres.
+ */
+const BENEFITS_SUBTITLE_BY_VERTICAL: Record<Vertical, string> = {
+  nails: "Todo lo que hoy haces a mano entre conversaciones — cuadrar la hora, explicar precios, recordar el diseño — pasa a tu sitio.",
+  barbershop:
+    "Todo lo que hoy haces a mano entre conversaciones — cuadrar la hora, explicar precios, confirmar el turno — pasa a tu sitio.",
+  wellness:
+    "Todo lo que hoy haces a mano entre conversaciones — cuadrar la hora, explicar precios, confirmar el turno — pasa a tu sitio.",
+};
+
+const FOOTER_TAGLINE_BY_VERTICAL: Record<Vertical, string> = {
+  nails: "Agenda y diseño de uñas para manicuristas independientes en Chile.",
+  barbershop: "Agenda online para barberos y peluqueros independientes en Chile.",
+  wellness: "Agenda online para masajistas y podólogas independientes en Chile.",
+};
+
+const HERO_COPY: Record<Vertical, { eyebrow: string; description: string }> = {
+  nails: {
+    eyebrow: "Para manicuristas independientes",
     description:
-      "Tus clientas ven tus horas libres y reservan a la hora que sea. Tú confirmas con un toque y dejas de perseguir mensajes.",
+      "Tus clientas entran a tu link, eligen su hora y diseñan su manicure antes de llegar. Tú abres el panel y ves el día resuelto.",
   },
-  {
+  barbershop: {
+    eyebrow: "Para barberos y peluqueros independientes",
+    description:
+      "Tus clientes entran a tu link, eligen su hora y ven el precio exacto de su corte. Tú abres el panel y ves el día resuelto.",
+  },
+  wellness: {
+    eyebrow: "Para masajistas y podólogas independientes",
+    description:
+      "Tus pacientes entran a tu link, eligen su hora y ven el precio exacto de su sesión. Tú abres el panel y ves el día resuelto.",
+  },
+};
+
+const SECOND_FEATURE_BY_VERTICAL: Record<Vertical, { icon: React.ReactNode; title: string; description: string }> = {
+  nails: {
     icon: <Palette aria-hidden />,
     title: "Llegan con el diseño listo",
     description:
       "Eligen forma, color, acabado y decoración desde tu catálogo. El precio y la duración se calculan solos, antes de sentarse.",
   },
-  {
-    icon: <Smartphone aria-hidden />,
-    title: "Tu panel, en tu teléfono",
-    description:
-      "Citas, servicios, portafolio y opiniones. Todo desde el navegador, sin instalar nada y sin computador.",
+  barbershop: {
+    icon: <Scissors aria-hidden />,
+    title: "Ven el precio antes de llegar",
+    description: "Cada corte tiene su precio y duración propios. Eligen, ven el total, reservan — sin preguntarte por WhatsApp.",
   },
-  {
-    icon: <Wallet aria-hidden />,
-    title: "Cero comisiones",
-    description:
-      "El pago sigue siendo presencial, como siempre lo has hecho. AgendaUñas no toca ni un peso de lo que cobras.",
+  wellness: {
+    icon: <HeartPulse aria-hidden />,
+    title: "Ven el precio antes de llegar",
+    description: "Cada sesión tiene su precio y duración propios. Eligen, ven el total, reservan — sin preguntarte por WhatsApp.",
   },
-];
+};
+
+function featuresFor(vertical: Vertical) {
+  return [
+    {
+      icon: <CalendarClock aria-hidden />,
+      title: "Agenda que trabaja sola",
+      description:
+        "Tus clientas ven tus horas libres y reservan a la hora que sea. Tú confirmas con un toque y dejas de perseguir mensajes.",
+    },
+    SECOND_FEATURE_BY_VERTICAL[vertical],
+    {
+      icon: <Smartphone aria-hidden />,
+      title: "Tu panel, en tu teléfono",
+      description:
+        "Citas, servicios, portafolio y opiniones. Todo desde el navegador, sin instalar nada y sin computador.",
+    },
+    {
+      icon: <Wallet aria-hidden />,
+      title: "Cero comisiones",
+      description:
+        "El pago sigue siendo presencial, como siempre lo has hecho. AgendaUñas no toca ni un peso de lo que cobras.",
+    },
+  ];
+}
 
 const STEPS = [
   {
@@ -87,7 +143,10 @@ export function LandingExperience() {
   const [archetype, setArchetype] = useState<BrandArchetype>("minimal_nude");
   const [mode, setMode] = useState<ThemeMode>("light");
   const [primary, setPrimary] = useState<string | null>(null);
+  const [vertical, setVertical] = useState<Vertical>("nails");
 
+  const heroCopy = HERO_COPY[vertical];
+  const features = featuresFor(vertical);
   const palette = landingPalette(archetype, mode, primary);
   // Sin el override: es lo que muestra la primera muestra del conmutador, que
   // es el botón de "volver al color del estilo". Con el color activo se veía
@@ -166,17 +225,36 @@ export function LandingExperience() {
               El microsite de un tenant hace lo contrario (la foto del trabajo
               primero), pero eso es un oficio visual y esto es una promesa. */}
           <div className="flex w-full flex-col items-start gap-6 md:w-[55%]">
-            <Eyebrow>Para manicuristas independientes</Eyebrow>
+            {/* Conmutador de rubro: distinto del de estilo (que vive en la
+                barra pegada) porque cambia copy y el micrositio de ejemplo,
+                no colores. Va junto al eyebrow porque es lo primero que
+                decide con qué se identifica quien visita. */}
+            <div className="flex flex-wrap items-center gap-2">
+              {VERTICALS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setVertical(option.value)}
+                  aria-pressed={option.value === vertical}
+                  className={`rounded-pill border px-3 py-1.5 text-xs font-semibold transition-all duration-200 [transition-timing-function:var(--ease-brand)] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    option.value === vertical
+                      ? "border-primary bg-primary-tint text-primary"
+                      : "border-outline-variant text-muted-foreground hover:bg-surface-2"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <Eyebrow>{heroCopy.eyebrow}</Eyebrow>
 
             <h1 className="font-heading text-[clamp(2.5rem,1.6rem+3.6vw,4.25rem)] leading-[1.04] font-bold tracking-[-0.03em] text-balance">
               Tu propio sitio de reservas,{" "}
               <span className="text-primary">con tu marca</span>.
             </h1>
 
-            <BodyLarge className="max-w-lg">
-              Tus clientas entran a tu link, eligen su hora y diseñan su manicure antes de llegar. Tú
-              abres el panel y ves el día resuelto.
-            </BodyLarge>
+            <BodyLarge className="max-w-lg">{heroCopy.description}</BodyLarge>
 
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
               <BrandButton href={REGISTER_HREF} size="lg" icon={<ArrowRight className="size-4" />}>
@@ -205,7 +283,7 @@ export function LandingExperience() {
                 className="pointer-events-none absolute -inset-8 -z-10 rounded-full opacity-40 blur-3xl transition-colors duration-500"
                 style={{ background: palette.primary }}
               />
-              <LandingPreview palette={palette} />
+              <LandingPreview palette={palette} vertical={vertical} />
             </div>
           </div>
         </div>
@@ -217,11 +295,11 @@ export function LandingExperience() {
           <SectionHeading
             eyebrow="Lo que resuelve"
             title="Deja de agendar por mensajes"
-            subtitle="Todo lo que hoy haces a mano entre conversaciones — cuadrar la hora, explicar precios, recordar el diseño — pasa a tu sitio."
+            subtitle={BENEFITS_SUBTITLE_BY_VERTICAL[vertical]}
           />
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURES.map((feature) => (
+            {features.map((feature) => (
               <Panel key={feature.title} className="flex flex-col items-start gap-4">
                 <IconCircle size="md" tone="primary">
                   {feature.icon}
@@ -322,7 +400,7 @@ export function LandingExperience() {
               </div>
 
               <div className="flex w-full justify-center lg:w-2/5">
-                <LandingPreview palette={palette} />
+                <LandingPreview palette={palette} vertical={vertical} />
               </div>
             </div>
           </Band>
@@ -371,7 +449,7 @@ export function LandingExperience() {
 
       <SiteFooter
         businessName="AgendaUñas"
-        tagline="Agenda y diseño de uñas para manicuristas independientes en Chile."
+        tagline={FOOTER_TAGLINE_BY_VERTICAL[vertical]}
         links={[{ label: "Crear mi sitio", href: REGISTER_HREF }]}
         className="mt-auto"
       />

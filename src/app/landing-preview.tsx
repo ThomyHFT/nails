@@ -1,5 +1,6 @@
 import { Check, Star } from "lucide-react";
 import type { BrandTokenSet } from "@/server/domain/branding/brand-tokens";
+import type { Vertical } from "@/server/domain/tenant/vertical";
 import { gradientPlaceholder } from "@/app/estilo/placeholders";
 
 /**
@@ -11,18 +12,48 @@ import { gradientPlaceholder } from "@/app/estilo/placeholders";
  * por arquetipo — exactamente lo que le va a pasar a su propio sitio.
  *
  * Los datos son ficticios a propósito: un nombre inventado deja claro que es
- * una demostración y no el negocio de una clienta real.
+ * una demostración y no el negocio de una clienta real. Varían por rubro
+ * (SPEC 13 fase 3) para que quien mira se vea reflejado, no solo a quien
+ * hace uñas.
  */
 
 const SLOTS = ["10:30", "12:00", "15:30"];
 
-export function LandingPreview({ palette }: { palette: BrandTokenSet }) {
+const VERTICAL_PREVIEW: Record<
+  Vertical,
+  { businessName: string; serviceName: string; priceClp: number; durationMinutes: number; detailChip: string | null }
+> = {
+  nails: {
+    businessName: "Uñas por Antonia",
+    serviceName: "Manicura Rusa",
+    priceClp: 25000,
+    durationMinutes: 90,
+    detailChip: "Almendra · Mate · Francesa",
+  },
+  barbershop: {
+    businessName: "Barbería Don Elías",
+    serviceName: "Corte + barba",
+    priceClp: 12000,
+    durationMinutes: 45,
+    detailChip: null,
+  },
+  wellness: {
+    businessName: "Masajes Renata",
+    serviceName: "Masaje descontracturante",
+    priceClp: 25000,
+    durationMinutes: 60,
+    detailChip: null,
+  },
+};
+
+export function LandingPreview({ palette, vertical }: { palette: BrandTokenSet; vertical: Vertical }) {
   // Editorial usa el mismo color en `primary` y `accent`, y el degradé quedaba
   // un bloque plano. Cuando coinciden, el segundo extremo pasa a `secondary`,
   // que en ese arquetipo es justo el gris del otro lado del contraste.
   const coverTo =
     palette.accent.toLowerCase() === palette.primary.toLowerCase() ? palette.secondary : palette.accent;
   const cover = gradientPlaceholder(palette.primary, coverTo);
+  const preview = VERTICAL_PREVIEW[vertical];
 
   return (
     <div
@@ -32,7 +63,7 @@ export function LandingPreview({ palette }: { palette: BrandTokenSet }) {
       <div className="flex flex-col gap-3 overflow-hidden rounded-[1.75rem] bg-background p-4">
         {/* Encabezado del micrositio */}
         <div className="flex items-center justify-between gap-2">
-          <span className="font-heading text-base font-semibold text-primary">Uñas por Antonia</span>
+          <span className="font-heading text-base font-semibold text-primary">{preview.businessName}</span>
           <span className="inline-flex items-center gap-1 rounded-pill bg-primary-tint px-2 py-1 text-[0.6875rem] font-semibold text-primary">
             <Star className="size-3 fill-current" />
             4,9
@@ -48,10 +79,10 @@ export function LandingPreview({ palette }: { palette: BrandTokenSet }) {
         {/* Servicio */}
         <div className="flex items-center justify-between gap-3 rounded-card border border-outline-variant bg-card p-3">
           <div className="flex flex-col">
-            <span className="text-sm font-medium">Manicura Rusa</span>
-            <span className="text-xs text-muted-foreground">90 min</span>
+            <span className="text-sm font-medium">{preview.serviceName}</span>
+            <span className="text-xs text-muted-foreground">{preview.durationMinutes} min</span>
           </div>
-          <span className="t-price text-sm text-primary">$25.000</span>
+          <span className="t-price text-sm text-primary">${preview.priceClp.toLocaleString("es-CL")}</span>
         </div>
 
         {/* Horas */}
@@ -73,13 +104,15 @@ export function LandingPreview({ palette }: { palette: BrandTokenSet }) {
           </div>
         </div>
 
-        {/* Diseño elegido */}
-        <div className="flex items-center gap-2 rounded-card bg-surface-2 p-3">
-          <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <Check className="size-4" strokeWidth={3} />
-          </span>
-          <span className="text-xs text-muted-foreground">Almendra · Mate · Francesa</span>
-        </div>
+        {/* Diseño elegido: solo el rubro con diseñador (uñas) lo tiene. */}
+        {preview.detailChip && (
+          <div className="flex items-center gap-2 rounded-card bg-surface-2 p-3">
+            <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Check className="size-4" strokeWidth={3} />
+            </span>
+            <span className="text-xs text-muted-foreground">{preview.detailChip}</span>
+          </div>
+        )}
 
         <span className="rounded-lg bg-primary py-2.5 text-center text-sm font-semibold text-primary-foreground">
           Reservar hora
