@@ -50,11 +50,11 @@ const REGISTER_HREF = "/registro-profesional";
  * El resto de la página (agenda, panel, comisiones) es igual para los tres.
  */
 const BENEFITS_SUBTITLE_BY_VERTICAL: Record<Vertical, string> = {
-  nails: "Todo lo que hoy haces a mano entre conversaciones — cuadrar la hora, explicar precios, recordar el diseño — pasa a tu sitio.",
+  nails: "Todo lo que hoy haces a mano entre conversaciones (cuadrar la hora, explicar precios, recordar el diseño) pasa a tu sitio.",
   barbershop:
-    "Todo lo que hoy haces a mano entre conversaciones — cuadrar la hora, explicar precios, confirmar el turno — pasa a tu sitio.",
+    "Todo lo que hoy haces a mano entre conversaciones (cuadrar la hora, explicar precios, confirmar el turno) pasa a tu sitio.",
   wellness:
-    "Todo lo que hoy haces a mano entre conversaciones — cuadrar la hora, explicar precios, confirmar el turno — pasa a tu sitio.",
+    "Todo lo que hoy haces a mano entre conversaciones (cuadrar la hora, explicar precios, confirmar el turno) pasa a tu sitio.",
 };
 
 const FOOTER_TAGLINE_BY_VERTICAL: Record<Vertical, string> = {
@@ -91,12 +91,12 @@ const SECOND_FEATURE_BY_VERTICAL: Record<Vertical, { icon: React.ReactNode; titl
   barbershop: {
     icon: <Scissors aria-hidden />,
     title: "Ven el precio antes de llegar",
-    description: "Cada corte tiene su precio y duración propios. Eligen, ven el total, reservan — sin preguntarte por WhatsApp.",
+    description: "Cada corte tiene su precio y duración propios. Eligen, ven el total, reservan, sin preguntarte por WhatsApp.",
   },
   wellness: {
     icon: <HeartPulse aria-hidden />,
     title: "Ven el precio antes de llegar",
-    description: "Cada sesión tiene su precio y duración propios. Eligen, ven el total, reservan — sin preguntarte por WhatsApp.",
+    description: "Cada sesión tiene su precio y duración propios. Eligen, ven el total, reservan, sin preguntarte por WhatsApp.",
   },
 };
 
@@ -319,7 +319,7 @@ export function LandingExperience() {
             <SectionHeading
               eyebrow="Tu marca"
               title="Elige tu color y míralo aquí mismo"
-              subtitle="Esta página está usando tu selección en vivo — tipografías, esquinas, botones y bandas incluidas. Tu micrositio funciona exactamente igual."
+              subtitle="Esta página está usando tu selección en vivo: tipografías, esquinas, botones y bandas incluidas. Tu micrositio funciona exactamente igual."
             />
 
             <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-14">

@@ -143,8 +143,8 @@ export default function RegistroProfesionalPage() {
             </div>
             <Caption className="text-xs">
               agendaunas.cl/{slug || "tu-negocio"}
-              {slugStatus === "taken" && <span className="text-destructive"> — no disponible</span>}
-              {slugStatus === "checking" && " — comprobando…"}
+              {slugStatus === "taken" && <span className="text-destructive"> · no disponible</span>}
+              {slugStatus === "checking" && " · comprobando…"}
             </Caption>
           </label>
 

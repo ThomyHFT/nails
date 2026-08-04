@@ -483,7 +483,7 @@ export function MarcaForm({ slug }: { slug: string }) {
           coverImageUrl={form.coverImageUrl || null}
         />
         <p className="text-xs text-muted-foreground">
-          Datos de ejemplo — para ver tu contenido real, abre tu sitio en otra pestaña.
+          Datos de ejemplo: para ver tu contenido real, abre tu sitio en otra pestaña.
         </p>
       </div>
     </div>
