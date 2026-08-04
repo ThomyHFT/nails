@@ -8,4 +8,6 @@ export const FONT_PAIR_CSS_VARS: Record<BrandFontPair, { heading: string; body: 
   dmserif_outfit: { heading: "var(--font-dm-serif-display)", body: "var(--font-outfit)" },
   jakarta_solo: { heading: "var(--font-plus-jakarta-sans)", body: "var(--font-plus-jakarta-sans)" },
   fraunces_nunito: { heading: "var(--font-fraunces)", body: "var(--font-nunito)" },
+  oswald_inter: { heading: "var(--font-oswald)", body: "var(--font-inter)" },
+  outfit_solo: { heading: "var(--font-outfit)", body: "var(--font-outfit)" },
 };

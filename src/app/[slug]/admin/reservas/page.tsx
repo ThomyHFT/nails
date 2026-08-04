@@ -132,7 +132,7 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                   <Panel key={booking.id} padding="sm" className="flex flex-col gap-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 flex-col gap-1">
-                        <Title>{client?.name ?? "Clienta"}</Title>
+                        <Title>{client?.name ?? "Cliente"}</Title>
                         {client?.email && <Caption className="truncate text-xs">{client.email}</Caption>}
                       </div>
                       <div className="flex flex-col items-end gap-1.5">

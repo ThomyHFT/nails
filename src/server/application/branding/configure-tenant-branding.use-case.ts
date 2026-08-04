@@ -2,6 +2,7 @@ import { BRAND_ARCHETYPES } from "@/server/domain/branding/brand-archetypes";
 import type { BrandArchetype, BrandFontPair } from "@/server/domain/branding/brand-tokens";
 import { FONT_PAIR_FAMILIES } from "@/server/domain/branding/brand-tokens";
 import type { BrandingRepository } from "@/server/domain/branding/branding-repository.port";
+import { HERO_LAYOUTS, resolveSectionOrder, type HeroLayout } from "@/server/domain/branding/portada-layout";
 import type { TenantBranding } from "@/server/domain/branding/tenant-branding.entity";
 
 const COLOR_HEX_PATTERN = /^#[0-9A-Fa-f]{6}$/;
@@ -34,6 +35,13 @@ export class InvalidFontPairError extends Error {
   }
 }
 
+export class InvalidHeroLayoutError extends Error {
+  constructor() {
+    super("La variante de hero no existe");
+    this.name = "InvalidHeroLayoutError";
+  }
+}
+
 export interface ConfigureTenantBrandingInput {
   professionalId: string;
   archetype: BrandArchetype;
@@ -42,6 +50,8 @@ export interface ConfigureTenantBrandingInput {
   fontPair: BrandFontPair | null;
   logoUrl: string | null;
   coverImageUrl: string | null;
+  heroLayout: HeroLayout;
+  sectionOrder: unknown;
 }
 
 function assertColorHex(field: string, value: string | null): void {
@@ -66,11 +76,17 @@ export class ConfigureTenantBrandingUseCase {
     if (input.fontPair !== null && !(input.fontPair in FONT_PAIR_FAMILIES)) {
       throw new InvalidFontPairError();
     }
+    if (!HERO_LAYOUTS.includes(input.heroLayout)) {
+      throw new InvalidHeroLayoutError();
+    }
     assertColorHex("primary_color_hex", input.primaryColorHex);
     assertColorHex("on_primary_color_hex", input.onPrimaryColorHex);
     assertHttpsUrl("logo_url", input.logoUrl);
     assertHttpsUrl("cover_image_url", input.coverImageUrl);
 
-    return this.brandingRepository.upsert(input);
+    return this.brandingRepository.upsert({
+      ...input,
+      sectionOrder: resolveSectionOrder(input.sectionOrder),
+    });
   }
 }

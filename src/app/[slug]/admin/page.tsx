@@ -123,7 +123,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                       ? `${variant.serviceName} · ${variant.label ?? "—"}`
                       : "Servicio"
                   }
-                  clientName={client?.name ?? "Clienta"}
+                  clientName={client?.name ?? "Cliente"}
                   priceClp={booking.priceClp}
                 />
               );

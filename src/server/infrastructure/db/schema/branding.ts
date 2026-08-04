@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { brandArchetypeEnum, brandFontPairEnum } from "@/server/infrastructure/db/schema/enums";
+import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { brandArchetypeEnum, brandFontPairEnum, heroLayoutEnum } from "@/server/infrastructure/db/schema/enums";
 import { professionals } from "@/server/infrastructure/db/schema/users";
 
 export const tenantBranding = pgTable("tenant_branding", {
@@ -17,6 +17,8 @@ export const tenantBranding = pgTable("tenant_branding", {
   fontPair: brandFontPairEnum("font_pair"),
   logoUrl: text("logo_url"),
   coverImageUrl: text("cover_image_url"),
+  heroLayout: heroLayoutEnum("hero_layout").notNull().default("split"),
+  sectionOrder: jsonb("section_order"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

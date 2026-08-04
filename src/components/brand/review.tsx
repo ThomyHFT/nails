@@ -149,7 +149,7 @@ export function ReviewCard({
       {photoUrl && <MediaFrame src={photoUrl} alt="" ratio="wide" className="max-w-64" />}
 
       <div className="flex items-center justify-between gap-3 border-t border-outline-variant pt-3">
-        <span className="text-sm font-medium">{authorName ?? "Clienta"}</span>
+        <span className="text-sm font-medium">{authorName ?? "Cliente"}</span>
         <div className="flex items-center gap-3">
           {authorInstagram && (
             <a

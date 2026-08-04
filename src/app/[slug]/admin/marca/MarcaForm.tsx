@@ -1,19 +1,49 @@
 "use client";
 
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/ImageUploader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OptionCard, SegmentedControl } from "@/components/brand";
 import { BRAND_ARCHETYPES } from "@/server/domain/branding/brand-archetypes";
 import { FONT_PAIR_FAMILIES } from "@/server/domain/branding/brand-tokens";
 import type { BrandArchetype, BrandFontPair } from "@/server/domain/branding/brand-tokens";
+import {
+  DEFAULT_SECTION_ORDER,
+  HERO_LAYOUTS,
+  resolveSectionOrder,
+  type HeroLayout,
+  type PortadaSection,
+} from "@/server/domain/branding/portada-layout";
 import { resolveBrandTokens } from "@/server/domain/branding/resolve-brand-tokens";
 import type { TenantBranding } from "@/server/domain/branding/tenant-branding.entity";
 import { BrandPreview } from "@/app/[slug]/admin/marca/BrandPreview";
 
 const ARCHETYPES = Object.entries(BRAND_ARCHETYPES) as [BrandArchetype, (typeof BRAND_ARCHETYPES)[BrandArchetype]][];
 const FONT_PAIRS = Object.entries(FONT_PAIR_FAMILIES) as [BrandFontPair, (typeof FONT_PAIR_FAMILIES)[BrandFontPair]][];
+
+const HERO_LAYOUT_LABELS: Record<HeroLayout, string> = {
+  split: "Foto al costado",
+  stacked: "Foto arriba",
+  minimal: "Sin foto",
+};
+
+const SECTION_LABELS: Record<PortadaSection, string> = {
+  servicios: "Servicios",
+  galeria: "Galería",
+  opiniones: "Opiniones",
+  contacto: "Contacto",
+};
+
+type SectionRow = { key: PortadaSection; included: boolean };
+
+function toSectionRows(sectionOrder: unknown): SectionRow[] {
+  const included = resolveSectionOrder(sectionOrder);
+  const rest = DEFAULT_SECTION_ORDER.filter((section) => !included.includes(section));
+  return [...included, ...rest].map((key) => ({ key, included: included.includes(key) }));
+}
 
 type FormState = {
   archetype: BrandArchetype;
@@ -22,6 +52,8 @@ type FormState = {
   fontPair: BrandFontPair | "";
   logoUrl: string;
   coverImageUrl: string;
+  heroLayout: HeroLayout;
+  sectionRows: SectionRow[];
   tagline: string;
   phone: string;
   phoneVisible: boolean;
@@ -44,6 +76,8 @@ function toFormState(branding: TenantBranding | null, tagline: string | null, co
     fontPair: branding?.fontPair ?? "",
     logoUrl: branding?.logoUrl ?? "",
     coverImageUrl: branding?.coverImageUrl ?? "",
+    heroLayout: branding?.heroLayout ?? "split",
+    sectionRows: toSectionRows(branding?.sectionOrder ?? null),
     tagline: tagline ?? "",
     phone: contact?.phone ?? "",
     phoneVisible: contact?.phoneVisible ?? true,
@@ -85,12 +119,33 @@ export function MarcaForm({ slug }: { slug: string }) {
       fontPair: form.fontPair || null,
       logoUrl: form.logoUrl || null,
       coverImageUrl: form.coverImageUrl || null,
+      heroLayout: form.heroLayout,
+      sectionOrder: form.sectionRows.filter((row) => row.included).map((row) => row.key),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
   }, [form]);
 
   const resolved = useMemo(() => resolveBrandTokens(pendingBranding), [pendingBranding]);
+
+  function moveSectionRow(index: number, direction: -1 | 1) {
+    setForm((current) => {
+      if (!current) return current;
+      const rows = [...current.sectionRows];
+      const target = index + direction;
+      if (target < 0 || target >= rows.length) return current;
+      [rows[index], rows[target]] = [rows[target], rows[index]];
+      return { ...current, sectionRows: rows };
+    });
+  }
+
+  function toggleSectionRow(index: number) {
+    setForm((current) => {
+      if (!current) return current;
+      const rows = current.sectionRows.map((row, i) => (i === index ? { ...row, included: !row.included } : row));
+      return { ...current, sectionRows: rows };
+    });
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -109,6 +164,8 @@ export function MarcaForm({ slug }: { slug: string }) {
           fontPair: form.fontPair || null,
           logoUrl: form.logoUrl || null,
           coverImageUrl: form.coverImageUrl || null,
+          heroLayout: form.heroLayout,
+          sectionOrder: form.sectionRows.filter((row) => row.included).map((row) => row.key),
         }),
       }),
       fetch("/api/professional/tagline", {
@@ -156,19 +213,80 @@ export function MarcaForm({ slug }: { slug: string }) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="archetype">Arquetipo</Label>
-          <select
-            id="archetype"
-            value={form.archetype}
-            onChange={(e) => setForm({ ...form, archetype: e.target.value as BrandArchetype })}
-            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
+          <Label>Arquetipo</Label>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {ARCHETYPES.map(([value, definition]) => (
-              <option key={value} value={value}>
-                {definition.label}
-              </option>
+              <OptionCard
+                key={value}
+                label={definition.label}
+                selected={form.archetype === value}
+                onSelect={() => setForm({ ...form, archetype: value })}
+              >
+                <span
+                  className="h-10 w-full rounded-lg border border-outline-variant"
+                  style={{
+                    background: `linear-gradient(135deg, ${definition.light.primary}, ${definition.light.accent})`,
+                  }}
+                />
+              </OptionCard>
             ))}
-          </select>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label>Layout del hero</Label>
+          <SegmentedControl
+            options={HERO_LAYOUTS.map((value) => ({ value, label: HERO_LAYOUT_LABELS[value] }))}
+            value={form.heroLayout}
+            onChange={(value) => setForm({ ...form, heroLayout: value })}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label>Secciones de la portada</Label>
+          <p className="text-xs text-muted-foreground">
+            Desmarca una sección para ocultarla, o cambia el orden con las flechas.
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {form.sectionRows.map((row, index) => (
+              <li
+                key={row.key}
+                className="flex items-center gap-3 rounded-lg border border-input bg-transparent px-3 py-2"
+              >
+                <label className="flex flex-1 items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={row.included}
+                    onChange={() => toggleSectionRow(index)}
+                    className="size-4 rounded border-input"
+                  />
+                  {SECTION_LABELS[row.key]}
+                </label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={index === 0}
+                    onClick={() => moveSectionRow(index, -1)}
+                    aria-label={`Subir ${SECTION_LABELS[row.key]}`}
+                  >
+                    <ChevronUp className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={index === form.sectionRows.length - 1}
+                    onClick={() => moveSectionRow(index, 1)}
+                    aria-label={`Bajar ${SECTION_LABELS[row.key]}`}
+                  >
+                    <ChevronDown className="size-4" />
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -327,11 +445,30 @@ export function MarcaForm({ slug }: { slug: string }) {
         {status && <p className="text-sm text-muted-foreground">{status}</p>}
       </form>
 
-      <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium">Preview en vivo</p>
-        <div className="flex gap-3">
-          <BrandPreview label="Claro" tokens={resolved.light} fontPair={resolved.fontPair} />
-          <BrandPreview label="Oscuro" tokens={resolved.dark} fontPair={resolved.fontPair} />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium">Preview en vivo</p>
+          <div className="flex gap-3">
+            <BrandPreview label="Claro" tokens={resolved.light} fontPair={resolved.fontPair} />
+            <BrandPreview label="Oscuro" tokens={resolved.dark} fontPair={resolved.fontPair} />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <p className="text-sm font-medium">Orden de la portada</p>
+          <ol className="flex flex-col gap-1 text-sm text-muted-foreground">
+            <li>1. Hero ({HERO_LAYOUT_LABELS[form.heroLayout]})</li>
+            {form.sectionRows
+              .filter((row) => row.included)
+              .map((row, index) => (
+                <li key={row.key}>
+                  {index + 2}. {SECTION_LABELS[row.key]}
+                </li>
+              ))}
+          </ol>
+          <p className="text-xs text-muted-foreground">
+            Para ver la portada real, ábrela en otra pestaña.
+          </p>
         </div>
       </div>
     </div>

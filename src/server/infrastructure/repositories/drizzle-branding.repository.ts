@@ -17,6 +17,8 @@ function toDomain(row: typeof tenantBranding.$inferSelect): TenantBranding {
     fontPair: row.fontPair,
     logoUrl: row.logoUrl,
     coverImageUrl: row.coverImageUrl,
+    heroLayout: row.heroLayout,
+    sectionOrder: row.sectionOrder,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -43,6 +45,8 @@ export class DrizzleBrandingRepository implements BrandingRepository {
         fontPair: branding.fontPair,
         logoUrl: branding.logoUrl,
         coverImageUrl: branding.coverImageUrl,
+        heroLayout: branding.heroLayout,
+        sectionOrder: branding.sectionOrder,
       })
       .onConflictDoUpdate({
         target: tenantBranding.professionalId,
@@ -53,6 +57,8 @@ export class DrizzleBrandingRepository implements BrandingRepository {
           fontPair: branding.fontPair,
           logoUrl: branding.logoUrl,
           coverImageUrl: branding.coverImageUrl,
+          heroLayout: branding.heroLayout,
+          sectionOrder: branding.sectionOrder,
           updatedAt: new Date(),
         },
       })

@@ -6,9 +6,14 @@ import {
   InvalidArchetypeError,
   InvalidColorHexError,
   InvalidFontPairError,
+  InvalidHeroLayoutError,
   InvalidImageUrlError,
+  type ConfigureTenantBrandingInput,
 } from "@/server/application/branding/configure-tenant-branding.use-case";
 import { GetTenantBrandingUseCase } from "@/server/application/branding/get-tenant-branding.use-case";
+import { BRAND_ARCHETYPES } from "@/server/domain/branding/brand-archetypes";
+import { FONT_PAIR_FAMILIES } from "@/server/domain/branding/brand-tokens";
+import { HERO_LAYOUTS } from "@/server/domain/branding/portada-layout";
 import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 
@@ -26,14 +31,9 @@ async function requireOwnedProfessional() {
   return { professional, response: null };
 }
 
-const archetypeSchema = z.enum(["minimal_nude", "glam", "editorial", "pastel_soft"]);
-const fontPairSchema = z.enum([
-  "playfair_jakarta",
-  "cormorant_inter",
-  "dmserif_outfit",
-  "jakarta_solo",
-  "fraunces_nunito",
-]);
+const archetypeSchema = z.enum(Object.keys(BRAND_ARCHETYPES) as [string, ...string[]]);
+const fontPairSchema = z.enum(Object.keys(FONT_PAIR_FAMILIES) as [string, ...string[]]);
+const heroLayoutSchema = z.enum(HERO_LAYOUTS as [string, ...string[]]);
 
 const putBrandingSchema = z.object({
   archetype: archetypeSchema,
@@ -42,6 +42,8 @@ const putBrandingSchema = z.object({
   fontPair: fontPairSchema.nullable(),
   logoUrl: z.string().nullable(),
   coverImageUrl: z.string().nullable(),
+  heroLayout: heroLayoutSchema,
+  sectionOrder: z.unknown(),
 });
 
 export async function GET() {
@@ -64,14 +66,21 @@ export async function PUT(request: Request) {
 
   const useCase = new ConfigureTenantBrandingUseCase(new DrizzleBrandingRepository());
   try {
-    const branding = await useCase.execute({ professionalId: professional.id, ...parsed.data });
+    const branding = await useCase.execute({
+      professionalId: professional.id,
+      ...parsed.data,
+      archetype: parsed.data.archetype as ConfigureTenantBrandingInput["archetype"],
+      fontPair: parsed.data.fontPair as ConfigureTenantBrandingInput["fontPair"],
+      heroLayout: parsed.data.heroLayout as ConfigureTenantBrandingInput["heroLayout"],
+    });
     return NextResponse.json({ branding });
   } catch (err) {
     if (
       err instanceof InvalidColorHexError ||
       err instanceof InvalidImageUrlError ||
       err instanceof InvalidArchetypeError ||
-      err instanceof InvalidFontPairError
+      err instanceof InvalidFontPairError ||
+      err instanceof InvalidHeroLayoutError
     ) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }

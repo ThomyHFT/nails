@@ -34,6 +34,9 @@ export const brandArchetypeEnum = pgEnum("brand_archetype", [
   "glam",
   "editorial",
   "pastel_soft",
+  "barber_classic",
+  "urban_dark",
+  "clinical_calm",
 ]);
 
 export const brandFontPairEnum = pgEnum("brand_font_pair", [
@@ -42,7 +45,11 @@ export const brandFontPairEnum = pgEnum("brand_font_pair", [
   "dmserif_outfit",
   "jakarta_solo",
   "fraunces_nunito",
+  "oswald_inter",
+  "outfit_solo",
 ]);
+
+export const heroLayoutEnum = pgEnum("hero_layout", ["split", "stacked", "minimal"]);
 
 export const emailNotificationTypeEnum = pgEnum("email_notification_type", [
   "confirmation",

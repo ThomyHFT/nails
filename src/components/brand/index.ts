@@ -44,6 +44,7 @@ export {
   GalleryGrid,
   Hero,
   SiteFooter,
+  type HeroLayout,
 } from "@/components/brand/marketing";
 
 export {

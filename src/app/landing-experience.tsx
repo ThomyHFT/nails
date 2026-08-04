@@ -106,7 +106,7 @@ function featuresFor(vertical: Vertical) {
       icon: <CalendarClock aria-hidden />,
       title: "Agenda que trabaja sola",
       description:
-        "Tus clientas ven tus horas libres y reservan a la hora que sea. Tú confirmas con un toque y dejas de perseguir mensajes.",
+        "Tus clientes ven tus horas libres y reservan a la hora que sea. Tú confirmas con un toque y dejas de perseguir mensajes.",
     },
     SECOND_FEATURE_BY_VERTICAL[vertical],
     {

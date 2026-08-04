@@ -22,6 +22,8 @@ function defaultBranding(professionalId: string): TenantBranding {
     fontPair: null,
     logoUrl: null,
     coverImageUrl: null,
+    heroLayout: "split",
+    sectionOrder: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

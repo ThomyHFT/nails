@@ -35,6 +35,8 @@ function branding(overrides: Partial<TenantBranding> = {}): TenantBranding {
     fontPair: null,
     logoUrl: null,
     coverImageUrl: null,
+    heroLayout: "split",
+    sectionOrder: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

@@ -17,7 +17,7 @@ export function buildEmailVerificationEmail(input: EmailVerificationEmailInput):
     <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
       <h1 style="color:${brandColor};font-size:20px;margin:0 0 16px;">Un último paso</h1>
       <p>Tu cuenta para <strong>${input.businessName}</strong> ya está creada. Puedes entrar a tu panel y configurar
-      tu negocio ahora mismo — pero tu micrositio todavía no es visible para tus clientas.</p>
+      tu negocio ahora mismo — pero tu micrositio todavía no es visible para tus clientes.</p>
       <p><a href="${input.verifyUrl}" style="color:${brandColor};">Verificar mi correo y publicar mi sitio</a></p>
       <p>El enlace vence en 24 horas y solo se puede usar una vez.</p>
     </div>

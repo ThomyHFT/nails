@@ -25,9 +25,17 @@ const TOKEN_KEYS: (keyof BrandTokenSet)[] = [
 ];
 
 describe("BRAND_ARCHETYPES", () => {
-  it("defines the four archetypes", () => {
+  it("defines the seven archetypes", () => {
     expect(Object.keys(BRAND_ARCHETYPES).sort()).toEqual(
-      ["editorial", "glam", "minimal_nude", "pastel_soft"].sort(),
+      [
+        "barber_classic",
+        "clinical_calm",
+        "editorial",
+        "glam",
+        "minimal_nude",
+        "pastel_soft",
+        "urban_dark",
+      ].sort(),
     );
   });
 

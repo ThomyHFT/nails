@@ -8,14 +8,20 @@ import { Body, BodyLarge, Caption, Display, Eyebrow, Headline, Overline } from "
  * Piezas de la vitrina pública: hero, galería, CTA de contacto y pie.
  */
 
+export type HeroLayout = "split" | "stacked" | "minimal";
+
 /**
- * Hero editorial. En móvil apila texto sobre imagen; en escritorio abre a dos
- * columnas con la foto enmarcada, que es la lectura de los mockups.
+ * Hero editorial, en tres variantes (SPEC 14). La imagen siempre va en un
+ * marco propio y nunca de fondo detrás del texto: el fondo lavado obliga a un
+ * velo que apaga la foto y baja el contraste del titular a la vez.
  *
- * La imagen va en un marco propio y no de fondo detrás del texto: el fondo
- * lavado obliga a un velo que apaga la foto y baja el contraste del titular.
+ * - `split` (default): retrato enmarcado al costado, la lectura original.
+ * - `stacked`: foto ancha arriba a todo el contenedor, texto centrado debajo.
+ * - `minimal`: sin foto, para el tenant que todavía no tiene una que valga la
+ *   pena — nunca deja el hueco donde iría, aunque `imageUrl` venga cargado.
  */
 export function Hero({
+  layout = "split",
   eyebrow,
   title,
   description,
@@ -26,6 +32,7 @@ export function Hero({
   badge,
   className,
 }: {
+  layout?: HeroLayout;
   eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
@@ -36,6 +43,44 @@ export function Hero({
   badge?: ReactNode;
   className?: string;
 }) {
+  const actions = (primaryAction || secondaryAction) && (
+    <div className="mt-2 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:gap-4">
+      {primaryAction}
+      {secondaryAction}
+    </div>
+  );
+
+  if (layout === "minimal") {
+    return (
+      <section className={cn("flex flex-col items-center gap-6 px-5 py-16 text-center md:py-24", className)}>
+        {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+        <Display className="max-w-2xl text-primary">{title}</Display>
+        {description && <BodyLarge className="max-w-md">{description}</BodyLarge>}
+        {actions && <div className="flex justify-center">{actions}</div>}
+        {badge && <div className="mt-2">{badge}</div>}
+      </section>
+    );
+  }
+
+  if (layout === "stacked") {
+    return (
+      <section className={cn("flex flex-col gap-8 px-5 pt-10 pb-14 md:py-20", className)}>
+        {imageUrl !== undefined && (
+          <div className="relative w-full">
+            <MediaFrame src={imageUrl} alt={imageAlt ?? ""} ratio="wide" className="shadow-e1" />
+            {badge && <div className="absolute -bottom-5 left-4 md:-bottom-6 md:-left-6">{badge}</div>}
+          </div>
+        )}
+        <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
+          {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+          <Display className="text-primary">{title}</Display>
+          {description && <BodyLarge className="max-w-md">{description}</BodyLarge>}
+          {actions && <div className="flex justify-center">{actions}</div>}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className={cn("flex flex-col items-center gap-8 px-5 pt-10 pb-14 md:flex-row md:gap-12 md:py-20", className)}>
       {/* En móvil el trabajo va primero: en un oficio visual la foto no puede
@@ -45,12 +90,7 @@ export function Hero({
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
         <Display className="text-primary">{title}</Display>
         {description && <BodyLarge className="max-w-md">{description}</BodyLarge>}
-        {(primaryAction || secondaryAction) && (
-          <div className="mt-2 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:gap-4">
-            {primaryAction}
-            {secondaryAction}
-          </div>
-        )}
+        {actions}
       </div>
 
       {imageUrl !== undefined && (

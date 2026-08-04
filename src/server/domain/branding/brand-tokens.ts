@@ -1,11 +1,20 @@
-export type BrandArchetype = "minimal_nude" | "glam" | "editorial" | "pastel_soft";
+export type BrandArchetype =
+  | "minimal_nude"
+  | "glam"
+  | "editorial"
+  | "pastel_soft"
+  | "barber_classic"
+  | "urban_dark"
+  | "clinical_calm";
 
 export type BrandFontPair =
   | "playfair_jakarta"
   | "cormorant_inter"
   | "dmserif_outfit"
   | "jakarta_solo"
-  | "fraunces_nunito";
+  | "fraunces_nunito"
+  | "oswald_inter"
+  | "outfit_solo";
 
 export type BrandTokenSet = {
   background: string;
@@ -42,4 +51,6 @@ export const FONT_PAIR_FAMILIES: Record<BrandFontPair, { heading: string; body: 
   dmserif_outfit: { heading: "DM Serif Display", body: "Outfit" },
   jakarta_solo: { heading: "Plus Jakarta Sans", body: "Plus Jakarta Sans" },
   fraunces_nunito: { heading: "Fraunces", body: "Nunito" },
+  oswald_inter: { heading: "Oswald", body: "Inter" },
+  outfit_solo: { heading: "Outfit", body: "Outfit" },
 };

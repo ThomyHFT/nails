@@ -9,6 +9,8 @@ import { ListReviewsUseCase } from "@/server/application/review/list-reviews.use
 import { ListServicesUseCase } from "@/server/application/service/list-services.use-case";
 import { priceFromClp } from "@/server/domain/service/price-from";
 import { isAddressVisible, isPhoneVisible } from "@/server/domain/professional/professional.entity";
+import type { PortadaSection } from "@/server/domain/branding/portada-layout";
+import { resolveSectionOrder } from "@/server/domain/branding/portada-layout";
 import { ratingSummary } from "@/server/domain/review/rating-summary";
 import { reviewerDisplayName } from "@/server/domain/review/reviewer-display-name";
 import { db } from "@/server/infrastructure/db/client";
@@ -84,9 +86,149 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
     : [];
   const reviewerNameById = new Map(reviewClientRows.map((client) => [client.id, client.name]));
 
+  const serviciosSection = featuredServices.length > 0 && (
+    <div key="servicios" className="px-5">
+      {/* Nivel 2 y no 1: la banda tiene que despegarse del fondo *y* de las
+          tarjetas que lleva dentro, y con un solo escalón las tres capas
+          quedaban indistinguibles en tenants de fondo muy claro. */}
+      <Band level={2} id="servicios" className="scroll-mt-24">
+        <SectionHeading
+          title="Servicios destacados"
+          subtitle="Elige el servicio, el largo y la hora. El pago es presencial, al terminar."
+          className="mb-10"
+        />
+        {/* La grilla sigue el conteo real: a dos columnas fijas, tres
+            servicios dejaban un hueco huérfano a media pantalla. */}
+        <div
+          className={cn(
+            "grid gap-5",
+            featuredServices.length === 1 && "mx-auto max-w-md",
+            featuredServices.length === 2 && "md:grid-cols-2",
+            featuredServices.length === 3 && "md:grid-cols-3",
+            featuredServices.length >= 4 && "md:grid-cols-2",
+          )}
+        >
+          {featuredServices.map((service) => (
+            <ServiceCard
+              key={service.id}
+              href={`/${slug}/reservar?service=${service.id}`}
+              // Con foto sube la variante "media" del sistema (foto arriba,
+              // precio grande): sin ella, la compacta ya está pensada para
+              // sostenerse sin imagen.
+              variant={service.imageUrl ? "media" : "compact"}
+              service={{
+                id: service.id,
+                name: service.name,
+                description: service.description,
+                imageUrl: service.imageUrl,
+                priceFromClp: service.priceFrom,
+                durationMinutes: service.durationMinutes,
+              }}
+            />
+          ))}
+        </div>
+        <div className="mt-10 flex justify-center">
+          <ActionLink href={`/${slug}/servicios`} icon={<ArrowRight className="size-4" />}>
+            Ver todos los servicios
+          </ActionLink>
+        </div>
+      </Band>
+    </div>
+  );
+
+  const galeriaSection = portfolioItems.length > 0 && (
+    <Section key="galeria" id="galeria" className="flex flex-col gap-6">
+      <SectionHeading
+        align="start"
+        title="Nuestro trabajo"
+        subtitle={
+          professional.instagramHandle
+            ? `Síguenos en Instagram ${instagramLabel(professional.instagramHandle)}`
+            : undefined
+        }
+        action={
+          professional.instagramHandle ? (
+            <a
+              href={instagramUrl(professional.instagramHandle)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex text-sm font-semibold text-primary transition-colors hover:underline"
+            >
+              Ver más
+            </a>
+          ) : undefined
+        }
+      />
+      <GalleryLightbox items={portfolioItems.map((item) => ({ id: item.id, imageUrl: item.imageUrl, alt: "" }))} />
+    </Section>
+  );
+
+  const opinionesSection = reviewsSummary && (
+    <Section key="opiniones" id="opiniones" className="flex flex-col gap-6">
+      <SectionHeading
+        align="start"
+        title="Lo que dicen"
+        action={<RatingSummary average={reviewsSummary.average} count={reviewsSummary.count} />}
+      />
+      <div
+        className={cn(
+          "grid gap-4",
+          previewReviews.length === 1 && "max-w-md",
+          previewReviews.length === 2 && "md:grid-cols-2",
+          previewReviews.length >= 3 && "md:grid-cols-3",
+        )}
+      >
+        {previewReviews.map((review) => {
+          const clientName = reviewerNameById.get(review.clientUserId);
+          return (
+            <ReviewCard
+              key={review.id}
+              rating={review.rating}
+              body={review.body}
+              photoUrl={review.photoUrl}
+              authorName={clientName ? reviewerDisplayName(clientName) : null}
+              authorInstagram={review.authorInstagram}
+            />
+          );
+        })}
+      </div>
+      <ActionLink href={`/${slug}/opiniones`} icon={<ArrowRight className="size-4" />}>
+        Ver todas las opiniones
+      </ActionLink>
+    </Section>
+  );
+
+  const contactoSection = (isPhoneVisible(professional) || isAddressVisible(professional)) && (
+    <Section key="contacto" className="flex flex-col gap-4">
+      {isPhoneVisible(professional) && (
+        <ContactCard
+          icon={<MessageCircle className="size-7" />}
+          title="¿Tienes alguna duda especial?"
+          description="Escríbeme directamente por WhatsApp. Estaré feliz de asesorarte sobre qué servicio es el ideal para ti."
+          action={
+            <BrandButton size="lg" href={whatsAppUrl(professional.phone!)}>
+              Contactar por WhatsApp
+            </BrandButton>
+          }
+        />
+      )}
+      {isAddressVisible(professional) && (
+        <ContactCard icon={<MapPin className="size-7" />} title="¿Dónde estamos?" description={professional.address} />
+      )}
+    </Section>
+  );
+
+  const sectionsByKey: Record<PortadaSection, React.ReactNode> = {
+    servicios: serviciosSection,
+    galeria: galeriaSection,
+    opiniones: opinionesSection,
+    contacto: contactoSection,
+  };
+
   return (
     <Container size="xl" className="flex flex-col">
       <Hero
+        layout={branding?.heroLayout ?? "split"}
         // El eyebrow nunca repite el nombre del negocio: ya está en el header,
         // 60px más arriba. Si hay Instagram lo anticipa acá; si no, se omite.
         eyebrow={professional.instagramHandle ? instagramLabel(professional.instagramHandle) : undefined}
@@ -117,137 +259,7 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
         }
       />
 
-      {featuredServices.length > 0 && (
-        <div className="px-5">
-          {/* Nivel 2 y no 1: la banda tiene que despegarse del fondo *y* de las
-              tarjetas que lleva dentro, y con un solo escalón las tres capas
-              quedaban indistinguibles en tenants de fondo muy claro. */}
-          <Band level={2} id="servicios" className="scroll-mt-24">
-            <SectionHeading
-              title="Servicios destacados"
-              subtitle="Elige el servicio, el largo y la hora. El pago es presencial, al terminar."
-              className="mb-10"
-            />
-            {/* La grilla sigue el conteo real: a dos columnas fijas, tres
-                servicios dejaban un hueco huérfano a media pantalla. */}
-            <div
-              className={cn(
-                "grid gap-5",
-                featuredServices.length === 1 && "mx-auto max-w-md",
-                featuredServices.length === 2 && "md:grid-cols-2",
-                featuredServices.length === 3 && "md:grid-cols-3",
-                featuredServices.length >= 4 && "md:grid-cols-2",
-              )}
-            >
-              {featuredServices.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  href={`/${slug}/reservar?service=${service.id}`}
-                  // Con foto sube la variante "media" del sistema (foto arriba,
-                  // precio grande): sin ella, la compacta ya está pensada para
-                  // sostenerse sin imagen.
-                  variant={service.imageUrl ? "media" : "compact"}
-                  service={{
-                    id: service.id,
-                    name: service.name,
-                    description: service.description,
-                    imageUrl: service.imageUrl,
-                    priceFromClp: service.priceFrom,
-                    durationMinutes: service.durationMinutes,
-                  }}
-                />
-              ))}
-            </div>
-            <div className="mt-10 flex justify-center">
-              <ActionLink href={`/${slug}/servicios`} icon={<ArrowRight className="size-4" />}>
-                Ver todos los servicios
-              </ActionLink>
-            </div>
-          </Band>
-        </div>
-      )}
-
-      {portfolioItems.length > 0 && (
-        <Section id="galeria" className="flex flex-col gap-6">
-          <SectionHeading
-            align="start"
-            title="Nuestro trabajo"
-            subtitle={
-              professional.instagramHandle
-                ? `Síguenos en Instagram ${instagramLabel(professional.instagramHandle)}`
-                : undefined
-            }
-            action={
-              professional.instagramHandle ? (
-                <a
-                  href={instagramUrl(professional.instagramHandle)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex text-sm font-semibold text-primary transition-colors hover:underline"
-                >
-                  Ver más
-                </a>
-              ) : undefined
-            }
-          />
-          <GalleryLightbox items={portfolioItems.map((item) => ({ id: item.id, imageUrl: item.imageUrl, alt: "" }))} />
-        </Section>
-      )}
-
-      {reviewsSummary && (
-        <Section id="opiniones" className="flex flex-col gap-6">
-          <SectionHeading
-            align="start"
-            title="Lo que dicen las clientas"
-            action={<RatingSummary average={reviewsSummary.average} count={reviewsSummary.count} />}
-          />
-          <div
-            className={cn(
-              "grid gap-4",
-              previewReviews.length === 1 && "max-w-md",
-              previewReviews.length === 2 && "md:grid-cols-2",
-              previewReviews.length >= 3 && "md:grid-cols-3",
-            )}
-          >
-            {previewReviews.map((review) => {
-              const clientName = reviewerNameById.get(review.clientUserId);
-              return (
-                <ReviewCard
-                  key={review.id}
-                  rating={review.rating}
-                  body={review.body}
-                  photoUrl={review.photoUrl}
-                  authorName={clientName ? reviewerDisplayName(clientName) : null}
-                  authorInstagram={review.authorInstagram}
-                />
-              );
-            })}
-          </div>
-          <ActionLink href={`/${slug}/opiniones`} icon={<ArrowRight className="size-4" />}>
-            Ver todas las opiniones
-          </ActionLink>
-        </Section>
-      )}
-
-      {(isPhoneVisible(professional) || isAddressVisible(professional)) && (
-        <Section className="flex flex-col gap-4">
-          {isPhoneVisible(professional) && (
-            <ContactCard
-              icon={<MessageCircle className="size-7" />}
-              title="¿Tienes alguna duda especial?"
-              description="Escríbeme directamente por WhatsApp. Estaré feliz de asesorarte sobre qué servicio es el ideal para ti."
-              action={
-                <BrandButton size="lg" href={whatsAppUrl(professional.phone!)}>
-                  Contactar por WhatsApp
-                </BrandButton>
-              }
-            />
-          )}
-          {isAddressVisible(professional) && (
-            <ContactCard icon={<MapPin className="size-7" />} title="¿Dónde estamos?" description={professional.address} />
-          )}
-        </Section>
-      )}
+      {resolveSectionOrder(branding?.sectionOrder).map((section) => sectionsByKey[section])}
     </Container>
   );
 }

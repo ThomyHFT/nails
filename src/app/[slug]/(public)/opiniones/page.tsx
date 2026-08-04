@@ -52,7 +52,7 @@ export default async function OpinionesPage({ params }: { params: Promise<{ slug
             {summary ? (
               <RatingSummary average={summary.average} count={summary.count} size="lg" />
             ) : (
-              <Caption>Las opiniones las escriben clientas con una reserva completada.</Caption>
+              <Caption>Las opiniones las escriben clientes con una reserva completada.</Caption>
             )}
           </div>
 

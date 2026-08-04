@@ -1,4 +1,5 @@
 import type { BrandArchetype, BrandFontPair } from "@/server/domain/branding/brand-tokens";
+import type { HeroLayout } from "@/server/domain/branding/portada-layout";
 import type { TenantBranding } from "@/server/domain/branding/tenant-branding.entity";
 
 export interface BrandingUpsert {
@@ -9,6 +10,8 @@ export interface BrandingUpsert {
   fontPair: BrandFontPair | null;
   logoUrl: string | null;
   coverImageUrl: string | null;
+  heroLayout: HeroLayout;
+  sectionOrder: unknown;
 }
 
 export interface BrandingRepository {
