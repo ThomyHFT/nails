@@ -67,7 +67,9 @@ export function GalleryLightbox({ items, className }: { items: GalleryItem[]; cl
               padding="sm"
               className="flex min-h-16 flex-1 items-center justify-center"
             >
-              {item.caption && <Title className="text-center text-balance">{item.caption}</Title>}
+              {item.caption && (
+                <Title className="text-center text-balance text-sm text-primary">{item.caption}</Title>
+              )}
             </Panel>
           </Panel>
         ))}
