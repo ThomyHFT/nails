@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { ImageUploader } from "@/components/ImageUploader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AdminCard, BrandButton, Caption, MediaFrame, Panel } from "@/components/brand";
+
+const NO_SERVICE = "none";
 
 type PortfolioItem = {
   id: string;
@@ -124,19 +127,22 @@ export function PortafolioManager({ slug }: { slug: string }) {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="service">Servicio asociado (opcional)</Label>
-          <select
-            id="service"
-            value={newServiceId}
-            onChange={(e) => setNewServiceId(e.target.value)}
-            className="h-8 rounded-lg border border-outline-variant bg-background px-2 text-sm"
+          <Select
+            value={newServiceId || NO_SERVICE}
+            onValueChange={(value) => setNewServiceId(!value || value === NO_SERVICE ? "" : value)}
           >
-            <option value="">Ninguno</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="service" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_SERVICE}>Ninguno</SelectItem>
+              {services.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <BrandButton size="sm" disabled={!newImageUrl || isCreating} onClick={createItem} className="w-fit">

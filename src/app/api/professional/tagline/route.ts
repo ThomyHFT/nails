@@ -19,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  return NextResponse.json({ tagline: professional.tagline });
+  return NextResponse.json({ tagline: professional.tagline, businessName: professional.businessName });
 }
 
 export async function PUT(request: Request) {

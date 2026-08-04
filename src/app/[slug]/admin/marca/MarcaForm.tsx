@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/ImageUploader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OptionCard, SegmentedControl } from "@/components/brand";
 import { BRAND_ARCHETYPES } from "@/server/domain/branding/brand-archetypes";
 import { FONT_PAIR_FAMILIES } from "@/server/domain/branding/brand-tokens";
@@ -19,7 +20,9 @@ import {
 } from "@/server/domain/branding/portada-layout";
 import { resolveBrandTokens } from "@/server/domain/branding/resolve-brand-tokens";
 import type { TenantBranding } from "@/server/domain/branding/tenant-branding.entity";
-import { BrandPreview } from "@/app/[slug]/admin/marca/BrandPreview";
+import { PortadaPreview } from "@/app/[slug]/admin/marca/PortadaPreview";
+
+const INHERIT_FONT_PAIR = "inherit";
 
 const ARCHETYPES = Object.entries(BRAND_ARCHETYPES) as [BrandArchetype, (typeof BRAND_ARCHETYPES)[BrandArchetype]][];
 const FONT_PAIRS = Object.entries(FONT_PAIR_FAMILIES) as [BrandFontPair, (typeof FONT_PAIR_FAMILIES)[BrandFontPair]][];
@@ -88,6 +91,8 @@ function toFormState(branding: TenantBranding | null, tagline: string | null, co
 
 export function MarcaForm({ slug }: { slug: string }) {
   const [form, setForm] = useState<FormState | null>(null);
+  const [businessName, setBusinessName] = useState("");
+  const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -101,6 +106,7 @@ export function MarcaForm({ slug }: { slug: string }) {
     const taglineData = await taglineResponse.json();
     const contactoData = await contactoResponse.json();
     setForm(toFormState(brandingData.branding ?? null, taglineData.tagline ?? null, contactoResponse.ok ? contactoData : null));
+    setBusinessName(taglineData.businessName ?? "");
   }, []);
 
   useEffect(() => {
@@ -127,6 +133,11 @@ export function MarcaForm({ slug }: { slug: string }) {
   }, [form]);
 
   const resolved = useMemo(() => resolveBrandTokens(pendingBranding), [pendingBranding]);
+
+  const includedSections = useMemo(
+    () => form?.sectionRows.filter((row) => row.included).map((row) => row.key) ?? [],
+    [form],
+  );
 
   function moveSectionRow(index: number, direction: -1 | 1) {
     setForm((current) => {
@@ -330,19 +341,24 @@ export function MarcaForm({ slug }: { slug: string }) {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="fontPair">Par tipográfico</Label>
-          <select
-            id="fontPair"
-            value={form.fontPair}
-            onChange={(e) => setForm({ ...form, fontPair: e.target.value as BrandFontPair | "" })}
-            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          <Select
+            value={form.fontPair || INHERIT_FONT_PAIR}
+            onValueChange={(value) =>
+              setForm({ ...form, fontPair: value === INHERIT_FONT_PAIR ? "" : (value as BrandFontPair) })
+            }
           >
-            <option value="">Heredado del arquetipo ({BRAND_ARCHETYPES[form.archetype].label})</option>
-            {FONT_PAIRS.map(([value, families]) => (
-              <option key={value} value={value}>
-                {families.heading} + {families.body}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="fontPair" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={INHERIT_FONT_PAIR}>Heredado del arquetipo ({BRAND_ARCHETYPES[form.archetype].label})</SelectItem>
+              {FONT_PAIRS.map(([value, families]) => (
+                <SelectItem key={value} value={value}>
+                  {families.heading} + {families.body}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -445,31 +461,30 @@ export function MarcaForm({ slug }: { slug: string }) {
         {status && <p className="text-sm text-muted-foreground">{status}</p>}
       </form>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3 lg:sticky lg:top-8 lg:self-start">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-medium">Preview en vivo</p>
-          <div className="flex gap-3">
-            <BrandPreview label="Claro" tokens={resolved.light} fontPair={resolved.fontPair} />
-            <BrandPreview label="Oscuro" tokens={resolved.dark} fontPair={resolved.fontPair} />
-          </div>
+          <SegmentedControl
+            size="sm"
+            options={[
+              { value: "light", label: "Claro" },
+              { value: "dark", label: "Oscuro" },
+            ]}
+            value={previewMode}
+            onChange={setPreviewMode}
+          />
         </div>
-
-        <div className="flex flex-col gap-1.5">
-          <p className="text-sm font-medium">Orden de la portada</p>
-          <ol className="flex flex-col gap-1 text-sm text-muted-foreground">
-            <li>1. Hero ({HERO_LAYOUT_LABELS[form.heroLayout]})</li>
-            {form.sectionRows
-              .filter((row) => row.included)
-              .map((row, index) => (
-                <li key={row.key}>
-                  {index + 2}. {SECTION_LABELS[row.key]}
-                </li>
-              ))}
-          </ol>
-          <p className="text-xs text-muted-foreground">
-            Para ver la portada real, ábrela en otra pestaña.
-          </p>
-        </div>
+        <PortadaPreview
+          businessName={businessName || slug}
+          tokens={previewMode === "light" ? resolved.light : resolved.dark}
+          fontPair={resolved.fontPair}
+          heroLayout={form.heroLayout}
+          sections={includedSections}
+          coverImageUrl={form.coverImageUrl || null}
+        />
+        <p className="text-xs text-muted-foreground">
+          Datos de ejemplo — para ver tu contenido real, abre tu sitio en otra pestaña.
+        </p>
       </div>
     </div>
   );

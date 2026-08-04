@@ -73,6 +73,7 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [12](specs/12-panel-superadmin.md) | Panel `/admin`: activar/desactivar cuentas, extender prueba, generar y listar códigos de invitación | Implemented |
 | [13](specs/13-multi-rubro.md) | Multi-rubro: `professionals.vertical`, diseñador como módulo opcional, eje de variantes genérico, marca neutra | Fase 1, 2 (pasos 1-3) y 3 (portada) implementadas; dominio/marca pausado |
 | [14](specs/14-personalizacion-ampliada.md) | Arquetipos y tipografías por rubro, layout de hero y orden de secciones de la portada | Approved |
+| [15](specs/15-preview-portada-admin.md) | Preview en vivo de la portada dentro de `/admin/marca`, con los componentes de marca reales y datos placeholder | Implemented |
 
 El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` solo tiene filas de seed; `designs` ya tiene escritor real desde el SPEC 07 (`reference_image_url`). `professionals.tagline` existe desde el SPEC 08.
 
