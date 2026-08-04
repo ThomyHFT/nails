@@ -202,7 +202,11 @@ export async function POST(request: Request) {
           : null,
         new DrizzleEmailNotificationRepository(),
       );
-      await notificationUseCase.execute({ bookingId: booking.id, type: "pending" });
+      await notificationUseCase.execute({
+        bookingId: booking.id,
+        type: "pending",
+        baseUrl: new URL(request.url).origin,
+      });
     } catch {
       // Un fallo al notificar nunca debe cambiar la respuesta de crear la reserva.
     }

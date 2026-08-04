@@ -11,18 +11,20 @@ import type { Vertical } from "@/server/domain/tenant/vertical";
 export function AdminSidebar({
   slug,
   vertical,
+  pendingBookingsCount = 0,
   pendingReviewsCount = 0,
   open = false,
   onClose,
 }: {
   slug: string;
   vertical: Vertical;
+  pendingBookingsCount?: number;
   pendingReviewsCount?: number;
   open?: boolean;
   onClose?: () => void;
 }) {
   const pathname = usePathname();
-  const items = getAdminNavItems(slug, vertical, pendingReviewsCount);
+  const items = getAdminNavItems(slug, vertical, { pendingBookingsCount, pendingReviewsCount });
 
   const nav = (
     <nav className="flex h-full w-60 shrink-0 flex-col gap-1 px-3 py-6">

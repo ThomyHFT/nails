@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Booking } from "@/server/domain/booking/booking.entity";
 import type { TenantBranding } from "@/server/domain/branding/tenant-branding.entity";
-import { buildCancellationEmail, buildConfirmationEmail, buildPendingEmail } from "@/server/domain/notification/email-templates";
+import {
+  buildCancellationEmail,
+  buildConfirmationEmail,
+  buildNewBookingRequestEmail,
+  buildPendingEmail,
+} from "@/server/domain/notification/email-templates";
 
 function booking(overrides: Partial<Booking> = {}): Booking {
   return {
@@ -94,5 +99,21 @@ describe("buildCancellationEmail", () => {
 
     expect(email.html).toContain("Fran Uñas");
     expect(email.subject).toContain("cancelada");
+  });
+});
+
+describe("buildNewBookingRequestEmail", () => {
+  it("includes the client's name, the date and a link to the panel", () => {
+    const email = buildNewBookingRequestEmail({
+      booking: booking(),
+      branding: branding({ primaryColorHex: "#111111" }),
+      professionalName: "Fran Uñas",
+      clientName: "Camila Rojas",
+      panelUrl: "https://agendaunas.cl/fran-unas/admin/reservas",
+    });
+
+    expect(email.html).toContain("Camila Rojas");
+    expect(email.html).toContain("https://agendaunas.cl/fran-unas/admin/reservas");
+    expect(email.subject).toContain("Camila Rojas");
   });
 });

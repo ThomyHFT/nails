@@ -22,10 +22,17 @@ async function setup({ withEmailSender = true }: { withEmailSender?: boolean } =
     role: "client",
   });
 
+  const owner = await userRepository.create({
+    email: "fran@example.com",
+    passwordHash: "hash",
+    name: "Fran",
+    role: "professional",
+  });
+
   professionalRepository.professionals.push({
     id: "prof-1",
     slug: "fran-unas",
-    ownerUserId: "owner-1",
+    ownerUserId: owner.id,
     businessName: "Fran Uñas",
     vertical: "nails",
     bio: null,
@@ -63,7 +70,7 @@ async function setup({ withEmailSender = true }: { withEmailSender?: boolean } =
     emailNotificationRepository,
   );
 
-  return { useCase, booking, client, emailSender, emailNotificationRepository };
+  return { useCase, booking, client, owner, emailSender, emailNotificationRepository };
 }
 
 describe("SendBookingNotificationUseCase", () => {
@@ -117,6 +124,41 @@ describe("SendBookingNotificationUseCase", () => {
         errorMessage: "RESEND_API_KEY no configurada",
       },
     ]);
+  });
+
+  it("also emails the professional's owner when a pending booking has a baseUrl", async () => {
+    const { useCase, booking, client, owner, emailSender, emailNotificationRepository } = await setup();
+
+    await useCase.execute({ bookingId: booking.id, type: "pending", baseUrl: "https://agendaunas.cl" });
+
+    expect(emailSender.sent).toHaveLength(2);
+    expect(emailSender.sent[0]?.to).toBe(client.email);
+    expect(emailSender.sent[1]?.to).toBe(owner.email);
+    expect(emailSender.sent[1]?.html).toContain("https://agendaunas.cl/fran-unas/admin/reservas#" + booking.id);
+    expect(emailNotificationRepository.rows).toHaveLength(2);
+    expect(emailNotificationRepository.rows[1]).toEqual({
+      professionalId: "prof-1",
+      bookingId: booking.id,
+      type: "pending",
+      status: "sent",
+      errorMessage: null,
+    });
+  });
+
+  it("does not email the professional when a pending booking has no baseUrl", async () => {
+    const { useCase, booking, emailSender } = await setup();
+
+    await useCase.execute({ bookingId: booking.id, type: "pending" });
+
+    expect(emailSender.sent).toHaveLength(1);
+  });
+
+  it("does not email the professional for confirmation or cancellation, only for a new pending booking", async () => {
+    const { useCase, booking, emailSender } = await setup();
+
+    await useCase.execute({ bookingId: booking.id, type: "confirmation", baseUrl: "https://agendaunas.cl" });
+
+    expect(emailSender.sent).toHaveLength(1);
   });
 
   it("does nothing when the booking does not exist", async () => {

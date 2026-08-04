@@ -43,4 +43,6 @@ export interface BookingRepository {
   countClientStrikes(professionalId: string, clientUserId: string): Promise<number>;
   /** Una fila por clienta con reservas en este tenant, ordenada por la más reciente primero. */
   listClientStats(professionalId: string): Promise<ClientBookingStats[]>;
+  /** Reservas `pending`: el badge de "Reservas" en el nav, mismo criterio que el de Opiniones. */
+  countPending(professionalId: string): Promise<number>;
 }

@@ -28,6 +28,10 @@ export function PortafolioManager({ slug }: { slug: string }) {
   const [newServiceId, setNewServiceId] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCaption, setEditCaption] = useState("");
+  const [editServiceId, setEditServiceId] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const load = useCallback(async () => {
     const [itemsRes, servicesRes] = await Promise.all([fetch("/api/portfolio"), fetch("/api/services")]);
@@ -105,6 +109,37 @@ export function PortafolioManager({ slug }: { slug: string }) {
     load();
   }
 
+  function startEdit(item: PortfolioItem) {
+    setStatus(null);
+    setEditingId(item.id);
+    setEditCaption(item.caption ?? "");
+    setEditServiceId(item.serviceId ?? "");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit(id: string) {
+    setStatus(null);
+    setIsSavingEdit(true);
+    try {
+      const response = await fetch("/api/portfolio", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, caption: editCaption || null, serviceId: editServiceId || null }),
+      });
+      if (!response.ok) {
+        setStatus("No se pudo guardar la edición.");
+        return;
+      }
+      setEditingId(null);
+      load();
+    } finally {
+      setIsSavingEdit(false);
+    }
+  }
+
   async function deleteItem(id: string) {
     setStatus(null);
     const response = await fetch(`/api/portfolio?id=${id}`, { method: "DELETE" });
@@ -154,30 +189,80 @@ export function PortafolioManager({ slug }: { slug: string }) {
         {items.map((item) => (
           <Panel key={item.id} padding="sm" className="flex flex-col gap-3">
             <MediaFrame src={item.imageUrl} alt={item.caption ?? ""} ratio="square" />
-            {item.caption && <Caption className="text-xs">{item.caption}</Caption>}
-            <div className="flex items-center gap-2">
-              <Label htmlFor={`order-${item.id}`} className="text-xs">
-                Orden
-              </Label>
-              <Input
-                id={`order-${item.id}`}
-                type="number"
-                defaultValue={item.sortOrder}
-                onBlur={(e) => {
-                  const value = Number(e.target.value);
-                  if (value !== item.sortOrder) updateSortOrder(item.id, value);
-                }}
-                className="w-16"
-              />
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <BrandButton variant="outline" size="sm" onClick={() => togglePublished(item)}>
-                {item.published ? "Despublicar" : "Publicar"}
-              </BrandButton>
-              <BrandButton variant="danger" size="sm" onClick={() => deleteItem(item.id)}>
-                Eliminar
-              </BrandButton>
-            </div>
+
+            {editingId === item.id ? (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`caption-${item.id}`} className="text-xs">
+                    Bajada
+                  </Label>
+                  <Input
+                    id={`caption-${item.id}`}
+                    value={editCaption}
+                    onChange={(e) => setEditCaption(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`edit-service-${item.id}`} className="text-xs">
+                    Servicio asociado
+                  </Label>
+                  <Select
+                    value={editServiceId || NO_SERVICE}
+                    onValueChange={(value) => setEditServiceId(!value || value === NO_SERVICE ? "" : value)}
+                  >
+                    <SelectTrigger id={`edit-service-${item.id}`} className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_SERVICE}>Ninguno</SelectItem>
+                      {services.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <BrandButton variant="outline" size="sm" onClick={cancelEdit} disabled={isSavingEdit}>
+                    Cancelar
+                  </BrandButton>
+                  <BrandButton size="sm" onClick={() => saveEdit(item.id)} disabled={isSavingEdit}>
+                    {isSavingEdit ? "Guardando…" : "Guardar"}
+                  </BrandButton>
+                </div>
+              </>
+            ) : (
+              <>
+                {item.caption && <Caption className="text-xs">{item.caption}</Caption>}
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={`order-${item.id}`} className="text-xs">
+                    Orden
+                  </Label>
+                  <Input
+                    id={`order-${item.id}`}
+                    type="number"
+                    defaultValue={item.sortOrder}
+                    onBlur={(e) => {
+                      const value = Number(e.target.value);
+                      if (value !== item.sortOrder) updateSortOrder(item.id, value);
+                    }}
+                    className="w-16"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <BrandButton variant="outline" size="sm" onClick={() => startEdit(item)}>
+                    Editar
+                  </BrandButton>
+                  <BrandButton variant="outline" size="sm" onClick={() => togglePublished(item)}>
+                    {item.published ? "Despublicar" : "Publicar"}
+                  </BrandButton>
+                  <BrandButton variant="danger" size="sm" onClick={() => deleteItem(item.id)}>
+                    Eliminar
+                  </BrandButton>
+                </div>
+              </>
+            )}
           </Panel>
         ))}
       </div>

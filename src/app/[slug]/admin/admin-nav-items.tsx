@@ -10,12 +10,27 @@ export type AdminNavItem = {
   badge?: number;
 };
 
-export function getAdminNavItems(slug: string, vertical: Vertical, pendingReviewsCount = 0): AdminNavItem[] {
+export interface AdminNavCounts {
+  pendingBookingsCount?: number;
+  pendingReviewsCount?: number;
+}
+
+export function getAdminNavItems(
+  slug: string,
+  vertical: Vertical,
+  { pendingBookingsCount = 0, pendingReviewsCount = 0 }: AdminNavCounts = {},
+): AdminNavItem[] {
   const base = `/${slug}/admin`;
 
   return [
     { href: base, label: "Resumen", icon: <LayoutDashboard />, exact: true },
-    { href: `${base}/reservas`, label: "Reservas", icon: <CalendarClock />, exact: false },
+    {
+      href: `${base}/reservas`,
+      label: "Reservas",
+      icon: <CalendarClock />,
+      exact: false,
+      badge: pendingBookingsCount > 0 ? pendingBookingsCount : undefined,
+    },
     { href: `${base}/clientes`, label: "Clientes", icon: <Users />, exact: false },
     { href: `${base}/disponibilidad`, label: "Disponibilidad", icon: <CalendarClock />, exact: false },
     { href: `${base}/servicios`, label: "Servicios", icon: <Tag />, exact: false },

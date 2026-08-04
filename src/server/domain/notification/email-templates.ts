@@ -74,3 +74,31 @@ export function buildCancellationEmail(input: EmailTemplateInput): EmailTemplate
   `.trim();
   return { subject, html: renderShell(input, "Reserva cancelada", body) };
 }
+
+export interface NewBookingRequestEmailInput extends EmailTemplateInput {
+  clientName: string;
+  /** URL absoluta a `/[slug]/admin/reservas`, con ancla a la reserva si el llamador la arma. */
+  panelUrl: string;
+}
+
+/**
+ * A la profesional, no a la clienta: es el correo que faltaba para que se
+ * entere de una solicitud nueva sin tener que entrar a revisar el panel a
+ * cada rato.
+ */
+export function buildNewBookingRequestEmail(input: NewBookingRequestEmailInput): EmailTemplate {
+  const { booking, clientName, panelUrl } = input;
+  const subject = `Nueva solicitud de reserva de ${clientName}`;
+  const body = `
+    <p>Hola, <strong>${clientName}</strong> pidió una hora contigo. Queda pendiente de tu confirmación.</p>
+    <p><strong>Fecha:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
+    <p><strong>Duración:</strong> ${booking.durationMinutes} minutos</p>
+    <p><strong>Precio:</strong> ${formatClp(booking.priceClp)}</p>
+    <p style="margin-top:24px;">
+      <a href="${panelUrl}" style="display:inline-block;background:${input.branding.primaryColorHex ?? "#111111"};color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;">
+        Ver la reserva
+      </a>
+    </p>
+  `.trim();
+  return { subject, html: renderShell(input, "Nueva solicitud de reserva", body) };
+}

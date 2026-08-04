@@ -34,7 +34,7 @@ import {
   SectionHeading,
   ServiceCard,
 } from "@/components/brand";
-import { instagramLabel, instagramUrl, whatsAppUrl } from "@/app/[slug]/(public)/links";
+import { googleMapsUrl, instagramLabel, instagramUrl, whatsAppUrl } from "@/app/[slug]/(public)/links";
 import { GalleryLightbox } from "@/app/[slug]/(public)/GalleryLightbox";
 
 const FEATURED_SERVICES_LIMIT = 4;
@@ -213,7 +213,16 @@ export default async function TenantPage({ params }: { params: Promise<{ slug: s
         />
       )}
       {isAddressVisible(professional) && (
-        <ContactCard icon={<MapPin className="size-7" />} title="¿Dónde estamos?" description={professional.address} />
+        <ContactCard
+          icon={<MapPin className="size-7" />}
+          title="¿Dónde estamos?"
+          description={professional.address}
+          action={
+            <BrandButton size="lg" variant="outline" href={googleMapsUrl(professional.address!)}>
+              Ver en Google Maps
+            </BrandButton>
+          }
+        />
       )}
     </Section>
   );

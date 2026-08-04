@@ -17,3 +17,13 @@ export function instagramLabel(handle: string): string {
 export function whatsAppUrl(phone: string): string {
   return `https://wa.me/${phone.replace(/[^0-9]/g, "")}`;
 }
+
+/**
+ * Búsqueda de Google Maps por texto, no un pin de coordenadas: la dirección
+ * es texto libre que la profesional escribe a mano, sin geocodificar. El
+ * esquema `search/?api=1&query=` es el que Google documenta como estable
+ * para este caso y abre la app en el teléfono si está instalada.
+ */
+export function googleMapsUrl(address: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}

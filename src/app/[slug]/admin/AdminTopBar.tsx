@@ -8,16 +8,18 @@ import type { Vertical } from "@/server/domain/tenant/vertical";
 export function AdminTopBar({
   slug,
   vertical,
+  pendingBookingsCount = 0,
   pendingReviewsCount = 0,
   onOpen,
 }: {
   slug: string;
   vertical: Vertical;
+  pendingBookingsCount?: number;
   pendingReviewsCount?: number;
   onOpen: () => void;
 }) {
   const pathname = usePathname();
-  const items = getAdminNavItems(slug, vertical, pendingReviewsCount);
+  const items = getAdminNavItems(slug, vertical, { pendingBookingsCount, pendingReviewsCount });
   const current = items.find((item) => (item.exact ? pathname === item.href : (pathname?.startsWith(item.href) ?? false)));
 
   return (

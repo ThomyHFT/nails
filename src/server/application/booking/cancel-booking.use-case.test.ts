@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { InMemoryBookingRepository } from "@/server/application/booking/__fakes__/in-memory-booking-repository";
 import { BookingNotOwnedError } from "@/server/application/booking/booking-guard-errors";
-import { CancelBookingByClientUseCase } from "@/server/application/booking/cancel-booking.use-case";
+import {
+  CancelBookingByClientUseCase,
+  CancelBookingByProfessionalUseCase,
+} from "@/server/application/booking/cancel-booking.use-case";
 
 async function makeBooking(bookingRepository: InMemoryBookingRepository, clientUserId: string) {
   return bookingRepository.create({
@@ -43,5 +46,27 @@ describe("CancelBookingByClientUseCase", () => {
     await bookingRepository.cancel(booking.id, "professional");
 
     expect(await bookingRepository.countClientStrikes("prof-1", "client-1")).toBe(0);
+  });
+});
+
+describe("CancelBookingByProfessionalUseCase", () => {
+  it("cancels the booking with cancelled_by = professional, without a strike", async () => {
+    const bookingRepository = new InMemoryBookingRepository();
+    const booking = await makeBooking(bookingRepository, "client-1");
+    const useCase = new CancelBookingByProfessionalUseCase(bookingRepository);
+
+    const cancelled = await useCase.execute(booking.id, "prof-1");
+
+    expect(cancelled.status).toBe("cancelled");
+    expect(cancelled.cancelledBy).toBe("professional");
+    expect(await bookingRepository.countClientStrikes("prof-1", "client-1")).toBe(0);
+  });
+
+  it("rejects cancelling a booking that belongs to another professional", async () => {
+    const bookingRepository = new InMemoryBookingRepository();
+    const booking = await makeBooking(bookingRepository, "client-1");
+    const useCase = new CancelBookingByProfessionalUseCase(bookingRepository);
+
+    await expect(useCase.execute(booking.id, "prof-2")).rejects.toBeInstanceOf(BookingNotOwnedError);
   });
 });

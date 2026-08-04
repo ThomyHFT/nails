@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandButton } from "@/components/brand";
 
-async function postAction(bookingId: string, action: "confirm" | "complete" | "no-show") {
+type Action = "confirm" | "complete" | "no-show" | "reject";
+
+async function postAction(bookingId: string, action: Action) {
   return fetch(`/api/bookings/${bookingId}/${action}`, { method: "POST" });
 }
 
@@ -12,8 +14,9 @@ export function BookingActions({ bookingId, status }: { bookingId: string; statu
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmingReject, setConfirmingReject] = useState(false);
 
-  async function run(action: "confirm" | "complete" | "no-show") {
+  async function run(action: Action) {
     setError(null);
     setIsSubmitting(true);
     try {
@@ -23,6 +26,7 @@ export function BookingActions({ bookingId, status }: { bookingId: string; statu
         setError(typeof data.error === "string" ? data.error : "No se pudo actualizar la reserva.");
         return;
       }
+      setConfirmingReject(false);
       router.refresh();
     } finally {
       setIsSubmitting(false);
@@ -31,7 +35,7 @@ export function BookingActions({ bookingId, status }: { bookingId: string; statu
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         {status === "pending" && (
           <BrandButton size="sm" disabled={isSubmitting} onClick={() => run("confirm")}>
             Confirmar
@@ -45,6 +49,20 @@ export function BookingActions({ bookingId, status }: { bookingId: string; statu
             <BrandButton size="sm" variant="danger" disabled={isSubmitting} onClick={() => run("no-show")}>
               No show
             </BrandButton>
+            {confirmingReject ? (
+              <>
+                <BrandButton size="sm" variant="danger" disabled={isSubmitting} onClick={() => run("reject")}>
+                  Sí, {status === "pending" ? "rechazar" : "cancelar"}
+                </BrandButton>
+                <BrandButton size="sm" variant="ghost" disabled={isSubmitting} onClick={() => setConfirmingReject(false)}>
+                  No
+                </BrandButton>
+              </>
+            ) : (
+              <BrandButton size="sm" variant="ghost" disabled={isSubmitting} onClick={() => setConfirmingReject(true)}>
+                {status === "pending" ? "Rechazar" : "Cancelar"}
+              </BrandButton>
+            )}
           </>
         )}
       </div>

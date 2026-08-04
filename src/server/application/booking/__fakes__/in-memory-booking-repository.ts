@@ -137,4 +137,8 @@ export class InMemoryBookingRepository implements BookingRepository {
 
     return [...byClient.values()].sort((a, b) => b.lastBookingAt.getTime() - a.lastBookingAt.getTime());
   }
+
+  async countPending(professionalId: string): Promise<number> {
+    return this.bookings.filter((b) => b.professionalId === professionalId && b.status === "pending").length;
+  }
 }

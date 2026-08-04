@@ -187,4 +187,12 @@ export class DrizzleBookingRepository implements BookingRepository {
 
     return rows.map((row) => ({ ...row, lastBookingAt: new Date(row.lastBookingAt) }));
   }
+
+  async countPending(professionalId: string): Promise<number> {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(bookings)
+      .where(and(eq(bookings.professionalId, professionalId), eq(bookings.status, "pending")));
+    return row?.count ?? 0;
+  }
 }

@@ -9,10 +9,12 @@ import { AdminSidebar } from "@/app/[slug]/admin/AdminSidebar";
 export function AdminNav({
   slug,
   vertical,
+  pendingBookingsCount = 0,
   pendingReviewsCount = 0,
 }: {
   slug: string;
   vertical: Vertical;
+  pendingBookingsCount?: number;
   pendingReviewsCount?: number;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,10 +39,17 @@ export function AdminNav({
 
   return (
     <>
-      <AdminTopBar slug={slug} vertical={vertical} pendingReviewsCount={pendingReviewsCount} onOpen={() => setIsOpen(true)} />
+      <AdminTopBar
+        slug={slug}
+        vertical={vertical}
+        pendingBookingsCount={pendingBookingsCount}
+        pendingReviewsCount={pendingReviewsCount}
+        onOpen={() => setIsOpen(true)}
+      />
       <AdminSidebar
         slug={slug}
         vertical={vertical}
+        pendingBookingsCount={pendingBookingsCount}
         pendingReviewsCount={pendingReviewsCount}
         open={isOpen}
         onClose={() => setIsOpen(false)}

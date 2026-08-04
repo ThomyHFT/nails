@@ -129,49 +129,54 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                 const strikes = strikesByClient.get(booking.clientUserId) ?? 0;
 
                 return (
-                  <Panel key={booking.id} padding="sm" className="flex flex-col gap-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <Title>{client?.name ?? "Cliente"}</Title>
-                        {client?.email && <Caption className="truncate text-xs">{client.email}</Caption>}
+                  // El id es el ancla que usa el correo "nueva solicitud" para
+                  // llevar directo a esta reserva; scroll-mt- compensa el
+                  // header pegado del admin.
+                  <div key={booking.id} id={booking.id} className="scroll-mt-20">
+                    <Panel padding="sm" className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 flex-col gap-1">
+                          <Title>{client?.name ?? "Cliente"}</Title>
+                          {client?.email && <Caption className="truncate text-xs">{client.email}</Caption>}
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5">
+                          <StatusBadge tone={STATUS_TONES[booking.status]}>{STATUS_BADGE_LABELS[booking.status]}</StatusBadge>
+                          {/* Los strikes son la señal que decide si conviene
+                              confirmar: van junto al estado, no enterrados en la
+                              línea del nombre. */}
+                          {strikes > 0 && (
+                            <Chip tone="danger">
+                              {strikes} strike{strikes > 1 ? "s" : ""}
+                            </Chip>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1.5">
-                        <StatusBadge tone={STATUS_TONES[booking.status]}>{STATUS_BADGE_LABELS[booking.status]}</StatusBadge>
-                        {/* Los strikes son la señal que decide si conviene
-                            confirmar: van junto al estado, no enterrados en la
-                            línea del nombre. */}
-                        {strikes > 0 && (
-                          <Chip tone="danger">
-                            {strikes} strike{strikes > 1 ? "s" : ""}
-                          </Chip>
-                        )}
+
+                      <Caption>
+                        {variant
+                          ? `${variant.serviceName} · ${variant.label ?? "—"}`
+                          : booking.serviceVariantId}
+                      </Caption>
+
+                      {design?.referenceImageUrl && (
+                        <MediaFrame
+                          src={design.referenceImageUrl}
+                          alt="Foto de referencia del diseño"
+                          ratio="square"
+                          className="max-w-24"
+                        />
+                      )}
+
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <MetaItem icon={<CalendarDays />}>{formatDateTime(booking.startsAt)}</MetaItem>
+                        <Price clp={booking.priceClp} size="sm" />
                       </div>
-                    </div>
 
-                    <Caption>
-                      {variant
-                        ? `${variant.serviceName} · ${variant.label ?? "—"}`
-                        : booking.serviceVariantId}
-                    </Caption>
-
-                    {design?.referenceImageUrl && (
-                      <MediaFrame
-                        src={design.referenceImageUrl}
-                        alt="Foto de referencia del diseño"
-                        ratio="square"
-                        className="max-w-24"
-                      />
-                    )}
-
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <MetaItem icon={<CalendarDays />}>{formatDateTime(booking.startsAt)}</MetaItem>
-                      <Price clp={booking.priceClp} size="sm" />
-                    </div>
-
-                    <div className="flex justify-end border-t border-outline-variant pt-3">
-                      <BookingActions bookingId={booking.id} status={booking.status} />
-                    </div>
-                  </Panel>
+                      <div className="flex justify-end border-t border-outline-variant pt-3">
+                        <BookingActions bookingId={booking.id} status={booking.status} />
+                      </div>
+                    </Panel>
+                  </div>
                 );
               })}
             </div>

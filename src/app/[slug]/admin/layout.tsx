@@ -2,6 +2,7 @@ import { requireTenantOwner } from "@/server/interface/guards";
 import { ListReviewsUseCase } from "@/server/application/review/list-reviews.use-case";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { DrizzleReviewsRepository } from "@/server/infrastructure/repositories/drizzle-reviews.repository";
+import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { AdminNav } from "@/app/[slug]/admin/AdminNav";
 import { AccountBanners } from "@/app/[slug]/admin/AccountBanners";
 
@@ -21,6 +22,9 @@ export default async function AdminLayout({
   const pendingReviewsCount = professional
     ? await new ListReviewsUseCase(new DrizzleReviewsRepository()).countPending(professional.id)
     : 0;
+  const pendingBookingsCount = professional
+    ? await new DrizzleBookingRepository().countPending(professional.id)
+    : 0;
 
   const now = new Date();
   const daysUntilTrialEnds = professional?.trialEndsAt
@@ -29,7 +33,12 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <AdminNav slug={slug} vertical={professional?.vertical ?? "nails"} pendingReviewsCount={pendingReviewsCount} />
+      <AdminNav
+        slug={slug}
+        vertical={professional?.vertical ?? "nails"}
+        pendingBookingsCount={pendingBookingsCount}
+        pendingReviewsCount={pendingReviewsCount}
+      />
       <main className="flex min-w-0 flex-1 flex-col gap-6 px-6 py-8 lg:px-10">
         {professional && (
           <AccountBanners isPublished={professional.publishedAt !== null} daysUntilTrialEnds={daysUntilTrialEnds} />
