@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Caption, MediaFrame, Panel } from "@/components/brand";
+import { MediaFrame, Panel, Title } from "@/components/brand";
 
 type GalleryItem = { id: string; imageUrl: string; caption?: string | null };
 
@@ -51,7 +51,7 @@ export function GalleryLightbox({ items, className }: { items: GalleryItem[]; cl
     <>
       <div className={cn("grid grid-cols-2 gap-3 md:gap-4", desktopCols, items.length === 1 && "max-w-sm", className)}>
         {items.map((item, index) => (
-          <Panel key={item.id} padding="none" className="overflow-hidden">
+          <Panel key={item.id} padding="none" className="flex h-full flex-col overflow-hidden">
             <button
               type="button"
               aria-label={`Ampliar foto ${index + 1} de ${items.length}`}
@@ -60,11 +60,9 @@ export function GalleryLightbox({ items, className }: { items: GalleryItem[]; cl
             >
               <MediaFrame src={item.imageUrl} alt={item.caption ?? ""} ratio="square" />
             </button>
-            {item.caption && (
-              <Caption className="px-3 py-2 text-xs" as="p">
-                {item.caption}
-              </Caption>
-            )}
+            <div className="flex min-h-16 flex-1 items-center justify-center px-4 py-3">
+              {item.caption && <Title className="text-center text-balance">{item.caption}</Title>}
+            </div>
           </Panel>
         ))}
       </div>
