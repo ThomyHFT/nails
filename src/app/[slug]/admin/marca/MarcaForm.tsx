@@ -211,7 +211,7 @@ export function MarcaForm({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_560px]">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="tagline">Titular del hero</Label>
@@ -461,7 +461,7 @@ export function MarcaForm({ slug }: { slug: string }) {
         {status && <p className="text-sm text-muted-foreground">{status}</p>}
       </form>
 
-      <div className="flex flex-col gap-3 lg:sticky lg:top-8 lg:self-start">
+      <div className="hidden flex-col gap-3 lg:flex lg:sticky lg:top-8 lg:self-start">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-medium">Preview en vivo</p>
           <SegmentedControl

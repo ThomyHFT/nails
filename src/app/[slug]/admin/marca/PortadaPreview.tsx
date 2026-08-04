@@ -5,8 +5,8 @@ import {
   BrandButton,
   ContactCard,
   FloatingStat,
-  GalleryGrid,
   Hero,
+  MediaFrame,
   RatingSummary,
   ReviewCard,
   Section,
@@ -69,7 +69,9 @@ export function PortadaPreview({
       <div key="servicios" className="px-4">
         <Band level={2}>
           <SectionHeading title="Servicios destacados" className="mb-6" />
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* Una columna siempre: a este ancho de sidebar, dos tarjetas lado a
+              lado quedan apretadas aunque el navegador sea de escritorio. */}
+          <div className="flex flex-col gap-4">
             {PLACEHOLDER_SERVICES.map((service) => (
               <ServiceCard key={service.id} href="#" service={service} />
             ))}
@@ -80,7 +82,14 @@ export function PortadaPreview({
     galeria: (
       <Section key="galeria" className="flex flex-col gap-4">
         <SectionHeading align="start" title="Nuestro trabajo" />
-        <GalleryGrid items={[0, 1, 2, 3].map((i) => ({ id: `preview-galeria-${i}`, imageUrl: galleryImage, alt: "" }))} />
+        {/* Grilla fija de 2 columnas en vez de `GalleryGrid`: sus columnas se
+            activan por ancho de ventana, no del sidebar, y a 4 columnas acá
+            las fotos quedan diminutas. */}
+        <div className="grid grid-cols-2 gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <MediaFrame key={i} src={galleryImage || null} alt="" ratio="square" />
+          ))}
+        </div>
       </Section>
     ),
     opiniones: (
@@ -90,7 +99,7 @@ export function PortadaPreview({
           title="Lo que dicen"
           action={<RatingSummary average={4.5} count={PLACEHOLDER_REVIEWS.length} />}
         />
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-3">
           {PLACEHOLDER_REVIEWS.map((review) => (
             <ReviewCard key={review.id} rating={review.rating} body={review.body} authorName="Cliente" />
           ))}
@@ -111,10 +120,10 @@ export function PortadaPreview({
 
   return (
     <div
-      className="tenant-brand overflow-hidden rounded-lg border border-border bg-background text-[0.92em] text-foreground"
+      className="tenant-brand overflow-hidden rounded-lg border border-border bg-background text-[0.85em] text-foreground"
       style={{ ...tenantBrandStyle(tokens, fontPair), fontFamily: "var(--tenant-font-body)" }}
     >
-      <div className="max-h-[640px] overflow-y-auto">
+      <div className="max-h-160 overflow-y-auto">
         <Hero
           layout={heroLayout}
           title={businessName}
