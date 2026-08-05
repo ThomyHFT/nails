@@ -8,6 +8,38 @@ import { BrandButton, Caption, MediaFrame } from "@/components/brand";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_BYTES = 8 * 1024 * 1024;
+const MAX_DIMENSION = 1920;
+const COMPRESS_QUALITY = 0.82;
+
+/**
+ * Comprimimos en el navegador antes de subir: redimensiona al lado largo
+ * máximo y reencodea a WEBP. Si el navegador no soporta WEBP de salida
+ * (Safari viejo) `toBlob` devuelve null y usamos el archivo original.
+ */
+async function compressImage(file: File): Promise<File> {
+  if (file.type === "image/webp" || file.type === "image/gif") return file;
+
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/webp", COMPRESS_QUALITY),
+  );
+  if (!blob || blob.size >= file.size) return file;
+
+  const newName = file.name.replace(/\.[^.]+$/, "") + ".webp";
+  return new File([blob], newName, { type: "image/webp" });
+}
 
 /**
  * Subida de imagen del sistema de marca. Antes usaba el `Button` de shadcn,
@@ -47,7 +79,8 @@ export function ImageUploader({
 
     setIsUploading(true);
     try {
-      const blob = await upload(`${pathPrefix}/${file.name}`, file, {
+      const compressed = await compressImage(file);
+      const blob = await upload(`${pathPrefix}/${compressed.name}`, compressed, {
         access: "public",
         handleUploadUrl: "/api/upload",
         clientPayload,
