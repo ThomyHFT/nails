@@ -16,6 +16,7 @@ export interface Booking {
   professionalNote: string | null;
   cancelledAt: Date | null;
   cancelledBy: BookingActor | null;
+  googleEventId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

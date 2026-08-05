@@ -40,6 +40,9 @@ export interface BookingRepository {
   listByClient(clientUserId: string): Promise<Booking[]>;
   updateStatus(id: string, status: BookingStatus): Promise<Booking>;
   cancel(id: string, cancelledBy: BookingActor): Promise<Booking>;
+  setGoogleEventId(id: string, googleEventId: string | null): Promise<void>;
+  /** Confirmadas, futuras, sin evento en Google — lo que un backfill tiene que subir. */
+  listConfirmedFutureWithoutCalendarEvent(professionalId: string, now: Date): Promise<Booking[]>;
   countClientStrikes(professionalId: string, clientUserId: string): Promise<number>;
   /** Una fila por clienta con reservas en este tenant, ordenada por la más reciente primero. */
   listClientStats(professionalId: string): Promise<ClientBookingStats[]>;

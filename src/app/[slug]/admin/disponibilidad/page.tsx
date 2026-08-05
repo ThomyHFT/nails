@@ -10,6 +10,7 @@ import { InfoNote } from "@/components/brand/booking";
 import { Chip } from "@/components/brand/chip";
 import { Panel } from "@/components/brand/surface";
 import { Body, Caption, Title } from "@/components/brand/typography";
+import { GoogleCalendarPanel } from "@/app/[slug]/admin/disponibilidad/GoogleCalendarPanel";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = [
@@ -492,6 +493,8 @@ export default function DisponibilidadPage() {
       </section>
 
       {status && <p className="text-sm">{status}</p>}
+
+      <GoogleCalendarPanel />
     </div>
   );
 }

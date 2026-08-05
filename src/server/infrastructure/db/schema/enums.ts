@@ -58,3 +58,5 @@ export const emailNotificationTypeEnum = pgEnum("email_notification_type", [
 ]);
 
 export const emailNotificationStatusEnum = pgEnum("email_notification_status", ["sent", "failed"]);
+
+export const calendarConnectionStatusEnum = pgEnum("calendar_connection_status", ["active", "revoked"]);

@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { bookings } from "@/server/infrastructure/db/schema/bookings";
 import { designs } from "@/server/infrastructure/db/schema/designs";
@@ -28,6 +28,7 @@ function toDomain(row: typeof bookings.$inferSelect): Booking {
     professionalNote: row.professionalNote,
     cancelledAt: row.cancelledAt,
     cancelledBy: row.cancelledBy,
+    googleEventId: row.googleEventId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -152,6 +153,25 @@ export class DrizzleBookingRepository implements BookingRepository {
       .where(eq(bookings.id, id))
       .returning();
     return toDomain(row);
+  }
+
+  async setGoogleEventId(id: string, googleEventId: string | null): Promise<void> {
+    await db.update(bookings).set({ googleEventId, updatedAt: new Date() }).where(eq(bookings.id, id));
+  }
+
+  async listConfirmedFutureWithoutCalendarEvent(professionalId: string, now: Date): Promise<Booking[]> {
+    const rows = await db
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.professionalId, professionalId),
+          eq(bookings.status, "confirmed"),
+          gt(bookings.startsAt, now),
+          isNull(bookings.googleEventId),
+        ),
+      );
+    return rows.map(toDomain);
   }
 
   async countClientStrikes(professionalId: string, clientUserId: string): Promise<number> {

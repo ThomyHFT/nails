@@ -141,6 +141,13 @@
       "when": 1785806773028,
       "tag": "0019_solid_onslaught",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1785936835019,
+      "tag": "0020_mighty_garia",
+      "breakpoints": true
     }
   ]
 }

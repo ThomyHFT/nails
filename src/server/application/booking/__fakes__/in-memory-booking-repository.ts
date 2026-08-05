@@ -30,6 +30,7 @@ export class InMemoryBookingRepository implements BookingRepository {
       professionalNote: null,
       cancelledAt: null,
       cancelledBy: null,
+      googleEventId: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -94,6 +95,23 @@ export class InMemoryBookingRepository implements BookingRepository {
     booking.cancelledAt = new Date();
     booking.updatedAt = new Date();
     return booking;
+  }
+
+  async setGoogleEventId(id: string, googleEventId: string | null): Promise<void> {
+    const booking = this.bookings.find((b) => b.id === id);
+    if (!booking) throw new Error(`Booking ${id} not found`);
+    booking.googleEventId = googleEventId;
+    booking.updatedAt = new Date();
+  }
+
+  async listConfirmedFutureWithoutCalendarEvent(professionalId: string, now: Date): Promise<Booking[]> {
+    return this.bookings.filter(
+      (booking) =>
+        booking.professionalId === professionalId &&
+        booking.status === "confirmed" &&
+        booking.startsAt > now &&
+        booking.googleEventId === null,
+    );
   }
 
   async countClientStrikes(professionalId: string, clientUserId: string): Promise<number> {

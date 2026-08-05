@@ -13,10 +13,12 @@ import { cn } from "@/lib/utils";
 export function AccountBanners({
   isPublished,
   daysUntilTrialEnds,
+  isCalendarRevoked = false,
 }: {
   isPublished: boolean;
   /** `null` = sin vencimiento. Negativo o cero = ya venció. */
   daysUntilTrialEnds: number | null;
+  isCalendarRevoked?: boolean;
 }) {
   const [isResending, setIsResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export function AccountBanners({
   const trialExpired = daysUntilTrialEnds !== null && daysUntilTrialEnds <= 0;
   const trialEndingSoon = daysUntilTrialEnds !== null && daysUntilTrialEnds > 0 && daysUntilTrialEnds <= 7;
 
-  if (isPublished && !trialExpired && !trialEndingSoon) {
+  if (isPublished && !trialExpired && !trialEndingSoon && !isCalendarRevoked) {
     return null;
   }
 
@@ -71,6 +73,18 @@ export function AccountBanners({
           {trialExpired
             ? "Tu prueba venció y tu sitio se despublicó. Escríbenos para renovarla."
             : `Tu prueba vence en ${daysUntilTrialEnds} ${daysUntilTrialEnds === 1 ? "día" : "días"}.`}
+        </div>
+      )}
+
+      {isCalendarRevoked && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card bg-warning-tint p-4 text-sm text-on-warning-tint">
+          <span className="flex items-center gap-3">
+            <TriangleAlert className="size-4 shrink-0" aria-hidden />
+            Google dejó de darnos acceso a tu calendario. Tus reservas siguen funcionando, pero no se están agendando.
+          </span>
+          <BrandButton size="sm" variant="outline" onClick={() => (window.location.href = "/api/google-calendar/connect")}>
+            Reconectar
+          </BrandButton>
         </div>
       )}
     </div>
