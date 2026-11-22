@@ -48,7 +48,24 @@ export function AppHeader({
           className="flex items-center gap-3 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {logoUrl ? (
-            <MediaFrame src={logoUrl} alt={businessName} ratio="square" rounded="full" className="size-10 shrink-0" />
+            // La inicial queda debajo del logo: si la URL muere (blob borrado,
+            // un sitio externo que bloquea el hotlink) se ve la inicial y no un
+            // círculo vacío junto al nombre.
+            <span className="relative size-10 shrink-0">
+              <span
+                aria-hidden
+                className="t-title absolute inset-0 flex items-center justify-center rounded-full bg-primary-tint text-primary"
+              >
+                {businessName.trim().charAt(0).toUpperCase()}
+              </span>
+              <MediaFrame
+                src={logoUrl}
+                alt={businessName}
+                ratio="square"
+                rounded="full"
+                className="relative size-10 bg-transparent"
+              />
+            </span>
           ) : null}
           <span className="t-title text-primary">{businessName}</span>
         </Link>
