@@ -25,6 +25,8 @@ export interface NewBooking {
   priceClp: number;
   durationMinutes: number;
   clientNote?: string | null;
+  /** Por defecto `pending` (la clienta reserva y la profesional confirma). Una reserva manual nace `confirmed`. */
+  status?: "pending" | "confirmed";
 }
 
 export interface NewBookingWithDesign {

@@ -9,6 +9,9 @@ import { serviceVariants, services } from "@/server/infrastructure/db/schema/ser
 import { users } from "@/server/infrastructure/db/schema/users";
 import type { Booking, BookingStatus } from "@/server/domain/booking/booking.entity";
 import { BookingActions } from "@/app/[slug]/admin/reservas/BookingActions";
+import { ManualBookingForm } from "@/app/[slug]/admin/reservas/ManualBookingForm";
+import { ListServicesUseCase } from "@/server/application/service/list-services.use-case";
+import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
 import { whatsAppUrl } from "@/app/[slug]/(public)/links";
 import { isPlaceholderEmail } from "@/server/domain/user/client-contact";
 import {
@@ -96,6 +99,23 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
     strikesByClient.set(clientId, await bookingRepository.countClientStrikes(professional.id, clientId));
   }
 
+  // Opciones del formulario de reserva manual (SPEC 18): solo servicios y
+  // variantes activos, y las clientas que ya reservaron con ella.
+  const serviceList = await new ListServicesUseCase(new DrizzleServicesRepository()).execute(professional.id);
+  const variantOptions = serviceList
+    .filter((service) => service.active)
+    .flatMap((service) =>
+      service.variants
+        .filter((variant) => variant.active)
+        .map((variant) => ({
+          id: variant.id,
+          label: `${service.name} · ${variant.label} · $${variant.priceClp.toLocaleString("es-CL")} · ${variant.durationMinutes} min`,
+        })),
+    );
+  const clientOptions = clientRows
+    .map((client) => ({ id: client.id, name: client.name, phone: client.phone }))
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+
   const bookingsByStatus = new Map<BookingStatus, Booking[]>();
   for (const status of STATUS_ORDER) bookingsByStatus.set(status, []);
   for (const booking of bookings) bookingsByStatus.get(booking.status)?.push(booking);
@@ -103,6 +123,8 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
   return (
     <div className="flex max-w-4xl flex-col gap-8">
       <AdminPageHeader title="Reservas" description="Agrupadas por estado, las pendientes primero." />
+
+      <ManualBookingForm variants={variantOptions} clients={clientOptions} />
 
       {bookings.length === 0 && (
         <EmptyState

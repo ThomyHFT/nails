@@ -77,7 +77,7 @@ export class DrizzleBookingRepository implements BookingRepository {
         designId: booking.designId ?? null,
         startsAt: booking.startsAt,
         endsAt: booking.endsAt,
-        status: "pending",
+        status: booking.status ?? "pending",
         priceClp: booking.priceClp,
         durationMinutes: booking.durationMinutes,
         clientNote: booking.clientNote ?? null,
