@@ -6,6 +6,8 @@ export interface EmailTemplateInput {
   booking: Booking;
   branding: TenantBranding;
   professionalName: string;
+  /** wa.me de la profesional si su teléfono es visible (SPEC 18); los correos a la clienta lo ofrecen. */
+  professionalWhatsAppUrl?: string | null;
 }
 
 export interface EmailTemplate {
@@ -31,6 +33,12 @@ function renderLogo(logoUrl: string | null): string {
   return `<img src="${src}" alt="" width="120" style="display:block;margin-bottom:24px;" />`;
 }
 
+function renderContact(input: EmailTemplateInput, primaryColor: string): string {
+  const href = safeUrl(input.professionalWhatsAppUrl ?? null);
+  if (!href) return "";
+  return `<p style="margin-top:24px;"><a href="${href}" style="color:${primaryColor};">¿Dudas? Escríbele por WhatsApp</a></p>`;
+}
+
 function renderShell(input: EmailTemplateInput, title: string, body: string): string {
   const primaryColor = safeColor(input.branding.primaryColorHex, "#111111");
   return `
@@ -38,6 +46,7 @@ function renderShell(input: EmailTemplateInput, title: string, body: string): st
       ${renderLogo(input.branding.logoUrl)}
       <h1 style="color:${primaryColor};font-size:20px;margin:0 0 16px;">${title}</h1>
       ${body}
+      ${renderContact(input, primaryColor)}
     </div>
   `.trim();
 }
@@ -103,4 +112,35 @@ export function buildNewBookingRequestEmail(input: NewBookingRequestEmailInput):
     </p>
   `.trim();
   return { subject, html: renderShell(input, "Nueva solicitud de reserva", body) };
+}
+
+export interface ClientCancelledEmailInput {
+  booking: Booking;
+  branding: TenantBranding;
+  professionalName: string;
+  clientName: string;
+  /** wa.me de la clienta, para escribirle o reofrecerle la hora. */
+  clientWhatsAppUrl: string | null;
+  panelUrl: string | null;
+}
+
+/**
+ * A la profesional, cuando la clienta cancela (SPEC 18). Antes se enteraba
+ * al ver el hueco en su agenda.
+ */
+export function buildClientCancelledEmail(input: ClientCancelledEmailInput): EmailTemplate {
+  const { booking, clientName } = input;
+  const primaryColor = safeColor(input.branding.primaryColorHex, "#111111");
+  const whatsApp = safeUrl(input.clientWhatsAppUrl);
+  const panel = safeUrl(input.panelUrl);
+  const subject = `${clientName} canceló su reserva`;
+  const body = `
+    <p><strong>${escapeHtml(clientName)}</strong> canceló su hora del ${formatDateTimeSantiago(booking.startsAt)}. El horario volvió a quedar disponible.</p>
+    ${whatsApp ? `<p><a href="${whatsApp}" style="color:${primaryColor};">Escribirle por WhatsApp</a></p>` : ""}
+    ${panel ? `<p><a href="${panel}" style="color:${primaryColor};">Ver mis reservas</a></p>` : ""}
+  `.trim();
+  return {
+    subject,
+    html: renderShell({ booking, branding: input.branding, professionalName: input.professionalName }, "Reserva cancelada", body),
+  };
 }

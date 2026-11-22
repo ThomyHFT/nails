@@ -38,7 +38,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           : null,
         new DrizzleEmailNotificationRepository(),
       );
-      await notificationUseCase.execute({ bookingId: booking.id, type: "cancellation" });
+      await notificationUseCase.execute({
+        bookingId: booking.id,
+        type: "cancellation",
+        baseUrl: new URL(request.url).origin,
+      });
     } catch {
       // Un fallo al notificar nunca debe cambiar la respuesta de cancelar la reserva.
     }

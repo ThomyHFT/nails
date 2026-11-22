@@ -6,13 +6,15 @@ import type { EmailNotificationRepository } from "@/server/domain/notification/e
 import type { EmailSender } from "@/server/domain/notification/email-sender.port";
 import {
   buildCancellationEmail,
+  buildClientCancelledEmail,
   buildConfirmationEmail,
   buildNewBookingRequestEmail,
   buildPendingEmail,
 } from "@/server/domain/notification/email-templates";
-import type { Professional } from "@/server/domain/professional/professional.entity";
+import { isPhoneVisible, type Professional } from "@/server/domain/professional/professional.entity";
 import type { ProfessionalRepository } from "@/server/domain/professional/professional-repository.port";
 import type { User } from "@/server/domain/user/user.entity";
+import { isPlaceholderEmail, whatsAppLink } from "@/server/domain/user/client-contact";
 import type { UserRepository } from "@/server/domain/user/user-repository.port";
 
 export type BookingNotificationType = "confirmation" | "cancellation" | "pending";
@@ -74,28 +76,44 @@ export class SendBookingNotificationUseCase {
         booking,
         professionalName: professional.businessName,
         branding: branding ?? defaultBranding(booking.professionalId),
+        professionalWhatsAppUrl:
+          isPhoneVisible(professional) && professional.phone ? whatsAppLink(professional.phone) : null,
       };
 
-      const template =
-        input.type === "confirmation"
-          ? buildConfirmationEmail(templateInput)
-          : input.type === "pending"
-            ? buildPendingEmail(templateInput)
-            : buildCancellationEmail(templateInput);
+      // Una clienta agendada a mano sin correo tiene una dirección de relleno
+      // (SPEC 18): nunca se le escribe. Los avisos a la profesional siguen.
+      if (!isPlaceholderEmail(client.email)) {
+        const template =
+          input.type === "confirmation"
+            ? buildConfirmationEmail(templateInput)
+            : input.type === "pending"
+              ? buildPendingEmail(templateInput)
+              : buildCancellationEmail(templateInput);
 
-      const result = await this.emailSender.send({
-        to: client.email,
-        subject: template.subject,
-        html: template.html,
-      });
+        const result = await this.emailSender.send({
+          to: client.email,
+          subject: template.subject,
+          html: template.html,
+        });
 
-      await this.emailNotificationRepository.create({
-        professionalId: booking.professionalId,
-        bookingId: booking.id,
-        type: input.type,
-        status: result.ok ? "sent" : "failed",
-        errorMessage: result.ok ? null : result.error,
-      });
+        await this.emailNotificationRepository.create({
+          professionalId: booking.professionalId,
+          bookingId: booking.id,
+          type: input.type,
+          status: result.ok ? "sent" : "failed",
+          errorMessage: result.ok ? null : result.error,
+        });
+      }
+
+      if (input.type === "cancellation" && booking.cancelledBy === "client") {
+        await this.notifyProfessionalOfClientCancellation(
+          booking,
+          professional,
+          templateInput.branding,
+          client,
+          input.baseUrl,
+        );
+      }
 
       // Antes de esto, la profesional nunca se enteraba de una reserva
       // nueva por correo: solo la clienta recibía el "pendiente de
@@ -109,6 +127,49 @@ export class SendBookingNotificationUseCase {
         professionalId: booking.professionalId,
         bookingId: booking.id,
         type: input.type,
+        status: "failed",
+        errorMessage: error instanceof Error ? error.message : "Error desconocido",
+      });
+    }
+  }
+
+  /** Mismo criterio best effort que `notifyProfessionalOfNewBooking` (SPEC 18). */
+  private async notifyProfessionalOfClientCancellation(
+    booking: Booking,
+    professional: Professional,
+    branding: TenantBranding,
+    client: User,
+    baseUrl: string | undefined,
+  ): Promise<void> {
+    if (!this.emailSender) return;
+
+    try {
+      const owner = await this.userRepository.findById(professional.ownerUserId);
+      if (!owner) return;
+
+      const template = buildClientCancelledEmail({
+        booking,
+        branding,
+        professionalName: professional.businessName,
+        clientName: client.name,
+        clientWhatsAppUrl: client.phone ? whatsAppLink(client.phone) : null,
+        panelUrl: baseUrl ? `${baseUrl}/${professional.slug}/admin/reservas` : null,
+      });
+
+      const result = await this.emailSender.send({ to: owner.email, subject: template.subject, html: template.html });
+
+      await this.emailNotificationRepository.create({
+        professionalId: booking.professionalId,
+        bookingId: booking.id,
+        type: "cancellation",
+        status: result.ok ? "sent" : "failed",
+        errorMessage: result.ok ? null : result.error,
+      });
+    } catch (error) {
+      await this.emailNotificationRepository.create({
+        professionalId: booking.professionalId,
+        bookingId: booking.id,
+        type: "cancellation",
         status: "failed",
         errorMessage: error instanceof Error ? error.message : "Error desconocido",
       });

@@ -36,3 +36,8 @@ export function placeholderEmail(id: string): string {
 export function isPlaceholderEmail(email: string): boolean {
   return email.toLowerCase().endsWith(`@${PLACEHOLDER_DOMAIN}`);
 }
+
+/** Enlace de chat de WhatsApp: wa.me solo acepta dígitos (sin +, espacios ni guiones). */
+export function whatsAppLink(phone: string): string {
+  return `https://wa.me/${phone.replace(/[^0-9]/g, "")}`;
+}
