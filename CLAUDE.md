@@ -75,6 +75,7 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [14](specs/14-personalizacion-ampliada.md) | Arquetipos y tipografías por rubro, layout de hero y orden de secciones de la portada | Approved |
 | [15](specs/15-preview-portada-admin.md) | Preview en vivo de la portada dentro de `/admin/marca`, con los componentes de marca reales y datos placeholder | Implemented |
 | [16](specs/16-listado-clientes.md) | Listado de clientes en `/admin/clientes`: reservas, gasto total, última visita y strikes por clienta | Implemented |
+| [17](specs/17-google-calendar.md) | Sincronización de reservas confirmadas con Google Calendar por OAuth2 (crear al confirmar, borrar al cancelar, reconexión manual) | Approved |
 
 El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` solo tiene filas de seed; `designs` ya tiene escritor real desde el SPEC 07 (`reference_image_url`). `professionals.tagline` existe desde el SPEC 08.
 
