@@ -170,16 +170,19 @@ export function LandingExperience() {
          ------------------------------------------------------------------ */}
       <div className="sticky top-0 z-50 border-b border-outline-variant bg-surface-1/90 backdrop-blur">
         <Container size="xl" className="flex items-center justify-between gap-3 px-5 py-2.5">
-          {/* La marca se va en móvil: en 390px la barra se partía en tres filas
-              y se comía un octavo de la pantalla para siempre. El nombre ya
-              está en el hero y en el pie. */}
-          <span className="hidden font-heading text-lg font-semibold text-primary sm:inline">AgendaUñas</span>
+          {/* La marca se queda también en móvil, pero compacta y sin encoger:
+              el hero no la repite, así que sin ella la primera pantalla no
+              decía de quién era el sitio. La barra sigue en una sola fila
+              porque los estilos de al lado se deslizan en vez de envolverse. */}
+          <span className="shrink-0 font-heading text-base font-semibold text-primary sm:text-lg">AgendaUñas</span>
 
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none sm:justify-end">
             <Overline className="hidden lg:inline">Pruébalo</Overline>
             {/* Una sola fila que se desliza: en móvil los cuatro estilos no
                 caben, y envolverlos crecía la barra pegada. */}
-            <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto sm:flex-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {/* El borde derecho se desvanece en móvil: un chip cortado a secas
+                ("Editori") parecía un error, no algo que se puede deslizar. */}
+            <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto [mask-image:linear-gradient(to_right,black_80%,transparent)] sm:flex-none sm:[mask-image:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {ARCHETYPE_CHOICES.map((choice) => {
                 const active = choice.value === archetype;
                 return (
