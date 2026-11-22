@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { InMemoryBookingRepository } from "@/server/application/booking/__fakes__/in-memory-booking-repository";
 import { BookingInvalidStateError } from "@/server/application/booking/booking-guard-errors";
 import {
@@ -87,5 +87,21 @@ describe("booking state guards", () => {
     await expect(
       new MarkNoShowUseCase(repo).execute(booking.id, PROFESSIONAL_ID, AFTER_APPOINTMENT),
     ).rejects.toBeInstanceOf(BookingInvalidStateError);
+  });
+
+  it("does not revive a booking the client cancelled between the professional's read and write", async () => {
+    const repo = new InMemoryBookingRepository();
+    const booking = await makeBooking(repo);
+    const staleRead = { ...booking };
+    // La profesional lee la reserva todavía pendiente...
+    vi.spyOn(repo, "findById").mockResolvedValueOnce(staleRead);
+    // ...y la clienta cancela antes de que llegue la escritura.
+    await repo.cancel(booking.id, "client");
+
+    await expect(new ConfirmBookingUseCase(repo).execute(booking.id, PROFESSIONAL_ID)).rejects.toBeInstanceOf(
+      BookingInvalidStateError,
+    );
+    expect((await repo.findById(booking.id))?.status).toBe("cancelled");
+    expect(await repo.countClientStrikes(PROFESSIONAL_ID, CLIENT_ID)).toBe(1);
   });
 });

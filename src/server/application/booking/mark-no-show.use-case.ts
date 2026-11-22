@@ -1,6 +1,6 @@
 import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
 import type { Booking } from "@/server/domain/booking/booking.entity";
-import { canApplyBookingAction } from "@/server/domain/booking/booking-transitions";
+import { allowedFromStatuses, canApplyBookingAction } from "@/server/domain/booking/booking-transitions";
 import {
   BookingInvalidStateError,
   BookingNotFoundError,
@@ -18,6 +18,9 @@ export class MarkNoShowUseCase {
     if (!canApplyBookingAction(booking.status, "no_show")) throw new BookingInvalidStateError();
     if (now < booking.endsAt) throw new BookingTooEarlyError();
 
-    return this.bookingRepository.updateStatus(bookingId, "no_show");
+    const updated = await this.bookingRepository.updateStatus(bookingId, "no_show", allowedFromStatuses("no_show"));
+    // null: la reserva cambió entre la lectura y esta escritura.
+    if (!updated) throw new BookingInvalidStateError();
+    return updated;
   }
 }

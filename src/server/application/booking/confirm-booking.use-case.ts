@@ -1,6 +1,6 @@
 import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
 import type { Booking } from "@/server/domain/booking/booking.entity";
-import { canApplyBookingAction } from "@/server/domain/booking/booking-transitions";
+import { allowedFromStatuses, canApplyBookingAction } from "@/server/domain/booking/booking-transitions";
 import {
   BookingInvalidStateError,
   BookingNotFoundError,
@@ -16,6 +16,9 @@ export class ConfirmBookingUseCase {
     if (booking.professionalId !== professionalId) throw new BookingNotOwnedError();
     if (!canApplyBookingAction(booking.status, "confirm")) throw new BookingInvalidStateError();
 
-    return this.bookingRepository.updateStatus(bookingId, "confirmed");
+    const updated = await this.bookingRepository.updateStatus(bookingId, "confirmed", allowedFromStatuses("confirm"));
+    // null: la reserva cambió entre la lectura y esta escritura.
+    if (!updated) throw new BookingInvalidStateError();
+    return updated;
   }
 }

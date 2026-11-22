@@ -79,17 +79,21 @@ export class InMemoryBookingRepository implements BookingRepository {
     return this.bookings.filter((booking) => booking.clientUserId === clientUserId);
   }
 
-  async updateStatus(id: string, status: BookingStatus): Promise<Booking> {
+  // fromStatuses es opcional solo en el fake: los tests lo usan para preparar
+  // estados directamente. Sin él, no hay condición.
+  async updateStatus(id: string, status: BookingStatus, fromStatuses?: readonly BookingStatus[]): Promise<Booking | null> {
     const booking = this.bookings.find((b) => b.id === id);
     if (!booking) throw new Error(`Booking ${id} not found`);
+    if (fromStatuses && !fromStatuses.includes(booking.status)) return null;
     booking.status = status;
     booking.updatedAt = new Date();
     return booking;
   }
 
-  async cancel(id: string, cancelledBy: BookingActor): Promise<Booking> {
+  async cancel(id: string, cancelledBy: BookingActor, fromStatuses?: readonly BookingStatus[]): Promise<Booking | null> {
     const booking = this.bookings.find((b) => b.id === id);
     if (!booking) throw new Error(`Booking ${id} not found`);
+    if (fromStatuses && !fromStatuses.includes(booking.status)) return null;
     booking.status = "cancelled";
     booking.cancelledBy = cancelledBy;
     booking.cancelledAt = new Date();

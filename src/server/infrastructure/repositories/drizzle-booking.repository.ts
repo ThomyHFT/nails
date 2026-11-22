@@ -171,22 +171,22 @@ export class DrizzleBookingRepository implements BookingRepository {
     return rows.map(toDomain);
   }
 
-  async updateStatus(id: string, status: BookingStatus): Promise<Booking> {
+  async updateStatus(id: string, status: BookingStatus, fromStatuses: readonly BookingStatus[]): Promise<Booking | null> {
     const [row] = await db
       .update(bookings)
       .set({ status, updatedAt: new Date() })
-      .where(eq(bookings.id, id))
+      .where(and(eq(bookings.id, id), inArray(bookings.status, [...fromStatuses])))
       .returning();
-    return toDomain(row);
+    return row ? toDomain(row) : null;
   }
 
-  async cancel(id: string, cancelledBy: BookingActor): Promise<Booking> {
+  async cancel(id: string, cancelledBy: BookingActor, fromStatuses: readonly BookingStatus[]): Promise<Booking | null> {
     const [row] = await db
       .update(bookings)
       .set({ status: "cancelled", cancelledBy, cancelledAt: new Date(), updatedAt: new Date() })
-      .where(eq(bookings.id, id))
+      .where(and(eq(bookings.id, id), inArray(bookings.status, [...fromStatuses])))
       .returning();
-    return toDomain(row);
+    return row ? toDomain(row) : null;
   }
 
   async setGoogleEventId(id: string, googleEventId: string | null): Promise<void> {

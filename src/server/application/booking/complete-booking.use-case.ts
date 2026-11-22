@@ -1,6 +1,6 @@
 import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
 import type { Booking } from "@/server/domain/booking/booking.entity";
-import { canApplyBookingAction } from "@/server/domain/booking/booking-transitions";
+import { allowedFromStatuses, canApplyBookingAction } from "@/server/domain/booking/booking-transitions";
 import {
   BookingInvalidStateError,
   BookingNotFoundError,
@@ -18,6 +18,9 @@ export class CompleteBookingUseCase {
     if (!canApplyBookingAction(booking.status, "complete")) throw new BookingInvalidStateError();
     if (now < booking.endsAt) throw new BookingTooEarlyError();
 
-    return this.bookingRepository.updateStatus(bookingId, "completed");
+    const updated = await this.bookingRepository.updateStatus(bookingId, "completed", allowedFromStatuses("complete"));
+    // null: la reserva cambió entre la lectura y esta escritura.
+    if (!updated) throw new BookingInvalidStateError();
+    return updated;
   }
 }

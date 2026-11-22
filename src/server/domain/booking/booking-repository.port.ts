@@ -51,8 +51,14 @@ export interface BookingRepository {
   listActiveByProfessionalInRange(professionalId: string, rangeStart: Date, rangeEnd: Date): Promise<Booking[]>;
   listByProfessional(professionalId: string, status?: BookingStatus): Promise<Booking[]>;
   listByClient(clientUserId: string): Promise<Booking[]>;
-  updateStatus(id: string, status: BookingStatus): Promise<Booking>;
-  cancel(id: string, cancelledBy: BookingActor): Promise<Booking>;
+  /**
+   * Cambia el estado solo si la reserva sigue en uno de `fromStatuses`
+   * (escritura condicional). Devuelve `null` si no estaba en ninguno: otra
+   * escritura ganó la carrera.
+   */
+  updateStatus(id: string, status: BookingStatus, fromStatuses: readonly BookingStatus[]): Promise<Booking | null>;
+  /** Igual que `updateStatus`: `null` si la reserva ya no estaba en `fromStatuses`. */
+  cancel(id: string, cancelledBy: BookingActor, fromStatuses: readonly BookingStatus[]): Promise<Booking | null>;
   setGoogleEventId(id: string, googleEventId: string | null): Promise<void>;
   /** Confirmadas, futuras, sin evento en Google — lo que un backfill tiene que subir. */
   listConfirmedFutureWithoutCalendarEvent(professionalId: string, now: Date): Promise<Booking[]>;

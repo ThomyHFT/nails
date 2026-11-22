@@ -1,6 +1,6 @@
 import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
 import type { Booking } from "@/server/domain/booking/booking.entity";
-import { canApplyBookingAction } from "@/server/domain/booking/booking-transitions";
+import { allowedFromStatuses, canApplyBookingAction } from "@/server/domain/booking/booking-transitions";
 import {
   BookingInvalidStateError,
   BookingNotFoundError,
@@ -16,7 +16,10 @@ export class CancelBookingByClientUseCase {
     if (booking.clientUserId !== clientUserId) throw new BookingNotOwnedError();
     if (!canApplyBookingAction(booking.status, "cancel")) throw new BookingInvalidStateError();
 
-    return this.bookingRepository.cancel(bookingId, "client");
+    const updated = await this.bookingRepository.cancel(bookingId, "client", allowedFromStatuses("cancel"));
+    // null: la reserva cambió entre la lectura y esta escritura.
+    if (!updated) throw new BookingInvalidStateError();
+    return updated;
   }
 }
 
@@ -30,6 +33,9 @@ export class CancelBookingByProfessionalUseCase {
     if (booking.professionalId !== professionalId) throw new BookingNotOwnedError();
     if (!canApplyBookingAction(booking.status, "cancel")) throw new BookingInvalidStateError();
 
-    return this.bookingRepository.cancel(bookingId, "professional");
+    const updated = await this.bookingRepository.cancel(bookingId, "professional", allowedFromStatuses("cancel"));
+    // null: la reserva cambió entre la lectura y esta escritura.
+    if (!updated) throw new BookingInvalidStateError();
+    return updated;
   }
 }

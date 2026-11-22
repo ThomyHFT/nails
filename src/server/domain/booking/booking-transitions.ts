@@ -20,3 +20,12 @@ const ALLOWED_FROM: Record<BookingAction, readonly BookingStatus[]> = {
 export function canApplyBookingAction(status: BookingStatus, action: BookingAction): boolean {
   return ALLOWED_FROM[action].includes(status);
 }
+
+/**
+ * Los mismos estados, para que el repositorio escriba con
+ * `WHERE status IN (...)`: si otra escritura cambió la reserva entre la
+ * lectura y la escritura, la actualización no toca nada en vez de pisarla.
+ */
+export function allowedFromStatuses(action: BookingAction): readonly BookingStatus[] {
+  return ALLOWED_FROM[action];
+}
