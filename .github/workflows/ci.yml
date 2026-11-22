@@ -1,0 +1,39 @@
+name: CI
+
+# Vercel despliega cada push a main sin correr tests. Este workflow es el que
+# avisa: seis tests estuvieron rotos meses sin que nadie se enterara.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tipos
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      # Los tests usan fakes en memoria: no necesitan base ni .env.
+      - name: Tests
+        run: npm test
