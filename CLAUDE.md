@@ -81,7 +81,7 @@ El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exis
 
 ## Deploy
 
-No hay PR ni CI: se pushea la rama del spec directo sobre `main` y Vercel detecta y redeploya solo.
+No hay PR: se pushea la rama del spec directo sobre `main` y Vercel detecta y redeploya solo. GitHub Actions ([ci.yml](.github/workflows/ci.yml)) corre tipos, lint y tests en cada push, pero no bloquea el deploy de Vercel: revisa que esté en verde.
 
 ```bash
 npm run db:migrate                              # 1. migrar Neon primero
