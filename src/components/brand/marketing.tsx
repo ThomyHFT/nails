@@ -99,7 +99,15 @@ export function Hero({
         // mar de crema. Con un máximo de 380px, el hero queda a la altura de
         // su propio contenido en vez de a la de la foto.
         <div className="relative order-1 w-full max-w-sm md:order-2 md:ml-auto md:w-2/5">
-          <MediaFrame src={imageUrl} alt={imageAlt ?? ""} ratio="portrait" className="shadow-e1" />
+          {/* 4:3 en móvil: en retrato la foto medía ~420px y empujaba el
+              titular y "Reservar hora" bajo el pliegue. Más baja, la foto
+              sigue primero y el CTA entra en la primera pantalla. */}
+          <MediaFrame
+            src={imageUrl}
+            alt={imageAlt ?? ""}
+            ratio="portrait"
+            className="aspect-[4/3] shadow-e1 md:aspect-[4/5]"
+          />
           {badge && <div className="absolute -bottom-5 left-4 md:-bottom-6 md:-left-6">{badge}</div>}
         </div>
       )}
