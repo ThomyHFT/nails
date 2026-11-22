@@ -5,6 +5,8 @@ import { ListDaysWithSlotsUseCase } from "@/server/application/booking/list-days
 
 const PROFESSIONAL_ID = "prof-1";
 const MONTH = "2026-08-01"; // agosto 2026: lunes son 3, 10, 17, 24, 31
+// Reloj fijo antes de agosto 2026: sin esto el caso de uso usa la hora real y descarta los slots como pasados.
+const NOW = new Date("2026-08-01T00:00:00Z");
 
 function makeUseCase() {
   const availabilityRepository = new InMemoryAvailabilityRepository();
@@ -23,6 +25,7 @@ describe("ListDaysWithSlotsUseCase", () => {
       bufferMinutes: 0,
       month: MONTH,
       durationMinutes: 60,
+      now: NOW,
     });
 
     expect(days).toEqual([]);
@@ -44,6 +47,7 @@ describe("ListDaysWithSlotsUseCase", () => {
       bufferMinutes: 0,
       month: MONTH,
       durationMinutes: 60,
+      now: NOW,
     });
 
     expect(days).toEqual(["2026-08-03", "2026-08-10", "2026-08-17", "2026-08-24", "2026-08-31"]);

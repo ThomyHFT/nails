@@ -12,6 +12,8 @@ import type { NailDesignPayload } from "@/server/domain/design/nail-design-paylo
 const PROFESSIONAL_ID = "prof-1";
 const MONDAY = "2026-08-10";
 const EFFECTIVE_MONTH = "2026-08-01";
+// Reloj fijo antes de agosto 2026: sin esto el caso de uso usa la hora real y descarta los slots como pasados.
+const NOW = new Date("2026-08-01T00:00:00Z");
 
 function makeUseCase() {
   const availabilityRepository = new InMemoryAvailabilityRepository();
@@ -47,6 +49,7 @@ describe("CreateBookingUseCase", () => {
       startsAt: "2026-08-10T09:00:00.000Z",
       priceClp: 15_000,
       durationMinutes: 60,
+      now: NOW,
     });
 
     expect(booking.status).toBe("pending");
@@ -69,6 +72,7 @@ describe("CreateBookingUseCase", () => {
       startsAt: "2026-08-10T09:00:00.000Z",
       priceClp: 15_000,
       durationMinutes: 60,
+      now: NOW,
     });
 
     await expect(
@@ -83,6 +87,7 @@ describe("CreateBookingUseCase", () => {
         startsAt: "2026-08-10T09:00:00.000Z",
         priceClp: 15_000,
         durationMinutes: 60,
+        now: NOW,
       }),
     ).rejects.toBeInstanceOf(SlotNotAvailableError);
   });
@@ -124,6 +129,7 @@ describe("CreateBookingUseCase", () => {
         startsAt: "2026-08-10T20:00:00.000Z",
         priceClp: 15_000,
         durationMinutes: 60,
+        now: NOW,
       }),
     ).rejects.toBeInstanceOf(SlotNotAvailableError);
   });
@@ -177,6 +183,7 @@ describe("CreateBookingUseCase", () => {
         startsAt: "2026-08-10T09:00:00.000Z",
         priceClp: 15_000,
         durationMinutes: 60,
+        now: NOW,
         designPayload: payload,
       }),
     ).rejects.toBeInstanceOf(SlotNotAvailableError);
@@ -192,6 +199,7 @@ describe("CreateBookingUseCase", () => {
       startsAt: "2026-08-10T09:00:00.000Z",
       priceClp: 15_000,
       durationMinutes: 60,
+      now: NOW,
     });
 
     expect(booking.durationMinutes).toBe(60);
@@ -237,6 +245,7 @@ describe("CreateBookingUseCase", () => {
       startsAt: "2026-08-10T09:00:00.000Z",
       priceClp: 15_000,
       durationMinutes: 60,
+      now: NOW,
       designPayload: payload,
       designReferenceImageUrl: "https://blob.vercel-storage.com/design-references/inspo.jpg",
     });
@@ -285,6 +294,7 @@ describe("CreateBookingUseCase", () => {
       startsAt: "2026-08-10T09:00:00.000Z",
       priceClp: 15_000,
       durationMinutes: 60,
+      now: NOW,
       designPayload: payload,
     });
 
@@ -320,6 +330,7 @@ describe("CreateBookingUseCase", () => {
         startsAt: "2026-08-10T09:00:00.000Z",
         priceClp: 15_000,
         durationMinutes: 60,
+        now: NOW,
         designPayload: payload,
       }),
     ).rejects.toBeInstanceOf(DesignerNotAvailableError);
