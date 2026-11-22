@@ -33,6 +33,24 @@ export class InMemoryUserRepository implements UserRepository {
     return user;
   }
 
+  async updatePhone(userId: string, phone: string): Promise<void> {
+    const user = this.usersById.get(userId);
+    if (user) this.usersById.set(userId, { ...user, phone, updatedAt: new Date() });
+  }
+
+  async updateProfile(userId: string, profile: { name: string; phone: string; passwordHash: string }): Promise<void> {
+    const user = this.usersById.get(userId);
+    if (user) this.usersById.set(userId, { ...user, ...profile, updatedAt: new Date() });
+  }
+
+  async findClientByPhone(phone: string): Promise<User | null> {
+    const digits = phone.replace(/\D/g, "");
+    const matches = [...this.usersById.values()].filter(
+      (user) => user.role === "client" && user.phone?.replace(/\D/g, "") === digits,
+    );
+    return matches.at(-1) ?? null;
+  }
+
   async updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
     const user = this.usersById.get(userId);
     if (user) {

@@ -33,6 +33,25 @@ export function TextField({
   );
 }
 
+/** Texto largo (notas): mismo marco que `TextField`, pero crece con el contenido. */
+export function TextAreaField({
+  label,
+  hint,
+  className,
+  ...props
+}: {
+  label: ReactNode;
+  hint?: ReactNode;
+} & ComponentProps<"textarea">) {
+  return (
+    <label className={cn("flex flex-col gap-2", className)}>
+      <Overline>{label}</Overline>
+      <textarea {...props} className={cn(FIELD_CLASSES, "h-auto min-h-24 resize-y py-3")} />
+      {hint ? <Caption className="text-xs">{hint}</Caption> : null}
+    </label>
+  );
+}
+
 /**
  * Formulario centrado de una columna: login, registro, recuperación. Ancho
  * corto a propósito — una columna angosta se lee como un trámite breve.

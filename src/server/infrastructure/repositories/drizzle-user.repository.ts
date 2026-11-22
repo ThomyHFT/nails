@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { users } from "@/server/infrastructure/db/schema/users";
 import type { User } from "@/server/domain/user/user.entity";
@@ -49,5 +49,27 @@ export class DrizzleUserRepository implements UserRepository {
 
   async markEmailVerified(userId: string): Promise<void> {
     await db.update(users).set({ emailVerifiedAt: new Date(), updatedAt: new Date() }).where(eq(users.id, userId));
+  }
+
+  async updatePhone(userId: string, phone: string): Promise<void> {
+    await db.update(users).set({ phone, updatedAt: new Date() }).where(eq(users.id, userId));
+  }
+
+  async updateProfile(userId: string, profile: { name: string; phone: string; passwordHash: string }): Promise<void> {
+    await db
+      .update(users)
+      .set({ ...profile, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async findClientByPhone(phone: string): Promise<User | null> {
+    const digits = phone.replace(/\D/g, "");
+    const [row] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.role, "client"), sql`regexp_replace(${users.phone}, '[^0-9]', '', 'g') = ${digits}`))
+      .orderBy(desc(users.createdAt))
+      .limit(1);
+    return row ? toDomain(row) : null;
   }
 }

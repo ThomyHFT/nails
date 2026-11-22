@@ -1,12 +1,14 @@
 import { inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { Users } from "lucide-react";
+import { MessageCircle, Users } from "lucide-react";
 import { db } from "@/server/infrastructure/db/client";
 import { users } from "@/server/infrastructure/db/schema/users";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { ListClientStatsUseCase } from "@/server/application/booking/list-client-stats.use-case";
 import { AdminPageHeader, Caption, Chip, EmptyState, Overline, Panel, Price } from "@/components/brand";
+import { whatsAppUrl } from "@/app/[slug]/(public)/links";
+import { isPlaceholderEmail } from "@/server/domain/user/client-contact";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("es-CL", { dateStyle: "medium", timeZone: "America/Santiago" });
@@ -24,7 +26,7 @@ export default async function ClientesAdminPage({ params }: { params: Promise<{ 
 
   const clientIds = stats.map((s) => s.clientUserId);
   const clientRows = clientIds.length
-    ? await db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, clientIds))
+    ? await db.select({ id: users.id, name: users.name, email: users.email, phone: users.phone }).from(users).where(inArray(users.id, clientIds))
     : [];
   const clientById = new Map(clientRows.map((c) => [c.id, c]));
 
@@ -70,7 +72,20 @@ export default async function ClientesAdminPage({ params }: { params: Promise<{ 
                   <tr key={stat.clientUserId} className="border-b border-outline-variant last:border-0">
                     <td className="p-2">
                       <div className="font-medium">{client?.name ?? "Clienta"}</div>
-                      {client?.email && <Caption className="text-xs">{client.email}</Caption>}
+                      {client?.email && !isPlaceholderEmail(client.email) && (
+                        <Caption className="text-xs">{client.email}</Caption>
+                      )}
+                      {client?.phone && (
+                        <a
+                          href={whatsAppUrl(client.phone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-sm text-xs font-semibold text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <MessageCircle className="size-3.5" aria-hidden />
+                          {client.phone}
+                        </a>
+                      )}
                     </td>
                     <td className="p-2 text-sm">
                       {stat.completedBookings} / {stat.totalBookings}

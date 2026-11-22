@@ -3,8 +3,10 @@ import { FakePasswordHasher } from "@/server/application/auth/__fakes__/fake-pas
 import { InMemoryUserRepository } from "@/server/application/auth/__fakes__/in-memory-user-repository";
 import {
   EmailAlreadyRegisteredError,
+  InvalidPhoneError,
   RegisterClientUseCase,
 } from "@/server/application/auth/register-client.use-case";
+import { UNUSABLE_PASSWORD_HASH } from "@/server/domain/user/client-contact";
 
 function makeUseCase() {
   const userRepository = new InMemoryUserRepository();
@@ -21,6 +23,7 @@ describe("RegisterClientUseCase", () => {
       email: "cliente@example.com",
       password: "super-secreta",
       name: "Cliente Test",
+      phone: "+56 9 1234 5678",
     });
 
     expect(user.passwordHash).not.toBe("super-secreta");
@@ -34,6 +37,7 @@ describe("RegisterClientUseCase", () => {
       email: "Cliente@Example.COM",
       password: "super-secreta",
       name: "Cliente Test",
+      phone: "+56 9 1234 5678",
     });
 
     expect(user.email).toBe("cliente@example.com");
@@ -46,6 +50,7 @@ describe("RegisterClientUseCase", () => {
       email: "cliente@example.com",
       password: "super-secreta",
       name: "Cliente Test",
+      phone: "+56 9 1234 5678",
     });
 
     expect(user.role).toBe("client");
@@ -58,6 +63,7 @@ describe("RegisterClientUseCase", () => {
       email: "cliente@example.com",
       password: "super-secreta",
       name: "Cliente Test",
+      phone: "+56 9 1234 5678",
     });
 
     await expect(
@@ -65,7 +71,40 @@ describe("RegisterClientUseCase", () => {
         email: "cliente@example.com",
         password: "otra-clave",
         name: "Otro Nombre",
+        phone: "+56 9 1111 2222",
       }),
     ).rejects.toBeInstanceOf(EmailAlreadyRegisteredError);
+  });
+
+  it("rejects a phone without enough digits", async () => {
+    const { useCase } = makeUseCase();
+
+    await expect(
+      useCase.execute({ email: "c@example.com", password: "super-secreta", name: "Cliente", phone: "123" }),
+    ).rejects.toBeInstanceOf(InvalidPhoneError);
+  });
+
+  it("activates an account the professional created by hand instead of rejecting the email", async () => {
+    const { useCase, userRepository } = makeUseCase();
+    const manual = await userRepository.create({
+      email: "camila@example.com",
+      passwordHash: UNUSABLE_PASSWORD_HASH,
+      name: "Cami",
+      phone: null,
+      role: "client",
+    });
+
+    const user = await useCase.execute({
+      email: "camila@example.com",
+      password: "super-secreta",
+      name: "Camila Rojas",
+      phone: "+56 9 8765 4321",
+    });
+
+    expect(user.id).toBe(manual.id);
+    const stored = await userRepository.findById(manual.id);
+    expect(stored?.passwordHash).toBe("hashed:super-secreta");
+    expect(stored?.name).toBe("Camila Rojas");
+    expect(stored?.phone).toBe("+56 9 8765 4321");
   });
 });

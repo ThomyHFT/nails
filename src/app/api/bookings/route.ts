@@ -13,6 +13,7 @@ import { GenerateAvailableSlotsUseCase } from "@/server/application/booking/gene
 import { SendBookingNotificationUseCase } from "@/server/application/notification/send-booking-notification.use-case";
 import { calculateDesignQuote, InvalidDesignElementError } from "@/server/domain/design/calculate-design-quote";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
+import { isValidPhone, normalizePhone } from "@/server/domain/user/client-contact";
 import { DrizzleAvailabilityRepository } from "@/server/infrastructure/repositories/drizzle-availability.repository";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
@@ -106,7 +107,8 @@ const createBookingSchema = z.object({
   serviceVariantId: z.string().uuid(),
   date: z.string().regex(datePattern),
   startsAt: z.string().datetime(),
-  clientNote: z.string().nullable().optional(),
+  clientNote: z.string().max(500).nullable().optional(),
+  clientPhone: z.string().optional(),
   design: z
     .object({
       payload: designPayloadSchema,
@@ -137,6 +139,20 @@ export async function POST(request: Request) {
   const variant = await resolveVariant(parsed.data.serviceVariantId, professional.id);
   if (!variant) {
     return NextResponse.json({ error: "Variante no encontrada" }, { status: 404 });
+  }
+
+  // SPEC 18: la profesional necesita el teléfono de su clienta. Las cuentas
+  // creadas antes de que fuera obligatorio lo completan acá, una sola vez.
+  const userRepository = new DrizzleUserRepository();
+  const client = await userRepository.findById(session.user.id);
+  if (client && !client.phone) {
+    if (!parsed.data.clientPhone || !isValidPhone(parsed.data.clientPhone)) {
+      return NextResponse.json(
+        { error: "Agrega tu teléfono para confirmar la reserva.", code: "PHONE_REQUIRED" },
+        { status: 422 },
+      );
+    }
+    await userRepository.updatePhone(client.id, normalizePhone(parsed.data.clientPhone));
   }
 
   let designPayload: NailDesignPayload | undefined;

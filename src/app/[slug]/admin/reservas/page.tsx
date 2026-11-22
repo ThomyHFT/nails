@@ -1,6 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { CalendarClock, CalendarDays } from "lucide-react";
+import { CalendarClock, CalendarDays, MessageCircle } from "lucide-react";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { db } from "@/server/infrastructure/db/client";
@@ -9,6 +9,8 @@ import { serviceVariants, services } from "@/server/infrastructure/db/schema/ser
 import { users } from "@/server/infrastructure/db/schema/users";
 import type { Booking, BookingStatus } from "@/server/domain/booking/booking.entity";
 import { BookingActions } from "@/app/[slug]/admin/reservas/BookingActions";
+import { whatsAppUrl } from "@/app/[slug]/(public)/links";
+import { isPlaceholderEmail } from "@/server/domain/user/client-contact";
 import {
   AdminPageHeader,
   Caption,
@@ -71,7 +73,7 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
 
   const [clientRows, variantRows, designRows] = await Promise.all([
     clientIds.length
-      ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, clientIds))
+      ? db.select({ id: users.id, name: users.name, email: users.email, phone: users.phone }).from(users).where(inArray(users.id, clientIds))
       : Promise.resolve([]),
     variantIds.length
       ? db
@@ -137,7 +139,21 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 flex-col gap-1">
                           <Title>{client?.name ?? "Cliente"}</Title>
-                          {client?.email && <Caption className="truncate text-xs">{client.email}</Caption>}
+                          {/* SPEC 18: el correo de relleno de una clienta agendada a mano no se muestra. */}
+                          {client?.email && !isPlaceholderEmail(client.email) && (
+                            <Caption className="truncate text-xs">{client.email}</Caption>
+                          )}
+                          {client?.phone && (
+                            <a
+                              href={whatsAppUrl(client.phone)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex w-fit items-center gap-1.5 rounded-sm text-xs font-semibold text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <MessageCircle className="size-3.5" aria-hidden />
+                              {client.phone}
+                            </a>
+                          )}
                         </div>
                         <div className="flex flex-col items-end gap-1.5">
                           <StatusBadge tone={STATUS_TONES[booking.status]}>{STATUS_BADGE_LABELS[booking.status]}</StatusBadge>
@@ -157,6 +173,12 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                           ? `${variant.serviceName} · ${variant.label ?? "—"}`
                           : booking.serviceVariantId}
                       </Caption>
+
+                      {booking.clientNote && (
+                        <blockquote className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-foreground">
+                          “{booking.clientNote}”
+                        </blockquote>
+                      )}
 
                       {design?.referenceImageUrl && (
                         <MediaFrame

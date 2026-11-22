@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   EmailAlreadyRegisteredError,
+  InvalidPhoneError,
   RegisterClientUseCase,
 } from "@/server/application/auth/register-client.use-case";
 import { DrizzleUserRepository } from "@/server/infrastructure/repositories/drizzle-user.repository";
@@ -11,7 +12,7 @@ const registerClientSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   name: z.string().min(1, "El nombre es requerido"),
-  phone: z.string().nullable().optional(),
+  phone: z.string().min(1, "El teléfono es requerido"),
 });
 
 export async function POST(request: Request) {
@@ -37,6 +38,9 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (err) {
+    if (err instanceof InvalidPhoneError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
     if (err instanceof EmailAlreadyRegisteredError) {
       return NextResponse.json({ error: err.message }, { status: 409 });
     }

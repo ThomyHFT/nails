@@ -29,7 +29,7 @@ export { Band, Container, Divider, IconCircle, MediaFrame, Panel, Section } from
 
 export { Chip, MetaItem, StatusBadge } from "@/components/brand/chip";
 
-export { AuthCard, FIELD_CLASSES, TextField } from "@/components/brand/form";
+export { AuthCard, FIELD_CLASSES, TextAreaField, TextField } from "@/components/brand/form";
 
 export { OptionCard, RatingInput, SegmentedControl, SelectChip, Swatch } from "@/components/brand/controls";
 

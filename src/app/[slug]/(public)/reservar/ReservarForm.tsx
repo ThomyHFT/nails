@@ -32,6 +32,8 @@ import {
   SelectChip,
   StickyActionBar,
   SummaryRow,
+  TextAreaField,
+  TextField,
   Title,
 } from "@/components/brand";
 import { NailDesigner, type NailDesignerResult } from "@/app/[slug]/(public)/reservar/NailDesigner";
@@ -191,6 +193,12 @@ export function ReservarForm({
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  // SPEC 18: nota para la profesional, y teléfono solo si la cuenta no lo
+  // tiene (cuentas anteriores a que fuera obligatorio). La API avisa con
+  // PHONE_REQUIRED y recién ahí se muestra el campo.
+  const [clientNote, setClientNote] = useState("");
+  const [needsPhone, setNeedsPhone] = useState(false);
+  const [clientPhone, setClientPhone] = useState("");
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -283,6 +291,8 @@ export function ReservarForm({
           serviceVariantId: variantId,
           date,
           startsAt: selectedSlot.startsAt,
+          clientNote: clientNote.trim() || null,
+          clientPhone: needsPhone ? clientPhone : undefined,
           design: design
             ? {
                 payload: design.payload,
@@ -296,6 +306,9 @@ export function ReservarForm({
 
       if (!response.ok) {
         const data = await response.json();
+        if (data.code === "PHONE_REQUIRED") {
+          setNeedsPhone(true);
+        }
         setStatus(typeof data.error === "string" ? data.error : "No se pudo confirmar la reserva.");
         return;
       }
@@ -679,6 +692,28 @@ export function ReservarForm({
                 detail="Se abona en el local al terminar el servicio."
               />
             </div>
+
+            <TextAreaField
+              label="Nota para la profesional (opcional)"
+              value={clientNote}
+              onChange={(e) => setClientNote(e.target.value)}
+              maxLength={500}
+              placeholder="Ej: tengo las uñas cortas, voy con mi hija…"
+            />
+
+            {needsPhone && (
+              <TextField
+                label="Tu teléfono"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+                placeholder="+56 9 1234 5678"
+                hint="Lo necesitamos para avisarte si cambia tu hora."
+                required
+              />
+            )}
           </div>
         )}
 
