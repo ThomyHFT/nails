@@ -11,7 +11,7 @@ export class InMemoryAvailabilityRepository implements AvailabilityRepository {
   private readonly exceptions: AvailabilityException[] = [];
   private nextId = 1;
 
-  async listRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string): Promise<AvailabilityRule[]> {
+  async listRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string | null): Promise<AvailabilityRule[]> {
     return this.rules.filter(
       (rule) => rule.professionalId === professionalId && rule.effectiveMonth === effectiveMonth,
     );
@@ -28,7 +28,7 @@ export class InMemoryAvailabilityRepository implements AvailabilityRepository {
     if (index >= 0) this.rules.splice(index, 1);
   }
 
-  async deleteRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string): Promise<void> {
+  async deleteRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string | null): Promise<void> {
     for (let i = this.rules.length - 1; i >= 0; i--) {
       if (this.rules[i].professionalId === professionalId && this.rules[i].effectiveMonth === effectiveMonth) {
         this.rules.splice(i, 1);

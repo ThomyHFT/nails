@@ -9,7 +9,8 @@ export interface RuleInput {
 
 export interface ConfigureAvailabilityRulesInput {
   professionalId: string;
-  effectiveMonth: string;
+  /** `null` guarda el horario semanal; un mes guarda una excepción de ese mes. */
+  effectiveMonth: string | null;
   rules: RuleInput[];
 }
 

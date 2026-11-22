@@ -1,4 +1,4 @@
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, eq, gte, isNull, lt } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { availabilityExceptions, availabilityRules } from "@/server/infrastructure/db/schema/availability";
 import type { AvailabilityException } from "@/server/domain/availability/availability-exception.entity";
@@ -41,6 +41,13 @@ function exceptionToDomain(row: typeof availabilityExceptions.$inferSelect): Ava
   };
 }
 
+/** `null` es el horario semanal: en SQL hay que preguntarlo con IS NULL, no con =. */
+function monthCondition(effectiveMonth: string | null) {
+  return effectiveMonth === null
+    ? isNull(availabilityRules.effectiveMonth)
+    : eq(availabilityRules.effectiveMonth, effectiveMonth);
+}
+
 function nextMonthStart(effectiveMonth: string): string {
   const [year, month] = effectiveMonth.split("-").map(Number);
   const next = new Date(Date.UTC(year, month, 1));
@@ -48,14 +55,14 @@ function nextMonthStart(effectiveMonth: string): string {
 }
 
 export class DrizzleAvailabilityRepository implements AvailabilityRepository {
-  async listRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string): Promise<AvailabilityRule[]> {
+  async listRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string | null): Promise<AvailabilityRule[]> {
     const rows = await db
       .select()
       .from(availabilityRules)
       .where(
         and(
           eq(availabilityRules.professionalId, professionalId),
-          eq(availabilityRules.effectiveMonth, effectiveMonth),
+          monthCondition(effectiveMonth),
         ),
       );
     return rows.map(ruleToDomain);
@@ -81,13 +88,13 @@ export class DrizzleAvailabilityRepository implements AvailabilityRepository {
       .where(and(eq(availabilityRules.id, id), eq(availabilityRules.professionalId, professionalId)));
   }
 
-  async deleteRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string): Promise<void> {
+  async deleteRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string | null): Promise<void> {
     await db
       .delete(availabilityRules)
       .where(
         and(
           eq(availabilityRules.professionalId, professionalId),
-          eq(availabilityRules.effectiveMonth, effectiveMonth),
+          monthCondition(effectiveMonth),
         ),
       );
   }

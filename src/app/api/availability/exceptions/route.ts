@@ -18,7 +18,14 @@ const createExceptionSchema = z.object({
   startTime: z.string().regex(timePattern).nullable().optional(),
   endTime: z.string().regex(timePattern).nullable().optional(),
   note: z.string().nullable().optional(),
-});
+}).refine(
+  // Un bloqueo puede ir sin horas (día completo) o con un rango; un horario extra siempre lleva rango.
+  (input) =>
+    input.startTime && input.endTime
+      ? input.startTime < input.endTime
+      : input.kind === "blocked" && !input.startTime && !input.endTime,
+  { message: "El rango de horas no es válido" },
+);
 
 async function requireOwnedProfessional() {
   const session = await auth();

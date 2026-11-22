@@ -120,7 +120,7 @@ describe("ListDaysWithSlotsUseCase", () => {
     expect(days.length).toBeGreaterThan(0);
   });
 
-  it("loads the month with three repository queries instead of one per day", async () => {
+  it("loads the month with a fixed number of queries instead of one per day", async () => {
     const { useCase, availabilityRepository, bookingRepository } = makeUseCase();
     await availabilityRepository.createRule({ professionalId: PROFESSIONAL_ID, weekday: 1, startTime: "09:00", endTime: "12:00", effectiveMonth: MONTH });
     const spies = [
@@ -132,6 +132,7 @@ describe("ListDaysWithSlotsUseCase", () => {
 
     await useCase.execute({ professionalId: PROFESSIONAL_ID, timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
 
-    expect(spies.reduce((total, spy) => total + spy.mock.calls.length, 0)).toBe(3);
+    // Reglas del mes + horario semanal + excepciones del mes + reservas del rango.
+    expect(spies.reduce((total, spy) => total + spy.mock.calls.length, 0)).toBe(4);
   });
 });

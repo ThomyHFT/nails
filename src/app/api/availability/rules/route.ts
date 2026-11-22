@@ -9,13 +9,17 @@ const timePattern = /^\d{2}:\d{2}$/;
 const monthPattern = /^\d{4}-\d{2}-01$/;
 
 const configureRulesSchema = z.object({
-  effectiveMonth: z.string().regex(monthPattern, "effectiveMonth debe ser el primer día del mes (YYYY-MM-01)"),
+  // null = horario semanal (se repite todos los meses); un mes = excepción de ese mes (SPEC 18).
+  effectiveMonth: z
+    .string()
+    .regex(monthPattern, "effectiveMonth debe ser el primer día del mes (YYYY-MM-01)")
+    .nullable(),
   rules: z.array(
     z.object({
       weekday: z.number().int().min(0).max(6),
       startTime: z.string().regex(timePattern),
       endTime: z.string().regex(timePattern),
-    }),
+    }).refine((rule) => rule.startTime < rule.endTime, { message: "La hora de inicio debe ser anterior a la de término" }),
   ),
 });
 
@@ -38,10 +42,12 @@ export async function GET(request: Request) {
   if (!professional) return response;
 
   const { searchParams } = new URL(request.url);
-  const effectiveMonth = searchParams.get("month");
-  if (!effectiveMonth || !monthPattern.test(effectiveMonth)) {
-    return NextResponse.json({ error: "month es requerido (YYYY-MM-01)" }, { status: 400 });
+  // ?month=weekly pide el horario semanal; ?month=YYYY-MM-01, las reglas propias de ese mes.
+  const monthParam = searchParams.get("month");
+  if (!monthParam || (monthParam !== "weekly" && !monthPattern.test(monthParam))) {
+    return NextResponse.json({ error: "month es requerido (weekly o YYYY-MM-01)" }, { status: 400 });
   }
+  const effectiveMonth = monthParam === "weekly" ? null : monthParam;
 
   const rules = await new DrizzleAvailabilityRepository().listRulesByProfessionalAndMonth(
     professional.id,

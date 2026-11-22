@@ -1,6 +1,7 @@
 import type { AvailabilityRepository } from "@/server/domain/availability/availability-repository.port";
 import type { AvailabilityException } from "@/server/domain/availability/availability-exception.entity";
 import type { AvailabilityRule } from "@/server/domain/availability/availability-rule.entity";
+import { resolveRulesForMonth } from "@/server/domain/availability/resolve-rules-for-month";
 import type { Booking } from "@/server/domain/booking/booking.entity";
 import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
 import { mergeIntervals, subtractIntervals, type MinuteInterval } from "@/server/application/booking/intervals";
@@ -53,7 +54,16 @@ export function computeDaySlots(input: ComputeDaySlotsInput): AvailableSlot[] {
   const { rules, exceptions, bookings, timezone, bufferMinutes, date, durationMinutes, now } = input;
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
 
-  const isBlocked = exceptions.some((exception) => exception.kind === "blocked");
+  // Un bloqueo sin horas tapa el día; con horas, solo ese rango (SPEC 18).
+  const isBlocked = exceptions.some(
+    (exception) => exception.kind === "blocked" && !(exception.startTime && exception.endTime),
+  );
+  const blockedIntervals: MinuteInterval[] = exceptions
+    .filter((exception) => exception.kind === "blocked" && exception.startTime && exception.endTime)
+    .map((exception) => ({
+      start: timeToMinutes(exception.startTime as string),
+      end: timeToMinutes(exception.endTime as string),
+    }));
 
   const baseIntervals: MinuteInterval[] = isBlocked
     ? []
@@ -76,7 +86,7 @@ export function computeDaySlots(input: ComputeDaySlotsInput): AvailableSlot[] {
     end: utcToZonedMinutesOfDay(booking.endsAt, timezone) + bufferMinutes,
   }));
 
-  const freeIntervals = subtractIntervals(openIntervals, busyIntervals);
+  const freeIntervals = subtractIntervals(openIntervals, [...busyIntervals, ...blockedIntervals]);
   const cutoff = new Date(now.getTime() + MINIMUM_LEAD_TIME_MS);
   const slots: AvailableSlot[] = [];
 
@@ -106,10 +116,12 @@ export class GenerateAvailableSlotsUseCase {
     const now = input.now ?? new Date();
     const effectiveMonth = `${date.slice(0, 7)}-01`;
 
-    const [rules, exceptions] = await Promise.all([
+    const [monthRules, weeklyRules, exceptions] = await Promise.all([
       this.availabilityRepository.listRulesByProfessionalAndMonth(professionalId, effectiveMonth),
+      this.availabilityRepository.listRulesByProfessionalAndMonth(professionalId, null),
       this.availabilityRepository.listExceptionsByProfessionalAndDate(professionalId, date),
     ]);
+    const rules = resolveRulesForMonth(monthRules, weeklyRules);
 
     // Sin horario abierto no hace falta mirar las reservas del día.
     if (computeDaySlots({ rules, exceptions, bookings: [], timezone, bufferMinutes, date, durationMinutes, now }).length === 0) {

@@ -6,7 +6,8 @@ export interface NewAvailabilityRule {
   weekday: number;
   startTime: string;
   endTime: string;
-  effectiveMonth: string;
+  /** `null` = horario semanal. */
+  effectiveMonth: string | null;
 }
 
 export interface NewAvailabilityException {
@@ -19,10 +20,11 @@ export interface NewAvailabilityException {
 }
 
 export interface AvailabilityRepository {
-  listRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string): Promise<AvailabilityRule[]>;
+  /** `effectiveMonth = null` lista el horario semanal; un mes, solo sus reglas propias. */
+  listRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string | null): Promise<AvailabilityRule[]>;
   createRule(rule: NewAvailabilityRule): Promise<AvailabilityRule>;
   deleteRule(id: string, professionalId: string): Promise<void>;
-  deleteRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string): Promise<void>;
+  deleteRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string | null): Promise<void>;
   listExceptionsByProfessionalAndDate(professionalId: string, date: string): Promise<AvailabilityException[]>;
   listExceptionsByProfessionalInMonth(professionalId: string, effectiveMonth: string): Promise<AvailabilityException[]>;
   createException(exception: NewAvailabilityException): Promise<AvailabilityException>;

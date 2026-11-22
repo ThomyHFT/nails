@@ -5,5 +5,6 @@ export interface AvailabilityRule {
   startTime: string;
   endTime: string;
   active: boolean;
-  effectiveMonth: string;
+  /** `null` = horario semanal (todos los meses); "YYYY-MM-01" = excepción de ese mes. */
+  effectiveMonth: string | null;
 }

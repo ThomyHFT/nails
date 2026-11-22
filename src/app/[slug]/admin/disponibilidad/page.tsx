@@ -73,6 +73,64 @@ function defaultRuleRows(): RuleRow[] {
   return WEEKDAYS.map((w) => ({ weekday: w.value, startTime: "09:00", endTime: "18:00", enabled: false }));
 }
 
+function rowsFromRules(rules: AvailabilityRule[]): RuleRow[] {
+  return defaultRuleRows().map((row) => {
+    const match = rules.find((r) => r.weekday === row.weekday);
+    return match ? { weekday: row.weekday, startTime: match.startTime, endTime: match.endTime, enabled: true } : row;
+  });
+}
+
+function RuleEditor({
+  scope,
+  rows,
+  setRows,
+}: {
+  scope: string;
+  rows: RuleRow[];
+  setRows: (update: (rows: RuleRow[]) => RuleRow[]) => void;
+}) {
+  const toggle = (weekday: number) =>
+    setRows((current) => current.map((r) => (r.weekday === weekday ? { ...r, enabled: !r.enabled } : r)));
+  const update = (weekday: number, field: "startTime" | "endTime", value: string) =>
+    setRows((current) => current.map((r) => (r.weekday === weekday ? { ...r, [field]: value } : r)));
+
+  return (
+    <>
+      {rows.map((row) => (
+        <div key={row.weekday} className="flex flex-wrap items-center gap-3">
+          <input
+            id={`${scope}-weekday-${row.weekday}`}
+            type="checkbox"
+            checked={row.enabled}
+            onChange={() => toggle(row.weekday)}
+            className="accent-primary"
+          />
+          <Label htmlFor={`${scope}-weekday-${row.weekday}`} className="w-20 shrink-0 font-normal">
+            {WEEKDAYS.find((w) => w.value === row.weekday)?.label}
+          </Label>
+          <Input
+            type="time"
+            value={row.startTime}
+            disabled={!row.enabled}
+            onChange={(e) => update(row.weekday, "startTime", e.target.value)}
+            className="w-32"
+            aria-label="Desde"
+          />
+          <Caption className="text-xs">a</Caption>
+          <Input
+            type="time"
+            value={row.endTime}
+            disabled={!row.enabled}
+            onChange={(e) => update(row.weekday, "endTime", e.target.value)}
+            className="w-32"
+            aria-label="Hasta"
+          />
+        </div>
+      ))}
+    </>
+  );
+}
+
 type DayStatus = "blocked" | "extra" | "open" | "closed";
 
 const DAY_STATUS_STYLES: Record<DayStatus, string> = {
@@ -84,9 +142,15 @@ const DAY_STATUS_STYLES: Record<DayStatus, string> = {
 
 export default function DisponibilidadPage() {
   const [month, setMonth] = useState(currentMonth());
-  const [ruleRows, setRuleRows] = useState<RuleRow[]>(defaultRuleRows());
-  const [currentMonthHasRules, setCurrentMonthHasRules] = useState(true);
-  const [nextMonthHasRules, setNextMonthHasRules] = useState(true);
+  // Horario semanal: se repite todos los meses (SPEC 18). monthRows es una
+  // excepción que reemplaza al semanal solo en el mes que se está viendo.
+  const [weeklyRows, setWeeklyRows] = useState<RuleRow[]>(defaultRuleRows());
+  const [weeklyLoaded, setWeeklyLoaded] = useState(false);
+  const [monthRows, setMonthRows] = useState<RuleRow[]>(defaultRuleRows());
+  const [monthHasOverride, setMonthHasOverride] = useState(false);
+  const [isSavingMonth, setIsSavingMonth] = useState(false);
+  const [blockStart, setBlockStart] = useState("13:00");
+  const [blockEnd, setBlockEnd] = useState("15:00");
   const [exceptions, setExceptions] = useState<AvailabilityException[]>([]);
   const [bufferMinutes, setBufferMinutes] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
@@ -97,18 +161,19 @@ export default function DisponibilidadPage() {
   const [extraEnd, setExtraEnd] = useState("18:00");
   const [extraNote, setExtraNote] = useState("");
 
-  const loadRules = useCallback(async () => {
+  const loadWeekly = useCallback(async () => {
+    const response = await fetch("/api/availability/rules?month=weekly");
+    const data = await response.json();
+    setWeeklyRows(rowsFromRules(data.rules ?? []));
+    setWeeklyLoaded(true);
+  }, []);
+
+  const loadMonth = useCallback(async () => {
     const response = await fetch(`/api/availability/rules?month=${month}`);
     const data = await response.json();
     const rules: AvailabilityRule[] = data.rules ?? [];
-    setRuleRows(
-      defaultRuleRows().map((row) => {
-        const match = rules.find((r) => r.weekday === row.weekday);
-        return match
-          ? { weekday: row.weekday, startTime: match.startTime, endTime: match.endTime, enabled: true }
-          : row;
-      }),
-    );
+    setMonthHasOverride(rules.length > 0);
+    setMonthRows(rowsFromRules(rules));
   }, [month]);
 
   const loadExceptions = useCallback(async () => {
@@ -117,24 +182,16 @@ export default function DisponibilidadPage() {
     setExceptions(data.exceptions ?? []);
   }, [month]);
 
-  // El aviso de "mes sin cargar" mira siempre el mes calendario real y el
-  // siguiente, sin importar qué mes esté navegando la profesional en la
-  // grilla — si no, dejaría de avisar apenas navegara a otro mes.
   useEffect(() => {
-    const real = currentMonth();
-    fetch(`/api/availability/rules?month=${real}`)
-      .then((res) => res.json())
-      .then((data) => setCurrentMonthHasRules((data.rules ?? []).length > 0));
-    fetch(`/api/availability/rules?month=${shiftMonth(real, 1)}`)
-      .then((res) => res.json())
-      .then((data) => setNextMonthHasRules((data.rules ?? []).length > 0));
-  }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga async del horario semanal al montar
+    loadWeekly();
+  }, [loadWeekly]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reloads data when the viewed month changes
-    loadRules();
+    loadMonth();
     loadExceptions();
-  }, [loadRules, loadExceptions]);
+  }, [loadMonth, loadExceptions]);
 
   function changeMonth(delta: number) {
     setSelectedDate(null);
@@ -147,39 +204,79 @@ export default function DisponibilidadPage() {
       .then((data) => setBufferMinutes(data.bufferMinutes ?? 0));
   }, []);
 
-  function toggleRow(weekday: number) {
-    setRuleRows((rows) => rows.map((r) => (r.weekday === weekday ? { ...r, enabled: !r.enabled } : r)));
+  async function postRules(effectiveMonth: string | null, rows: RuleRow[]): Promise<boolean> {
+    const rules = rows
+      .filter((r) => r.enabled)
+      .map((r) => ({ weekday: r.weekday, startTime: r.startTime, endTime: r.endTime }));
+    const response = await fetch("/api/availability/rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ effectiveMonth, rules }),
+    });
+    return response.ok;
   }
 
-  function updateRow(weekday: number, field: "startTime" | "endTime", value: string) {
-    setRuleRows((rows) => rows.map((r) => (r.weekday === weekday ? { ...r, [field]: value } : r)));
-  }
-
-  async function saveRules() {
+  async function saveWeekly() {
     if (isSavingRules) return;
     setStatus(null);
     setIsSavingRules(true);
-    const rules = ruleRows
-      .filter((r) => r.enabled)
-      .map((r) => ({ weekday: r.weekday, startTime: r.startTime, endTime: r.endTime }));
-
     try {
-      const response = await fetch("/api/availability/rules", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ effectiveMonth: month, rules }),
-      });
-
-      if (!response.ok) {
-        setStatus("No se pudo guardar el horario base.");
-        return;
-      }
-
-      setStatus("Horario base guardado.");
-      loadRules();
+      const ok = await postRules(null, weeklyRows);
+      setStatus(
+        ok
+          ? "Horario semanal guardado. Se aplica a todos los meses."
+          : "No se pudo guardar el horario. Revisa que cada inicio sea antes del término.",
+      );
+      if (ok) loadWeekly();
     } finally {
       setIsSavingRules(false);
     }
+  }
+
+  function startMonthOverride() {
+    setMonthRows(weeklyRows);
+    setMonthHasOverride(true);
+  }
+
+  async function saveMonthOverride() {
+    if (isSavingMonth) return;
+    setStatus(null);
+    setIsSavingMonth(true);
+    try {
+      const ok = await postRules(month, monthRows);
+      setStatus(ok ? `Horario especial de ${monthLabel(month)} guardado.` : "No se pudo guardar el horario del mes.");
+      if (ok) loadMonth();
+    } finally {
+      setIsSavingMonth(false);
+    }
+  }
+
+  async function removeMonthOverride() {
+    if (isSavingMonth) return;
+    setStatus(null);
+    setIsSavingMonth(true);
+    try {
+      // Guardar el mes sin reglas lo borra: vuelve a regir el horario semanal.
+      const ok = await postRules(month, []);
+      setStatus(ok ? `${monthLabel(month)} vuelve a usar el horario semanal.` : "No se pudo quitar el horario especial.");
+      if (ok) loadMonth();
+    } finally {
+      setIsSavingMonth(false);
+    }
+  }
+
+  async function addBlockedRange(date: string) {
+    setStatus(null);
+    const response = await fetch("/api/availability/exceptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date, kind: "blocked", startTime: blockStart, endTime: blockEnd, note: null }),
+    });
+    if (!response.ok) {
+      setStatus("No se pudo bloquear ese rango. Revisa que el inicio sea antes del término.");
+      return;
+    }
+    loadExceptions();
   }
 
   async function saveBuffer() {
@@ -251,11 +348,14 @@ export default function DisponibilidadPage() {
     return map;
   }, [exceptions]);
 
+  const effectiveRows = monthHasOverride ? monthRows : weeklyRows;
+  const hasWeeklySchedule = weeklyRows.some((r) => r.enabled);
+
   function dayStatus(date: string, weekday: number): DayStatus {
     const dayExceptions = exceptionsByDate.get(date) ?? [];
-    if (dayExceptions.some((e) => e.kind === "blocked")) return "blocked";
+    if (dayExceptions.some((e) => e.kind === "blocked" && !e.startTime)) return "blocked";
     if (dayExceptions.some((e) => e.kind === "extra")) return "extra";
-    const rule = ruleRows.find((r) => r.weekday === weekday);
+    const rule = effectiveRows.find((r) => r.weekday === weekday);
     return rule?.enabled ? "open" : "closed";
   }
 
@@ -272,71 +372,39 @@ export default function DisponibilidadPage() {
   ];
 
   const selectedExceptions = selectedDate ? (exceptionsByDate.get(selectedDate) ?? []) : [];
-  const selectedBlocked = selectedExceptions.find((e) => e.kind === "blocked") ?? null;
+  const selectedBlocked = selectedExceptions.find((e) => e.kind === "blocked" && !e.startTime) ?? null;
+  const selectedBlockedRanges = selectedExceptions.filter((e) => e.kind === "blocked" && e.startTime);
   const selectedExtras = selectedExceptions.filter((e) => e.kind === "extra");
   const selectedWeekday = selectedDate ? new Date(`${selectedDate}T00:00:00Z`).getUTCDay() : null;
-  const selectedRule = selectedWeekday !== null ? ruleRows.find((r) => r.weekday === selectedWeekday) : undefined;
+  const selectedRule = selectedWeekday !== null ? effectiveRows.find((r) => r.weekday === selectedWeekday) : undefined;
 
   return (
     <div className="flex max-w-3xl flex-col gap-8">
       <AdminPageHeader
         title="Disponibilidad"
-        description="Configura el horario base de la semana y ajusta días puntuales desde el calendario."
+        description="Tu horario semanal se repite solo. Ajusta días u horas puntuales desde el calendario."
       />
 
-      {!currentMonthHasRules && (
+      {weeklyLoaded && !hasWeeklySchedule && (
         <InfoNote tone="warning">
-          Todavía no cargaste el horario base de este mes. No se podrán agendar reservas hasta que lo hagas.
+          Todavía no cargaste tu horario semanal. Sin él no se pueden agendar reservas.
         </InfoNote>
       )}
 
-      {!nextMonthHasRules && (
-        <InfoNote tone="warning">
-          Todavía no cargaste el horario base del próximo mes. No se podrán agendar reservas en ese mes hasta que lo
-          hagas.
-        </InfoNote>
-      )}
-
-      <details className="group" open={!currentMonthHasRules}>
+      <details className="group" open={weeklyLoaded && !hasWeeklySchedule}>
         <summary className="cursor-pointer list-none">
           <Panel padding="sm" className="flex items-center justify-between">
-            <Title>Horario base semanal</Title>
+            <Title>Horario semanal</Title>
             <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
           </Panel>
         </summary>
         <Panel className="mt-3 flex flex-col gap-3">
-          <Caption>Se aplica a {monthLabel(month)}. Cada mes se define de nuevo.</Caption>
-          {ruleRows.map((row) => (
-            <div key={row.weekday} className="flex flex-wrap items-center gap-3">
-              <input
-                id={`weekday-${row.weekday}`}
-                type="checkbox"
-                checked={row.enabled}
-                onChange={() => toggleRow(row.weekday)}
-                className="accent-primary"
-              />
-              <Label htmlFor={`weekday-${row.weekday}`} className="w-20 shrink-0 font-normal">
-                {WEEKDAYS.find((w) => w.value === row.weekday)?.label}
-              </Label>
-              <Input
-                type="time"
-                value={row.startTime}
-                disabled={!row.enabled}
-                onChange={(e) => updateRow(row.weekday, "startTime", e.target.value)}
-                className="w-32"
-              />
-              <Caption className="text-xs">a</Caption>
-              <Input
-                type="time"
-                value={row.endTime}
-                disabled={!row.enabled}
-                onChange={(e) => updateRow(row.weekday, "endTime", e.target.value)}
-                className="w-32"
-              />
-            </div>
-          ))}
-          <Button onClick={saveRules} disabled={isSavingRules} className="w-fit">
-            {isSavingRules ? "Guardando…" : "Guardar horario base"}
+          <Caption>
+            Se repite todos los meses. Para un mes distinto (vacaciones, temporada alta) usa el calendario de abajo.
+          </Caption>
+          <RuleEditor scope="weekly" rows={weeklyRows} setRows={setWeeklyRows} />
+          <Button onClick={saveWeekly} disabled={isSavingRules} className="w-fit">
+            {isSavingRules ? "Guardando…" : "Guardar horario semanal"}
           </Button>
         </Panel>
       </details>
@@ -400,6 +468,26 @@ export default function DisponibilidadPage() {
         </div>
       </section>
 
+      {monthHasOverride ? (
+        <Panel className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Title>Horario especial de {monthLabel(month)}</Title>
+            <Button variant="ghost" size="sm" onClick={removeMonthOverride} disabled={isSavingMonth}>
+              Volver al horario semanal
+            </Button>
+          </div>
+          <Caption>Reemplaza al horario semanal solo en este mes.</Caption>
+          <RuleEditor scope="month" rows={monthRows} setRows={setMonthRows} />
+          <Button onClick={saveMonthOverride} disabled={isSavingMonth} className="w-fit">
+            {isSavingMonth ? "Guardando…" : `Guardar horario de ${monthLabel(month)}`}
+          </Button>
+        </Panel>
+      ) : (
+        <Button variant="outline" size="sm" onClick={startMonthOverride} className="w-fit">
+          Usar un horario distinto solo en {monthLabel(month)}
+        </Button>
+      )}
+
       {selectedDate && (
         <Panel className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -415,8 +503,8 @@ export default function DisponibilidadPage() {
 
           <Body className="text-sm">
             {selectedRule?.enabled
-              ? `Horario base: ${selectedRule.startTime}–${selectedRule.endTime}`
-              : "Sin horario base este día de la semana."}
+              ? `Horario: ${selectedRule.startTime}–${selectedRule.endTime}`
+              : "Sin horario este día de la semana."}
           </Body>
 
           <div className="flex items-center gap-3">
@@ -432,6 +520,41 @@ export default function DisponibilidadPage() {
                 Bloquear día completo
               </Button>
             )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Caption>Horas bloqueadas este día</Caption>
+            {selectedBlockedRanges.length === 0 && <Body className="text-sm text-muted-foreground">Ninguna.</Body>}
+            {selectedBlockedRanges.map((range) => (
+              <div key={range.id} className="flex items-center gap-3 text-sm">
+                <Chip tone="danger">
+                  {range.startTime}–{range.endTime}
+                </Chip>
+                <Button variant="ghost" size="sm" onClick={() => removeException(range.id)}>
+                  Quitar
+                </Button>
+              </div>
+            ))}
+            <div className="flex flex-wrap items-center gap-3">
+              <Input
+                type="time"
+                value={blockStart}
+                onChange={(e) => setBlockStart(e.target.value)}
+                className="w-32"
+                aria-label="Bloquear desde"
+              />
+              <span>a</span>
+              <Input
+                type="time"
+                value={blockEnd}
+                onChange={(e) => setBlockEnd(e.target.value)}
+                className="w-32"
+                aria-label="Bloquear hasta"
+              />
+              <Button size="sm" variant="outline" onClick={() => addBlockedRange(selectedDate)}>
+                Bloquear estas horas
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">

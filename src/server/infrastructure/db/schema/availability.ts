@@ -16,7 +16,9 @@ export const availabilityRules = pgTable(
     startTime: time("start_time").notNull(),
     endTime: time("end_time").notNull(),
     active: boolean("active").notNull().default(true),
-    effectiveMonth: date("effective_month").notNull(),
+    // NULL = horario semanal, se repite todos los meses (SPEC 18). Con fecha
+    // es una excepción que reemplaza al semanal en ese mes completo.
+    effectiveMonth: date("effective_month"),
   },
   (table) => [
     uniqueIndex("availability_rules_professional_weekday_month_idx").on(
@@ -24,6 +26,10 @@ export const availabilityRules = pgTable(
       table.weekday,
       table.effectiveMonth,
     ),
+    // El índice de arriba no frena duplicados con NULL (en Postgres NULL <> NULL).
+    uniqueIndex("availability_rules_professional_weekday_weekly_idx")
+      .on(table.professionalId, table.weekday)
+      .where(sql`${table.effectiveMonth} is null`),
   ],
 );
 

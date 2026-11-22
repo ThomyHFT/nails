@@ -1,6 +1,7 @@
 import type { AvailabilityRepository } from "@/server/domain/availability/availability-repository.port";
 import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
 import { computeDaySlots, dayRangeUtc } from "@/server/application/booking/generate-available-slots.use-case";
+import { resolveRulesForMonth } from "@/server/domain/availability/resolve-rules-for-month";
 
 export interface ListDaysWithSlotsInput {
   professionalId: string;
@@ -19,8 +20,8 @@ function daysInMonth(month: string): number {
 /**
  * Los días del mes que tienen al menos un slot libre.
  *
- * Carga el mes entero en tres consultas (reglas, excepciones y reservas
- * activas del rango) y calcula cada día en memoria con `computeDaySlots`, la
+ * Carga el mes entero en cuatro consultas en paralelo (reglas del mes,
+ * horario semanal, excepciones y reservas activas del rango) y calcula cada día en memoria con `computeDaySlots`, la
  * misma función que usa el cálculo de un solo día. Antes llamaba a
  * `GenerateAvailableSlotsUseCase` día por día: ~30 idas y vueltas en serie a
  * Neon y 4-5 segundos de "Cargando…" en el primer paso de la reserva.
@@ -42,11 +43,13 @@ export class ListDaysWithSlotsUseCase {
     const monthStart = dayRangeUtc(dateOf(1), timezone).start;
     const monthEnd = dayRangeUtc(dateOf(total), timezone).end;
 
-    const [rules, exceptions, bookings] = await Promise.all([
+    const [monthRules, weeklyRules, exceptions, bookings] = await Promise.all([
       this.availabilityRepository.listRulesByProfessionalAndMonth(professionalId, month),
+      this.availabilityRepository.listRulesByProfessionalAndMonth(professionalId, null),
       this.availabilityRepository.listExceptionsByProfessionalInMonth(professionalId, month),
       this.bookingRepository.listActiveByProfessionalInRange(professionalId, monthStart, monthEnd),
     ]);
+    const rules = resolveRulesForMonth(monthRules, weeklyRules);
 
     // Sin reglas ni horarios extra el mes no tiene nada abierto: no hace falta
     // recorrer los días.
