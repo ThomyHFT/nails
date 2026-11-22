@@ -44,9 +44,11 @@ export default function IngresarPage() {
   if (status === "authenticated") {
     return (
       <main className="flex min-h-screen flex-col">
-        <AuthCard title="Ya iniciaste sesión" description="Sigue a tu panel.">
+        {/* Texto neutro: una clienta logueada también puede caer acá, y a ella
+            /ingresar/panel la lleva a la portada, no a un panel. */}
+        <AuthCard title="Ya iniciaste sesión" description="Tu sesión sigue abierta.">
           <BrandButton size="lg" fullWidth href="/ingresar/panel">
-            Ir a mi panel
+            Continuar
           </BrandButton>
         </AuthCard>
       </main>
