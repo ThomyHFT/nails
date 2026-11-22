@@ -1,6 +1,6 @@
 # SPEC 18 — Agenda confiable (fase 1 del roadmap de producto)
 
-**Estado:** Approved
+**Estado:** Implemented (migración 0022 pendiente de aplicar en Neon)
 **Alcance:** que la agenda del sistema sea *la* agenda de la profesional, no una más al lado de WhatsApp y el cuaderno. Horario semanal que se repite solo, bloqueo de rangos de horas, reserva manual (incluida la clienta sin cuenta), teléfono y nota de la clienta, aviso a la profesional cuando la clienta cancela y enlaces de WhatsApp (`wa.me`, sin API).
 
 Hoy una profesional que se olvida de cargar el mes queda con el sitio sin horas (le pasó a `/karla` en noviembre y diciembre de 2026); las reservas que llegan por Instagram o WhatsApp no se pueden anotar; no hay forma de bloquear "de 15 a 17 tengo trámite"; y la profesional no tiene el teléfono de sus clientas ni se entera cuando una cancela.
