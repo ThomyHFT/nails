@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSiteHost } from "@/lib/use-site-host";
 import {
   ArrowRight,
@@ -222,6 +223,15 @@ export function LandingExperience() {
             >
               {mode === "light" ? <Moon /> : <Sun />}
             </button>
+
+            {/* La profesional que vuelve no tenía por dónde entrar: el login
+                vivía en /<slug>/login y había que recordar el slug. */}
+            <Link
+              href="/ingresar"
+              className="inline-flex h-8 shrink-0 items-center rounded-pill px-2.5 text-sm font-semibold text-primary transition-colors hover:bg-surface-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Ingresar
+            </Link>
           </div>
         </Container>
       </div>
@@ -460,7 +470,10 @@ export function LandingExperience() {
       <SiteFooter
         businessName="AgendaUñas"
         tagline={FOOTER_TAGLINE_BY_VERTICAL[vertical]}
-        links={[{ label: "Crear mi sitio", href: REGISTER_HREF }]}
+        links={[
+          { label: "Crear mi sitio", href: REGISTER_HREF },
+          { label: "Ingresar", href: "/ingresar" },
+        ]}
         className="mt-auto"
       />
     </div>

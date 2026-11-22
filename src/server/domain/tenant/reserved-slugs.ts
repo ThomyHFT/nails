@@ -25,6 +25,7 @@ const APP_ROUTES = [
   "login",
   "registro",
   "registro-profesional",
+  "ingresar",
   "recuperar",
   "verificado",
   "verificar-invalido",
