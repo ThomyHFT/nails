@@ -4,13 +4,35 @@ import { bookings } from "@/server/infrastructure/db/schema/bookings";
 import { designs } from "@/server/infrastructure/db/schema/designs";
 import type { Booking, BookingActor, BookingStatus } from "@/server/domain/booking/booking.entity";
 import type { ClientBookingStats } from "@/server/domain/booking/client-booking-stats.entity";
-import type {
-  BookingRepository,
-  NewBooking,
-  NewBookingWithDesign,
+import {
+  BookingSlotTakenError,
+  type BookingRepository,
+  type NewBooking,
+  type NewBookingWithDesign,
 } from "@/server/domain/booking/booking-repository.port";
 
 const ACTIVE_STATUSES: BookingStatus[] = ["pending", "confirmed"];
+
+const EXCLUSION_VIOLATION = "23P01";
+
+/** Drizzle envuelve el error del driver en `cause`; se recorre la cadena buscando el código de Postgres. */
+function isOverlapViolation(err: unknown): boolean {
+  let current: unknown = err;
+  for (let depth = 0; current && depth < 5; depth++) {
+    if ((current as { code?: unknown }).code === EXCLUSION_VIOLATION) return true;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
+}
+
+async function translateOverlap<T>(write: () => Promise<T>): Promise<T> {
+  try {
+    return await write();
+  } catch (err) {
+    if (isOverlapViolation(err)) throw new BookingSlotTakenError();
+    throw err;
+  }
+}
 
 function toDomain(row: typeof bookings.$inferSelect): Booking {
   return {
@@ -35,7 +57,17 @@ function toDomain(row: typeof bookings.$inferSelect): Booking {
 }
 
 export class DrizzleBookingRepository implements BookingRepository {
+  // El constraint `bookings_no_overlap` (migración 0021) rechaza dos reservas
+  // activas solapadas de la misma profesional; acá se traduce a un error de dominio.
   async create(booking: NewBooking): Promise<Booking> {
+    return translateOverlap(() => this.insertBooking(booking));
+  }
+
+  async createWithDesign(booking: NewBookingWithDesign): Promise<Booking> {
+    return translateOverlap(() => this.insertBookingWithDesign(booking));
+  }
+
+  private async insertBooking(booking: NewBooking): Promise<Booking> {
     const [row] = await db
       .insert(bookings)
       .values({
@@ -54,7 +86,9 @@ export class DrizzleBookingRepository implements BookingRepository {
     return toDomain(row);
   }
 
-  async createWithDesign(booking: NewBookingWithDesign): Promise<Booking> {
+  // db.batch corre como una transacción en neon-http: si el insert de la
+  // reserva choca con el constraint, el diseño tampoco queda guardado.
+  private async insertBookingWithDesign(booking: NewBookingWithDesign): Promise<Booking> {
     const designId = crypto.randomUUID();
     const bookingId = crypto.randomUUID();
 

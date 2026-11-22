@@ -2,6 +2,19 @@ import type { Booking, BookingActor, BookingStatus } from "@/server/domain/booki
 import type { ClientBookingStats } from "@/server/domain/booking/client-booking-stats.entity";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
 
+/**
+ * El repositorio la lanza cuando la base rechaza la reserva por solaparse con
+ * otra activa de la misma profesional (constraint `bookings_no_overlap`). Es la
+ * red de seguridad para dos reservas simultáneas que pasaron el cálculo de
+ * slots antes de que la otra quedara guardada.
+ */
+export class BookingSlotTakenError extends Error {
+  constructor() {
+    super("El horario ya fue tomado por otra reserva");
+    this.name = "BookingSlotTakenError";
+  }
+}
+
 export interface NewBooking {
   professionalId: string;
   clientUserId: string;

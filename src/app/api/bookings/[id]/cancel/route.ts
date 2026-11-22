@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { CancelBookingByClientUseCase } from "@/server/application/booking/cancel-booking.use-case";
-import { BookingNotFoundError, BookingNotOwnedError } from "@/server/application/booking/booking-guard-errors";
+import { BookingInvalidStateError, BookingNotFoundError, BookingNotOwnedError } from "@/server/application/booking/booking-guard-errors";
 import { SendBookingNotificationUseCase } from "@/server/application/notification/send-booking-notification.use-case";
 import { RemoveBookingFromCalendarUseCase } from "@/server/application/calendar/remove-booking-from-calendar.use-case";
 import { DrizzleUserRepository } from "@/server/infrastructure/repositories/drizzle-user.repository";
@@ -64,6 +64,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
     if (err instanceof BookingNotOwnedError) {
       return NextResponse.json({ error: err.message }, { status: 403 });
+    }
+    if (err instanceof BookingInvalidStateError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
     }
     throw err;
   }

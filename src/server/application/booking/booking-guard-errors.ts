@@ -12,6 +12,13 @@ export class BookingNotOwnedError extends Error {
   }
 }
 
+export class BookingInvalidStateError extends Error {
+  constructor() {
+    super("La reserva ya no se puede modificar: cambió de estado. Recargá la página.");
+    this.name = "BookingInvalidStateError";
+  }
+}
+
 export class BookingTooEarlyError extends Error {
   constructor() {
     super("No se puede marcar la reserva antes de que termine la cita");

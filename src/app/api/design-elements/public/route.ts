@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ListDesignElementsUseCase } from "@/server/application/design/list-design-elements.use-case";
 import { DrizzleDesignRepository } from "@/server/infrastructure/repositories/drizzle-design.repository";
+import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 
 export async function GET(request: Request) {
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "slug es requerido" }, { status: 400 });
   }
 
-  const professional = await new DrizzleProfessionalRepository().findBySlug(slug);
+  const professional = await new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
   if (!professional) {
     return NextResponse.json({ error: "Profesional no encontrada" }, { status: 404 });
   }

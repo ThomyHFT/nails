@@ -18,6 +18,7 @@ import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/d
 import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
 import { DrizzleDesignRepository } from "@/server/infrastructure/repositories/drizzle-design.repository";
 import { DrizzleEmailNotificationRepository } from "@/server/infrastructure/repositories/drizzle-email-notification.repository";
+import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { DrizzleUserRepository } from "@/server/infrastructure/repositories/drizzle-user.repository";
 import { ResendEmailSender } from "@/server/infrastructure/email/resend-email-sender";
@@ -25,8 +26,10 @@ import { env } from "@/server/infrastructure/config/env";
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
+// Pasa por el mismo filtro de visibilidad que las páginas públicas: un tenant
+// desactivado, sin verificar o con la prueba vencida no acepta reservas.
 async function resolveProfessionalBySlug(slug: string) {
-  return new DrizzleProfessionalRepository().findBySlug(slug);
+  return new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
 }
 
 async function resolveVariant(serviceVariantId: string, professionalId: string) {

@@ -5,6 +5,9 @@ import { designs } from "@/server/infrastructure/db/schema/designs";
 import { serviceVariants } from "@/server/infrastructure/db/schema/services";
 import { professionals, users } from "@/server/infrastructure/db/schema/users";
 
+// Constraint `bookings_no_overlap` (EXCLUDE USING gist) vive solo en la
+// migración 0021: Drizzle no sabe declararlo. Impide dos reservas activas
+// solapadas de la misma profesional.
 export const bookings = pgTable("bookings", {
   id: uuid("id")
     .primaryKey()

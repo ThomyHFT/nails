@@ -1,11 +1,14 @@
 import type { AvailabilityRepository } from "@/server/domain/availability/availability-repository.port";
-import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
+import { BookingSlotTakenError, type BookingRepository } from "@/server/domain/booking/booking-repository.port";
 import type { Booking } from "@/server/domain/booking/booking.entity";
 import { calculateDesignQuote } from "@/server/domain/design/calculate-design-quote";
 import type { DesignRepository } from "@/server/domain/design/design-repository.port";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
 import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
-import { GenerateAvailableSlotsUseCase } from "@/server/application/booking/generate-available-slots.use-case";
+import {
+  GenerateAvailableSlotsUseCase,
+  type AvailableSlot,
+} from "@/server/application/booking/generate-available-slots.use-case";
 
 export class SlotNotAvailableError extends Error {
   constructor() {
@@ -77,6 +80,22 @@ export class CreateBookingUseCase {
       throw new SlotNotAvailableError();
     }
 
+    try {
+      return await this.persist(input, matchingSlot, totalDurationMinutes, extraPriceClp, extraMinutes);
+    } catch (err) {
+      // Otra reserva tomó el horario entre el cálculo de slots y el insert.
+      if (err instanceof BookingSlotTakenError) throw new SlotNotAvailableError();
+      throw err;
+    }
+  }
+
+  private persist(
+    input: CreateBookingInput,
+    matchingSlot: AvailableSlot,
+    totalDurationMinutes: number,
+    extraPriceClp: number,
+    extraMinutes: number,
+  ): Promise<Booking> {
     if (input.designPayload) {
       return this.bookingRepository.createWithDesign({
         professionalId: input.professionalId,

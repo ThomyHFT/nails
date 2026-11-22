@@ -5,6 +5,7 @@ import { serviceVariants, services } from "@/server/infrastructure/db/schema/ser
 import { ListDaysWithSlotsUseCase } from "@/server/application/booking/list-days-with-slots.use-case";
 import { DrizzleAvailabilityRepository } from "@/server/infrastructure/repositories/drizzle-availability.repository";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
+import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 
 const monthPattern = /^\d{4}-\d{2}-01$/;
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const professional = await new DrizzleProfessionalRepository().findBySlug(slug);
+  const professional = await new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
   if (!professional) {
     return NextResponse.json({ error: "Profesional no encontrada" }, { status: 404 });
   }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { CompleteBookingUseCase } from "@/server/application/booking/complete-booking.use-case";
 import {
+  BookingInvalidStateError,
   BookingNotFoundError,
   BookingNotOwnedError,
   BookingTooEarlyError,
@@ -31,6 +32,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
     if (err instanceof BookingNotOwnedError) {
       return NextResponse.json({ error: err.message }, { status: 403 });
+    }
+    if (err instanceof BookingInvalidStateError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
     }
     if (err instanceof BookingTooEarlyError) {
       return NextResponse.json({ error: err.message }, { status: 409 });

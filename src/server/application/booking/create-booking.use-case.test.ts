@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { InMemoryAvailabilityRepository } from "@/server/application/booking/__fakes__/in-memory-availability-repository";
 import { InMemoryBookingRepository } from "@/server/application/booking/__fakes__/in-memory-booking-repository";
 import { InMemoryDesignRepository } from "@/server/application/design/__fakes__/in-memory-design-repository";
@@ -7,6 +7,7 @@ import {
   DesignerNotAvailableError,
   SlotNotAvailableError,
 } from "@/server/application/booking/create-booking.use-case";
+import { BookingSlotTakenError } from "@/server/domain/booking/booking-repository.port";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
 
 const PROFESSIONAL_ID = "prof-1";
@@ -82,6 +83,29 @@ describe("CreateBookingUseCase", () => {
         timezone: "UTC",
         bufferMinutes: 0,
         clientUserId: "client-2",
+        serviceVariantId: "variant-1",
+        date: MONDAY,
+        startsAt: "2026-08-10T09:00:00.000Z",
+        priceClp: 15_000,
+        durationMinutes: 60,
+        now: NOW,
+      }),
+    ).rejects.toBeInstanceOf(SlotNotAvailableError);
+  });
+
+  it("reports the slot as unavailable when another booking takes it between the slot check and the insert", async () => {
+    const { useCase, availabilityRepository, bookingRepository } = makeUseCase();
+    await withMondayRule(availabilityRepository);
+    // Simula el constraint bookings_no_overlap rechazando el insert de una carrera perdida.
+    vi.spyOn(bookingRepository, "create").mockRejectedValueOnce(new BookingSlotTakenError());
+
+    await expect(
+      useCase.execute({
+        professionalId: PROFESSIONAL_ID,
+        professionalVertical: "nails",
+        timezone: "UTC",
+        bufferMinutes: 0,
+        clientUserId: "client-1",
         serviceVariantId: "variant-1",
         date: MONDAY,
         startsAt: "2026-08-10T09:00:00.000Z",

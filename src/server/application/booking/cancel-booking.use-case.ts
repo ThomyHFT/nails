@@ -1,6 +1,11 @@
 import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
 import type { Booking } from "@/server/domain/booking/booking.entity";
-import { BookingNotFoundError, BookingNotOwnedError } from "@/server/application/booking/booking-guard-errors";
+import { canApplyBookingAction } from "@/server/domain/booking/booking-transitions";
+import {
+  BookingInvalidStateError,
+  BookingNotFoundError,
+  BookingNotOwnedError,
+} from "@/server/application/booking/booking-guard-errors";
 
 export class CancelBookingByClientUseCase {
   constructor(private readonly bookingRepository: BookingRepository) {}
@@ -9,6 +14,7 @@ export class CancelBookingByClientUseCase {
     const booking = await this.bookingRepository.findById(bookingId);
     if (!booking) throw new BookingNotFoundError();
     if (booking.clientUserId !== clientUserId) throw new BookingNotOwnedError();
+    if (!canApplyBookingAction(booking.status, "cancel")) throw new BookingInvalidStateError();
 
     return this.bookingRepository.cancel(bookingId, "client");
   }
@@ -22,6 +28,7 @@ export class CancelBookingByProfessionalUseCase {
     const booking = await this.bookingRepository.findById(bookingId);
     if (!booking) throw new BookingNotFoundError();
     if (booking.professionalId !== professionalId) throw new BookingNotOwnedError();
+    if (!canApplyBookingAction(booking.status, "cancel")) throw new BookingInvalidStateError();
 
     return this.bookingRepository.cancel(bookingId, "professional");
   }
