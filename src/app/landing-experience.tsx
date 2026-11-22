@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSiteHost } from "@/lib/use-site-host";
 import {
   ArrowRight,
   CalendarClock,
@@ -127,7 +128,10 @@ function featuresFor(vertical: Vertical) {
 const STEPS = [
   {
     title: "Elige tu dirección",
-    description: "agendaunas.cl/tu-nombre queda tuya en el mismo formulario de registro.",
+    description: (host: string | null) =>
+      host
+        ? `${host}/tu-nombre queda tuya en el mismo formulario de registro.`
+        : "Tu dirección propia queda tuya en el mismo formulario de registro.",
   },
   {
     title: "Carga tus servicios",
@@ -140,6 +144,7 @@ const STEPS = [
 ];
 
 export function LandingExperience() {
+  const siteHost = useSiteHost();
   const [archetype, setArchetype] = useState<BrandArchetype>("minimal_nude");
   const [mode, setMode] = useState<ThemeMode>("light");
   const [primary, setPrimary] = useState<string | null>(null);
@@ -419,7 +424,9 @@ export function LandingExperience() {
                   {index + 1}
                 </span>
                 <Title>{step.title}</Title>
-                <Body className="text-sm">{step.description}</Body>
+                <Body className="text-sm">
+                  {typeof step.description === "function" ? step.description(siteHost) : step.description}
+                </Body>
               </li>
             ))}
           </ol>

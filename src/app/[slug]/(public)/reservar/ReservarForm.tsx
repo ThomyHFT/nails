@@ -162,6 +162,9 @@ export function ReservarForm({
       router.push(`/${slug}/login?next=${encodeURIComponent(`/${slug}/reservar`)}`);
       return;
     }
+    // El calendario abre en el mes que el panel del paso 1 mostró con cupo,
+    // no en uno vacío que obligue a la clienta a buscar la flecha.
+    setCalendarMonth(previewMonth);
     setStep(hasDesigner ? "design" : "schedule");
   }
 
@@ -170,6 +173,9 @@ export function ReservarForm({
   const [variantId, setVariantId] = useState(initialVariantId ?? service?.variants[0]?.id ?? "");
 
   const [daysWithSlots, setDaysWithSlots] = useState<string[]>([]);
+  // Mes que muestra el panel del paso 1: el actual o, si ya no le queda cupo
+  // (pasa en la última semana de cada mes), el siguiente.
+  const [previewMonth, setPreviewMonth] = useState(currentMonth());
   const [isLoadingDays, setIsLoadingDays] = useState(false);
 
   const [design, setDesign] = useState<NailDesignerResult | null>(null);
@@ -192,11 +198,23 @@ export function ReservarForm({
     if (!nextVariantId) return;
     setIsLoadingDays(true);
     try {
-      const response = await fetch(
-        `/api/availability/days?slug=${slug}&serviceVariantId=${nextVariantId}&month=${currentMonth()}`,
-      );
-      const data = await response.json();
-      setDaysWithSlots(data.days ?? []);
+      const fetchDays = async (month: string): Promise<string[]> => {
+        const response = await fetch(
+          `/api/availability/days?slug=${slug}&serviceVariantId=${nextVariantId}&month=${month}`,
+        );
+        const data = await response.json();
+        return data.days ?? [];
+      };
+      const thisMonth = currentMonth();
+      let month = thisMonth;
+      let days = await fetchDays(thisMonth);
+      if (days.length === 0) {
+        month = shiftMonth(thisMonth, 1);
+        days = await fetchDays(month);
+        if (days.length === 0) month = thisMonth;
+      }
+      setPreviewMonth(month);
+      setDaysWithSlots(days);
     } finally {
       setIsLoadingDays(false);
     }
@@ -366,14 +384,18 @@ export function ReservarForm({
         )}
 
         <Panel className="flex flex-col gap-3">
-          <Title>Días con cupo este mes</Title>
+          <Title>
+            {previewMonth === currentMonth()
+              ? "Días con cupo este mes"
+              : `Días con cupo en ${monthLabel(previewMonth).toLowerCase()}`}
+          </Title>
           <Caption>
             El horario final depende del diseño que elijas: algunos horarios de estos días pueden desaparecer al sumar
             los minutos extra.
           </Caption>
           {isLoadingDays && <Caption>Cargando…</Caption>}
           {!isLoadingDays && daysWithSlots.length === 0 && (
-            <Caption>No hay días con cupo este mes todavía.</Caption>
+            <Caption>No hay días con cupo este mes ni el próximo todavía.</Caption>
           )}
           {!isLoadingDays && daysWithSlots.length > 0 && (
             <div className="flex flex-wrap gap-2">

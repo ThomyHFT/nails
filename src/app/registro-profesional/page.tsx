@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSiteHost } from "@/lib/use-site-host";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Check, X } from "lucide-react";
@@ -12,6 +13,7 @@ type SlugStatus = "idle" | "checking" | "available" | "taken";
 
 export default function RegistroProfesionalPage() {
   const router = useRouter();
+  const siteHost = useSiteHost();
   const [vertical, setVertical] = useState<Vertical>("nails");
   const [inviteCode, setInviteCode] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -142,7 +144,7 @@ export default function RegistroProfesionalPage() {
               {slugStatus === "taken" && <X className="size-5 shrink-0 text-destructive" aria-hidden />}
             </div>
             <Caption className="text-xs">
-              agendaunas.cl/{slug || "tu-negocio"}
+              {siteHost ?? "…"}/{slug || "tu-negocio"}
               {slugStatus === "taken" && <span className="text-destructive"> · no disponible</span>}
               {slugStatus === "checking" && " · comprobando…"}
             </Caption>
