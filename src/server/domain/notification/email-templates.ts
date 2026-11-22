@@ -1,4 +1,5 @@
 import type { Booking } from "@/server/domain/booking/booking.entity";
+import { escapeHtml, safeColor, safeUrl } from "@/server/domain/notification/html-escape";
 import type { TenantBranding } from "@/server/domain/branding/tenant-branding.entity";
 
 export interface EmailTemplateInput {
@@ -25,12 +26,13 @@ function formatClp(amount: number): string {
 }
 
 function renderLogo(logoUrl: string | null): string {
-  if (!logoUrl) return "";
-  return `<img src="${logoUrl}" alt="" width="120" style="display:block;margin-bottom:24px;" />`;
+  const src = safeUrl(logoUrl);
+  if (!src) return "";
+  return `<img src="${src}" alt="" width="120" style="display:block;margin-bottom:24px;" />`;
 }
 
 function renderShell(input: EmailTemplateInput, title: string, body: string): string {
-  const primaryColor = input.branding.primaryColorHex ?? "#111111";
+  const primaryColor = safeColor(input.branding.primaryColorHex, "#111111");
   return `
     <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
       ${renderLogo(input.branding.logoUrl)}
@@ -44,7 +46,7 @@ export function buildPendingEmail(input: EmailTemplateInput): EmailTemplate {
   const { booking, professionalName } = input;
   const subject = `Recibimos tu solicitud de reserva con ${professionalName}`;
   const body = `
-    <p>Hola, recibimos tu solicitud de reserva con <strong>${professionalName}</strong>. Está pendiente de
+    <p>Hola, recibimos tu solicitud de reserva con <strong>${escapeHtml(professionalName)}</strong>. Está pendiente de
     confirmación — te vamos a avisar por correo apenas la profesional la confirme.</p>
     <p><strong>Fecha:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
     <p><strong>Duración:</strong> ${booking.durationMinutes} minutos</p>
@@ -57,7 +59,7 @@ export function buildConfirmationEmail(input: EmailTemplateInput): EmailTemplate
   const { booking, professionalName } = input;
   const subject = `Tu reserva con ${professionalName} está confirmada`;
   const body = `
-    <p>Hola, tu reserva con <strong>${professionalName}</strong> fue confirmada.</p>
+    <p>Hola, tu reserva con <strong>${escapeHtml(professionalName)}</strong> fue confirmada.</p>
     <p><strong>Fecha:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
     <p><strong>Duración:</strong> ${booking.durationMinutes} minutos</p>
     <p><strong>Precio:</strong> ${formatClp(booking.priceClp)}</p>
@@ -69,7 +71,7 @@ export function buildCancellationEmail(input: EmailTemplateInput): EmailTemplate
   const { booking, professionalName } = input;
   const subject = `Tu reserva con ${professionalName} fue cancelada`;
   const body = `
-    <p>Hola, tu reserva con <strong>${professionalName}</strong> fue cancelada.</p>
+    <p>Hola, tu reserva con <strong>${escapeHtml(professionalName)}</strong> fue cancelada.</p>
     <p><strong>Fecha:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
   `.trim();
   return { subject, html: renderShell(input, "Reserva cancelada", body) };
@@ -90,12 +92,12 @@ export function buildNewBookingRequestEmail(input: NewBookingRequestEmailInput):
   const { booking, clientName, panelUrl } = input;
   const subject = `Nueva solicitud de reserva de ${clientName}`;
   const body = `
-    <p>Hola, <strong>${clientName}</strong> pidió una hora contigo. Queda pendiente de tu confirmación.</p>
+    <p>Hola, <strong>${escapeHtml(clientName)}</strong> pidió una hora contigo. Queda pendiente de tu confirmación.</p>
     <p><strong>Fecha:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
     <p><strong>Duración:</strong> ${booking.durationMinutes} minutos</p>
     <p><strong>Precio:</strong> ${formatClp(booking.priceClp)}</p>
     <p style="margin-top:24px;">
-      <a href="${panelUrl}" style="display:inline-block;background:${input.branding.primaryColorHex ?? "#111111"};color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;">
+      <a href="${safeUrl(panelUrl) ?? ""}" style="display:inline-block;background:${safeColor(input.branding.primaryColorHex, "#111111")};color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;">
         Ver la reserva
       </a>
     </p>

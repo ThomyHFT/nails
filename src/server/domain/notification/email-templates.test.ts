@@ -117,4 +117,31 @@ describe("buildNewBookingRequestEmail", () => {
     expect(email.html).toContain("https://agendaunas.cl/fran-unas/admin/reservas");
     expect(email.subject).toContain("Camila Rojas");
   });
+
+  it("escapes HTML in the client's name so it cannot inject links into the email", () => {
+    const email = buildNewBookingRequestEmail({
+      booking: booking(),
+      branding: branding(),
+      professionalName: "Fran Uñas",
+      clientName: '<a href="https://evil.example/login">Verifica tu cuenta</a>',
+      panelUrl: "https://agendaunas.cl/fran-unas/admin/reservas",
+    });
+
+    expect(email.html).not.toContain('<a href="https://evil.example');
+    expect(email.html).toContain("&lt;a href=&quot;https://evil.example/login&quot;&gt;");
+  });
+
+  it("drops a non-http logo url and a malformed brand color", () => {
+    const email = buildNewBookingRequestEmail({
+      booking: booking(),
+      branding: branding({ logoUrl: "javascript:alert(1)", primaryColorHex: 'red;" onmouseover="x' }),
+      professionalName: "Fran Uñas",
+      clientName: "Camila Rojas",
+      panelUrl: "https://agendaunas.cl/fran-unas/admin/reservas",
+    });
+
+    expect(email.html).not.toContain("javascript:");
+    expect(email.html).not.toContain("onmouseover");
+    expect(email.html).toContain("#111111");
+  });
 });
