@@ -1,3 +1,4 @@
+import { DEFAULT_BOOKING_POLICY } from "@/server/domain/professional/booking-policy";
 import type { InviteCode } from "@/server/domain/tenant/invite-code.entity";
 import type { Professional } from "@/server/domain/professional/professional.entity";
 import type {
@@ -64,6 +65,7 @@ export class InMemoryTenantProvisioningRepository implements TenantProvisioningR
       publishedAt: null,
       trialEndsAt: input.professional.trialEndsAt,
       bufferMinutes: 0,
+      bookingPolicy: DEFAULT_BOOKING_POLICY,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

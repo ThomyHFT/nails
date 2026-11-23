@@ -60,6 +60,7 @@ export async function GET(request: Request) {
     bufferMinutes: professional.bufferMinutes,
     month,
     durationMinutes: variant.durationMinutes,
+    policy: professional.bookingPolicy,
   });
 
   return NextResponse.json({ days });

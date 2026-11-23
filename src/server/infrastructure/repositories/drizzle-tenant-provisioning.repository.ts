@@ -37,6 +37,13 @@ function professionalToDomain(row: typeof professionals.$inferSelect): Professio
     publishedAt: row.publishedAt,
     trialEndsAt: row.trialEndsAt,
     bufferMinutes: row.bufferMinutes,
+    bookingPolicy: {
+      autoConfirm: row.autoConfirm,
+      slotIntervalMinutes: row.slotIntervalMinutes,
+      minLeadMinutes: row.minLeadMinutes,
+      maxAdvanceDays: row.maxAdvanceDays,
+      cancellationDeadlineHours: row.cancellationDeadlineHours,
+    },
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

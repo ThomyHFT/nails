@@ -46,7 +46,13 @@ export class SendBookingNotificationUseCase {
     private readonly emailNotificationRepository: EmailNotificationRepository,
   ) {}
 
-  async execute(input: { bookingId: string; type: BookingNotificationType; baseUrl?: string }): Promise<void> {
+  async execute(input: {
+    bookingId: string;
+    type: BookingNotificationType;
+    baseUrl?: string;
+    /** Reserva recién creada por la clienta: la profesional recibe el aviso aunque nazca confirmada (SPEC 19). */
+    isNewBooking?: boolean;
+  }): Promise<void> {
     const booking = await this.bookingRepository.findById(input.bookingId);
     if (!booking) return;
 
@@ -119,7 +125,7 @@ export class SendBookingNotificationUseCase {
       // nueva por correo: solo la clienta recibía el "pendiente de
       // confirmación". El resto de los tipos ya los dispara ella misma
       // (confirmar, cancelar), así que no hace falta avisarle a sí misma.
-      if (input.type === "pending" && input.baseUrl) {
+      if ((input.type === "pending" || input.isNewBooking) && input.baseUrl) {
         await this.notifyProfessionalOfNewBooking(booking, professional, templateInput.branding, client, input.baseUrl);
       }
     } catch (error) {

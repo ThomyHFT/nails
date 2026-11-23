@@ -1,3 +1,4 @@
+import { DEFAULT_BOOKING_POLICY } from "@/server/domain/professional/booking-policy";
 import { describe, expect, it } from "vitest";
 import { FakePasswordHasher } from "@/server/application/auth/__fakes__/fake-password-hasher";
 import { InMemoryUserRepository } from "@/server/application/auth/__fakes__/in-memory-user-repository";
@@ -180,6 +181,7 @@ describe("RegisterProfessionalUseCase", () => {
       publishedAt: new Date(),
       trialEndsAt: null,
       bufferMinutes: 0,
+      bookingPolicy: DEFAULT_BOOKING_POLICY,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

@@ -1,6 +1,6 @@
 import type { AvailabilityRepository } from "@/server/domain/availability/availability-repository.port";
 import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
-import { computeDaySlots, dayRangeUtc } from "@/server/application/booking/generate-available-slots.use-case";
+import { computeDaySlots, dayRangeUtc, type SlotPolicy } from "@/server/application/booking/generate-available-slots.use-case";
 import { resolveRulesForMonth } from "@/server/domain/availability/resolve-rules-for-month";
 
 export interface ListDaysWithSlotsInput {
@@ -10,6 +10,7 @@ export interface ListDaysWithSlotsInput {
   month: string; // YYYY-MM-01
   durationMinutes: number;
   now?: Date;
+  policy?: SlotPolicy;
 }
 
 function daysInMonth(month: string): number {
@@ -73,6 +74,7 @@ export class ListDaysWithSlotsUseCase {
         date,
         durationMinutes,
         now,
+        policy: input.policy,
       });
 
       if (slots.length > 0) days.push(date);

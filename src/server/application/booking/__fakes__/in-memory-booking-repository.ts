@@ -52,6 +52,7 @@ export class InMemoryBookingRepository implements BookingRepository {
       priceClp: booking.priceClp,
       durationMinutes: booking.durationMinutes,
       clientNote: booking.clientNote,
+      status: booking.status,
     });
   }
 

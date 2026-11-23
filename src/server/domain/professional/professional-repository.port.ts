@@ -1,3 +1,4 @@
+import type { BookingPolicy } from "@/server/domain/professional/booking-policy";
 import type { Professional } from "@/server/domain/professional/professional.entity";
 
 export interface ContactInfoInput {
@@ -14,6 +15,7 @@ export interface ProfessionalRepository {
   /** Todas las profesionales, para el panel de superadmin. Sin paginación: no hay volumen que la justifique. */
   findAll(): Promise<Professional[]>;
   updateBufferMinutes(professionalId: string, bufferMinutes: number): Promise<Professional>;
+  updateBookingPolicy(professionalId: string, policy: BookingPolicy): Promise<Professional>;
   updateTagline(professionalId: string, tagline: string | null): Promise<Professional>;
   updateContactInfo(professionalId: string, input: ContactInfoInput): Promise<Professional>;
   /** Setea `publishedAt` a ahora. Es lo que verificar el correo desbloquea. */

@@ -1,3 +1,4 @@
+import { DEFAULT_BOOKING_POLICY } from "@/server/domain/professional/booking-policy";
 import { describe, expect, it } from "vitest";
 import {
   isAddressVisible,
@@ -25,6 +26,7 @@ function professional(overrides: Partial<Professional> = {}): Professional {
     publishedAt: new Date("2026-01-01T00:00:00Z"),
     trialEndsAt: null,
     bufferMinutes: 0,
+    bookingPolicy: DEFAULT_BOOKING_POLICY,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

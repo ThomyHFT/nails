@@ -1,3 +1,4 @@
+import { DEFAULT_BOOKING_POLICY } from "@/server/domain/professional/booking-policy";
 import { describe, expect, it } from "vitest";
 import { InMemoryUserRepository } from "@/server/application/auth/__fakes__/in-memory-user-repository";
 import { FakeTokenGenerator } from "@/server/application/auth/__fakes__/fake-token-generator";
@@ -40,6 +41,7 @@ async function setup() {
     publishedAt: new Date("2026-01-01T00:00:00Z"),
     trialEndsAt: null,
     bufferMinutes: 15,
+    bookingPolicy: DEFAULT_BOOKING_POLICY,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -117,6 +119,7 @@ describe("RequestPasswordResetUseCase", () => {
       publishedAt: new Date("2026-01-01T00:00:00Z"),
       trialEndsAt: null,
       bufferMinutes: 15,
+      bookingPolicy: DEFAULT_BOOKING_POLICY,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

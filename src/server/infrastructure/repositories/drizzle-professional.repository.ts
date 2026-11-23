@@ -1,3 +1,4 @@
+import type { BookingPolicy } from "@/server/domain/professional/booking-policy";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { professionals } from "@/server/infrastructure/db/schema/users";
@@ -23,6 +24,13 @@ function toDomain(row: typeof professionals.$inferSelect): Professional {
     publishedAt: row.publishedAt,
     trialEndsAt: row.trialEndsAt,
     bufferMinutes: row.bufferMinutes,
+    bookingPolicy: {
+      autoConfirm: row.autoConfirm,
+      slotIntervalMinutes: row.slotIntervalMinutes,
+      minLeadMinutes: row.minLeadMinutes,
+      maxAdvanceDays: row.maxAdvanceDays,
+      cancellationDeadlineHours: row.cancellationDeadlineHours,
+    },
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -51,6 +59,15 @@ export class DrizzleProfessionalRepository implements ProfessionalRepository {
   async findAll(): Promise<Professional[]> {
     const rows = await db.select().from(professionals).orderBy(professionals.createdAt);
     return rows.map(toDomain);
+  }
+
+  async updateBookingPolicy(professionalId: string, policy: BookingPolicy): Promise<Professional> {
+    const [row] = await db
+      .update(professionals)
+      .set({ ...policy, updatedAt: new Date() })
+      .where(eq(professionals.id, professionalId))
+      .returning();
+    return toDomain(row);
   }
 
   async updateBufferMinutes(professionalId: string, bufferMinutes: number): Promise<Professional> {

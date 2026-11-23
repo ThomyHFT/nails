@@ -1,3 +1,4 @@
+import { DEFAULT_BOOKING_POLICY } from "@/server/domain/professional/booking-policy";
 import { describe, expect, it } from "vitest";
 import { InMemoryUserRepository } from "@/server/application/auth/__fakes__/in-memory-user-repository";
 import { InMemoryBookingRepository } from "@/server/application/booking/__fakes__/in-memory-booking-repository";
@@ -41,6 +42,7 @@ async function setup(clientEmail: string, professionalPhone: string | null = nul
     publishedAt: new Date("2026-01-01T00:00:00Z"),
     trialEndsAt: null,
     bufferMinutes: 0,
+    bookingPolicy: DEFAULT_BOOKING_POLICY,
     createdAt: new Date(),
     updatedAt: new Date(),
   });

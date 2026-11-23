@@ -32,6 +32,8 @@ export const bookings = pgTable("bookings", {
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   cancelledBy: actorEnum("cancelled_by"),
   googleEventId: text("google_event_id"),
+  // Recordatorio del día antes ya enviado (SPEC 19). Se limpia al reagendar.
+  reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

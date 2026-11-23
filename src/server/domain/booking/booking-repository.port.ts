@@ -38,6 +38,7 @@ export interface NewBookingWithDesign {
   priceClp: number;
   durationMinutes: number;
   clientNote?: string | null;
+  status?: "pending" | "confirmed";
   design: {
     payload: NailDesignPayload;
     extraPriceClp: number;

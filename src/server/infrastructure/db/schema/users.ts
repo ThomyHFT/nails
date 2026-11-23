@@ -76,6 +76,15 @@ export const professionals = pgTable("professionals", {
   // NULL = sin vencimiento (cuentas internas o ya pagadas).
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   bufferMinutes: integer("buffer_minutes").notNull().default(0),
+  // Reglas de reserva (SPEC 19).
+  autoConfirm: boolean("auto_confirm").notNull().default(false),
+  // NULL = cada duración del servicio.
+  slotIntervalMinutes: integer("slot_interval_minutes"),
+  minLeadMinutes: integer("min_lead_minutes").notNull().default(120),
+  // NULL = sin límite.
+  maxAdvanceDays: integer("max_advance_days"),
+  // 0 = la clienta puede cancelar o reagendar siempre.
+  cancellationDeadlineHours: integer("cancellation_deadline_hours").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

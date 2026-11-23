@@ -4,10 +4,12 @@ import type { AvailabilityRule } from "@/server/domain/availability/availability
 import { resolveRulesForMonth } from "@/server/domain/availability/resolve-rules-for-month";
 import type { Booking } from "@/server/domain/booking/booking.entity";
 import type { BookingRepository } from "@/server/domain/booking/booking-repository.port";
+import { DEFAULT_BOOKING_POLICY, type BookingPolicy } from "@/server/domain/professional/booking-policy";
 import { mergeIntervals, subtractIntervals, type MinuteInterval } from "@/server/application/booking/intervals";
 import { minutesToTime, timeToMinutes, utcToZonedMinutesOfDay, zonedDateTimeToUtc } from "@/server/application/booking/zoned-time";
 
-const MINIMUM_LEAD_TIME_MS = 2 * 60 * 60 * 1000;
+/** Las reglas que afectan qué horarios se ofrecen (SPEC 19). */
+export type SlotPolicy = Pick<BookingPolicy, "slotIntervalMinutes" | "minLeadMinutes" | "maxAdvanceDays">;
 
 export interface AvailableSlot {
   startsAt: string;
@@ -21,6 +23,10 @@ export interface GenerateAvailableSlotsInput {
   date: string;
   durationMinutes: number;
   now?: Date;
+  /** Por defecto, las reglas de siempre: cada duración, 2 h de antelación, sin límite hacia adelante. */
+  policy?: SlotPolicy;
+  /** Reserva que no cuenta como ocupada: la que se está reagendando (SPEC 19). */
+  excludeBookingId?: string;
 }
 
 export interface ComputeDaySlotsInput {
@@ -35,6 +41,7 @@ export interface ComputeDaySlotsInput {
   date: string;
   durationMinutes: number;
   now: Date;
+  policy?: SlotPolicy;
 }
 
 /** Inicio y fin (UTC) del día local, el mismo rango que se usa para buscar sus reservas. */
@@ -52,6 +59,8 @@ export function dayRangeUtc(date: string, timezone: string): { start: Date; end:
  */
 export function computeDaySlots(input: ComputeDaySlotsInput): AvailableSlot[] {
   const { rules, exceptions, bookings, timezone, bufferMinutes, date, durationMinutes, now } = input;
+  const policy = input.policy ?? DEFAULT_BOOKING_POLICY;
+  const step = policy.slotIntervalMinutes ?? durationMinutes;
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
 
   // Un bloqueo sin horas tapa el día; con horas, solo ese rango (SPEC 18).
@@ -87,7 +96,9 @@ export function computeDaySlots(input: ComputeDaySlotsInput): AvailableSlot[] {
   }));
 
   const freeIntervals = subtractIntervals(openIntervals, [...busyIntervals, ...blockedIntervals]);
-  const cutoff = new Date(now.getTime() + MINIMUM_LEAD_TIME_MS);
+  const cutoff = new Date(now.getTime() + policy.minLeadMinutes * 60_000);
+  const latest =
+    policy.maxAdvanceDays === null ? null : new Date(now.getTime() + policy.maxAdvanceDays * 24 * 60 * 60_000);
   const slots: AvailableSlot[] = [];
 
   for (const interval of freeIntervals) {
@@ -95,10 +106,10 @@ export function computeDaySlots(input: ComputeDaySlotsInput): AvailableSlot[] {
     while (slotStart + durationMinutes <= interval.end) {
       const startsAt = zonedDateTimeToUtc(date, minutesToTime(slotStart), timezone);
       const endsAt = zonedDateTimeToUtc(date, minutesToTime(slotStart + durationMinutes), timezone);
-      if (startsAt >= cutoff) {
+      if (startsAt >= cutoff && (latest === null || startsAt <= latest)) {
         slots.push({ startsAt: startsAt.toISOString(), endsAt: endsAt.toISOString() });
       }
-      slotStart += durationMinutes;
+      slotStart += step;
     }
   }
 
@@ -112,7 +123,7 @@ export class GenerateAvailableSlotsUseCase {
   ) {}
 
   async execute(input: GenerateAvailableSlotsInput): Promise<AvailableSlot[]> {
-    const { professionalId, timezone, bufferMinutes, date, durationMinutes } = input;
+    const { professionalId, timezone, bufferMinutes, date, durationMinutes, policy } = input;
     const now = input.now ?? new Date();
     const effectiveMonth = `${date.slice(0, 7)}-01`;
 
@@ -124,13 +135,16 @@ export class GenerateAvailableSlotsUseCase {
     const rules = resolveRulesForMonth(monthRules, weeklyRules);
 
     // Sin horario abierto no hace falta mirar las reservas del día.
-    if (computeDaySlots({ rules, exceptions, bookings: [], timezone, bufferMinutes, date, durationMinutes, now }).length === 0) {
+    const base = { rules, exceptions, timezone, bufferMinutes, date, durationMinutes, now, policy };
+    if (computeDaySlots({ ...base, bookings: [] }).length === 0) {
       return [];
     }
 
     const { start, end } = dayRangeUtc(date, timezone);
-    const bookings = await this.bookingRepository.listActiveByProfessionalInRange(professionalId, start, end);
+    const bookings = (await this.bookingRepository.listActiveByProfessionalInRange(professionalId, start, end)).filter(
+      (booking) => booking.id !== input.excludeBookingId,
+    );
 
-    return computeDaySlots({ rules, exceptions, bookings, timezone, bufferMinutes, date, durationMinutes, now });
+    return computeDaySlots({ ...base, bookings });
   }
 }

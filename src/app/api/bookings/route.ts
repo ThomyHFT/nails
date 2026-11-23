@@ -24,6 +24,11 @@ import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositor
 import { DrizzleUserRepository } from "@/server/infrastructure/repositories/drizzle-user.repository";
 import { ResendEmailSender } from "@/server/infrastructure/email/resend-email-sender";
 import { env } from "@/server/infrastructure/config/env";
+import { SyncBookingToCalendarUseCase } from "@/server/application/calendar/sync-booking-to-calendar.use-case";
+import { GoogleCalendarGateway } from "@/server/infrastructure/calendar/google-calendar-gateway";
+import { DrizzleGoogleCalendarConnectionRepository } from "@/server/infrastructure/repositories/drizzle-google-calendar-connection.repository";
+import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
+import { AesTokenCipher } from "@/server/infrastructure/security/aes-token-cipher";
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -83,6 +88,7 @@ export async function GET(request: Request) {
     bufferMinutes: professional.bufferMinutes,
     date,
     durationMinutes: variant.durationMinutes + extraMinutes,
+    policy: professional.bookingPolicy,
   });
 
   return NextResponse.json({ slots });
@@ -208,6 +214,7 @@ export async function POST(request: Request) {
       designPayload,
       designReferenceImageUrl: parsed.data.design?.referenceImageUrl ?? null,
       clientNote: parsed.data.clientNote,
+      policy: professional.bookingPolicy,
     });
 
     try {
@@ -223,11 +230,32 @@ export async function POST(request: Request) {
       );
       await notificationUseCase.execute({
         bookingId: booking.id,
-        type: "pending",
+        // SPEC 19: con confirmación automática la clienta recibe la
+        // confirmación directa; la profesional igual se entera de la reserva.
+        type: booking.status === "confirmed" ? "confirmation" : "pending",
+        isNewBooking: true,
         baseUrl: new URL(request.url).origin,
       });
     } catch {
       // Un fallo al notificar nunca debe cambiar la respuesta de crear la reserva.
+    }
+
+    // Autoconfirmada (SPEC 19): mismo paso a Google Calendar que al confirmar a mano.
+    if (booking.status === "confirmed") {
+      try {
+        if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.CALENDAR_TOKEN_KEY) {
+          const cipher = new AesTokenCipher(Buffer.from(env.CALENDAR_TOKEN_KEY, "base64"));
+          await new SyncBookingToCalendarUseCase(
+            new DrizzleBookingRepository(),
+            new DrizzleGoogleCalendarConnectionRepository(cipher),
+            new GoogleCalendarGateway(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET),
+            new DrizzleUserRepository(),
+            new DrizzleServicesRepository(),
+          ).execute(booking.id);
+        }
+      } catch {
+        // Un fallo de Google Calendar no cambia la respuesta.
+      }
     }
 
     return NextResponse.json({ booking }, { status: 201 });

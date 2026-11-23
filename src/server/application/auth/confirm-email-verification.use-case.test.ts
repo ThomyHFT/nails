@@ -1,3 +1,4 @@
+import { DEFAULT_BOOKING_POLICY } from "@/server/domain/professional/booking-policy";
 import { describe, expect, it } from "vitest";
 import { FakeTokenGenerator } from "@/server/application/auth/__fakes__/fake-token-generator";
 import { InMemoryEmailVerificationTokensRepository } from "@/server/application/auth/__fakes__/in-memory-email-verification-tokens-repository";
@@ -28,6 +29,7 @@ function professional(overrides: Partial<Professional> = {}): Professional {
     publishedAt: null,
     trialEndsAt: null,
     bufferMinutes: 0,
+    bookingPolicy: DEFAULT_BOOKING_POLICY,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

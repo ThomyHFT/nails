@@ -1,3 +1,4 @@
+import type { BookingPolicy } from "@/server/domain/professional/booking-policy";
 import type { Vertical } from "@/server/domain/tenant/vertical";
 
 export interface Professional {
@@ -20,6 +21,8 @@ export interface Professional {
   /** `null` = sin vencimiento (cuentas internas o ya pagadas). */
   trialEndsAt: Date | null;
   bufferMinutes: number;
+  /** Reglas de reserva (SPEC 19). */
+  bookingPolicy: BookingPolicy;
   createdAt: Date;
   updatedAt: Date;
 }

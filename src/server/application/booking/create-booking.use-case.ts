@@ -1,5 +1,6 @@
 import type { AvailabilityRepository } from "@/server/domain/availability/availability-repository.port";
 import { BookingSlotTakenError, type BookingRepository } from "@/server/domain/booking/booking-repository.port";
+import { DEFAULT_BOOKING_POLICY, type BookingPolicy } from "@/server/domain/professional/booking-policy";
 import type { Booking } from "@/server/domain/booking/booking.entity";
 import { calculateDesignQuote } from "@/server/domain/design/calculate-design-quote";
 import type { DesignRepository } from "@/server/domain/design/design-repository.port";
@@ -39,6 +40,8 @@ export interface CreateBookingInput {
   designReferenceImageUrl?: string | null;
   clientNote?: string | null;
   now?: Date;
+  /** Reglas de la profesional (SPEC 19): qué horarios valen y si la reserva nace confirmada. */
+  policy?: BookingPolicy;
 }
 
 export class CreateBookingUseCase {
@@ -73,6 +76,7 @@ export class CreateBookingUseCase {
       date: input.date,
       durationMinutes: totalDurationMinutes,
       now: input.now,
+      policy: input.policy,
     });
 
     const matchingSlot = availableSlots.find((slot) => slot.startsAt === input.startsAt);
@@ -96,6 +100,8 @@ export class CreateBookingUseCase {
     extraPriceClp: number,
     extraMinutes: number,
   ): Promise<Booking> {
+    // SPEC 19: con confirmación automática la reserva nace confirmada.
+    const status = (input.policy ?? DEFAULT_BOOKING_POLICY).autoConfirm ? "confirmed" : "pending";
     if (input.designPayload) {
       return this.bookingRepository.createWithDesign({
         professionalId: input.professionalId,
@@ -106,6 +112,7 @@ export class CreateBookingUseCase {
         priceClp: input.priceClp + extraPriceClp,
         durationMinutes: totalDurationMinutes,
         clientNote: input.clientNote ?? null,
+        status,
         design: {
           payload: input.designPayload,
           extraPriceClp,
@@ -124,6 +131,7 @@ export class CreateBookingUseCase {
       priceClp: input.priceClp + extraPriceClp,
       durationMinutes: totalDurationMinutes,
       clientNote: input.clientNote ?? null,
+      status,
     });
   }
 }
