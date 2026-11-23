@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CalendarClock, Images, LayoutDashboard, Palette, Sparkles, Star, Tag, Users } from "lucide-react";
+import { CalendarClock, CalendarRange, Images, LayoutDashboard, Palette, Sparkles, Star, Tag, Users } from "lucide-react";
 import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 
 export type AdminNavItem = {
@@ -24,6 +24,7 @@ export function getAdminNavItems(
 
   return [
     { href: base, label: "Resumen", icon: <LayoutDashboard />, exact: true },
+    { href: `${base}/agenda`, label: "Agenda", icon: <CalendarRange />, exact: false },
     {
       href: `${base}/reservas`,
       label: "Reservas",
