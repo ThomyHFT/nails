@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { BrandButton, Caption, FIELD_CLASSES, SelectChip } from "@/components/brand";
 
 interface Slot {
@@ -28,29 +28,32 @@ export function RescheduleForm({ slug, bookingId, timezone }: { slug: string; bo
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!date) return;
-    let cancelled = false;
-    setLoading(true);
+  // Solo cuenta la respuesta de la última fecha elegida.
+  const latestRequest = useRef(0);
+
+  async function selectDate(value: string) {
+    setDate(value);
     setTime(null);
     setError(null);
-    fetch(`/api/bookings/${bookingId}/reschedule?date=${date}`)
-      .then(async (response) => {
-        const data = await response.json();
-        if (cancelled) return;
-        if (!response.ok) {
-          setError(typeof data.error === "string" ? data.error : "No se pudieron cargar los horarios.");
-          setSlots([]);
-          return;
-        }
-        setSlots(data.slots as Slot[]);
-      })
-      .catch(() => !cancelled && setError("No se pudieron cargar los horarios."))
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [date, bookingId]);
+    if (!value) return;
+    const request = ++latestRequest.current;
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/reschedule?date=${value}`);
+      const data = await response.json();
+      if (request !== latestRequest.current) return;
+      if (!response.ok) {
+        setError(typeof data.error === "string" ? data.error : "No se pudieron cargar los horarios.");
+        setSlots([]);
+        return;
+      }
+      setSlots(data.slots as Slot[]);
+    } catch {
+      if (request === latestRequest.current) setError("No se pudieron cargar los horarios.");
+    } finally {
+      if (request === latestRequest.current) setLoading(false);
+    }
+  }
 
   async function submit() {
     if (!date || !time) return;
@@ -83,7 +86,7 @@ export function RescheduleForm({ slug, bookingId, timezone }: { slug: string; bo
           className={FIELD_CLASSES}
           min={todayIn(timezone)}
           value={date}
-          onChange={(event) => setDate(event.target.value)}
+          onChange={(event) => void selectDate(event.target.value)}
         />
       </label>
 
