@@ -122,7 +122,20 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
 
   return (
     <div className="flex max-w-4xl flex-col gap-8">
-      <AdminPageHeader title="Reservas" description="Agrupadas por estado, las pendientes primero." />
+      <AdminPageHeader
+        title="Reservas"
+        description="Agrupadas por estado, las pendientes primero."
+        action={
+          // <a> y no Link: Link precargaría el CSV en segundo plano.
+          <a
+            href="/api/export/reservas"
+            download
+            className="inline-flex h-9 items-center rounded-pill border border-outline-variant px-4 text-sm font-medium text-foreground transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Exportar CSV
+          </a>
+        }
+      />
 
       <ManualBookingForm variants={variantOptions} clients={clientOptions} />
 

@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { users } from "@/server/infrastructure/db/schema/users";
 import type { User } from "@/server/domain/user/user.entity";
@@ -22,6 +22,12 @@ export class DrizzleUserRepository implements UserRepository {
   async findByEmail(email: string): Promise<User | null> {
     const [row] = await db.select().from(users).where(eq(users.email, email)).limit(1);
     return row ? toDomain(row) : null;
+  }
+
+  async findManyByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) return [];
+    const rows = await db.select().from(users).where(inArray(users.id, ids));
+    return rows.map(toDomain);
   }
 
   async findById(id: string): Promise<User | null> {

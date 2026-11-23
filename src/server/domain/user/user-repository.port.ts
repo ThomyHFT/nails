@@ -11,6 +11,8 @@ export interface NewUser {
 export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
+  /** Varios usuarios en una consulta (exportar, reportes). Los ids que no existen se omiten. */
+  findManyByIds(ids: string[]): Promise<User[]>;
   create(user: NewUser): Promise<User>;
   updatePasswordHash(userId: string, passwordHash: string): Promise<void>;
   markEmailVerified(userId: string): Promise<void>;

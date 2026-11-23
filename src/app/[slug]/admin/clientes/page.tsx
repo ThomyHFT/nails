@@ -36,6 +36,16 @@ export default async function ClientesAdminPage({ params }: { params: Promise<{ 
       <AdminPageHeader
         title="Clientes"
         description="Quiénes te han reservado, cuánto han gastado y cuándo fue la última vez."
+        action={
+          // <a> y no Link: Link precargaría el CSV en segundo plano.
+          <a
+            href="/api/export/clientes"
+            download
+            className="inline-flex h-9 items-center rounded-pill border border-outline-variant px-4 text-sm font-medium text-foreground transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Exportar CSV
+          </a>
+        }
       />
 
       {stats.length === 0 ? (

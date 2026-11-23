@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CalendarClock, CalendarRange, Images, LayoutDashboard, Palette, Sparkles, Star, Tag, UserRound, Users } from "lucide-react";
+import { BarChart3, CalendarClock, CalendarRange, Images, LayoutDashboard, Palette, Sparkles, Star, Tag, UserRound, Users } from "lucide-react";
 import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 
 export type AdminNavItem = {
@@ -33,6 +33,7 @@ export function getAdminNavItems(
       badge: pendingBookingsCount > 0 ? pendingBookingsCount : undefined,
     },
     { href: `${base}/clientes`, label: "Clientes", icon: <Users />, exact: false },
+    { href: `${base}/reportes`, label: "Reportes", icon: <BarChart3 />, exact: false },
     { href: `${base}/disponibilidad`, label: "Disponibilidad", icon: <CalendarClock />, exact: false },
     { href: `${base}/servicios`, label: "Servicios", icon: <Tag />, exact: false },
     // Esconder el link no alcanza como protección — la ruta /admin/diseno
