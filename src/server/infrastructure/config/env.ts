@@ -10,6 +10,7 @@ const envSchema = z
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     CALENDAR_TOKEN_KEY: z.string().min(1).optional(),
+    CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters").optional(),
   })
   .refine((data) => !data.GOOGLE_CLIENT_ID || !!data.CALENDAR_TOKEN_KEY, {
     message: "CALENDAR_TOKEN_KEY is required when GOOGLE_CLIENT_ID is set",
