@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { bookings } from "@/server/infrastructure/db/schema/bookings";
 import { designs } from "@/server/infrastructure/db/schema/designs";
@@ -180,6 +180,22 @@ export class DrizzleBookingRepository implements BookingRepository {
     return row ? toDomain(row) : null;
   }
 
+  async reschedule(
+    id: string,
+    startsAt: Date,
+    endsAt: Date,
+    fromStatuses: readonly BookingStatus[],
+  ): Promise<Booking | null> {
+    const [row] = await translateOverlap(() =>
+      db
+        .update(bookings)
+        .set({ startsAt, endsAt, reminderSentAt: null, updatedAt: new Date() })
+        .where(and(eq(bookings.id, id), inArray(bookings.status, [...fromStatuses])))
+        .returning(),
+    );
+    return row ? toDomain(row) : null;
+  }
+
   async cancel(id: string, cancelledBy: BookingActor, fromStatuses: readonly BookingStatus[]): Promise<Booking | null> {
     const [row] = await db
       .update(bookings)
@@ -187,6 +203,30 @@ export class DrizzleBookingRepository implements BookingRepository {
       .where(and(eq(bookings.id, id), inArray(bookings.status, [...fromStatuses])))
       .returning();
     return row ? toDomain(row) : null;
+  }
+
+  async listAwaitingReminder(from: Date, to: Date): Promise<Booking[]> {
+    const rows = await db
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.status, "confirmed"),
+          isNull(bookings.reminderSentAt),
+          gte(bookings.startsAt, from),
+          lt(bookings.startsAt, to),
+        ),
+      );
+    return rows.map(toDomain);
+  }
+
+  async claimReminder(id: string): Promise<boolean> {
+    const rows = await db
+      .update(bookings)
+      .set({ reminderSentAt: new Date() })
+      .where(and(eq(bookings.id, id), isNull(bookings.reminderSentAt)))
+      .returning({ id: bookings.id });
+    return rows.length > 0;
   }
 
   async setGoogleEventId(id: string, googleEventId: string | null): Promise<void> {

@@ -1905,7 +1905,9 @@
       "values": [
         "confirmation",
         "cancellation",
-        "pending"
+        "pending",
+        "reschedule",
+        "reminder"
       ]
     },
     "public.exception_kind": {

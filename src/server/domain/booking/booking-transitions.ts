@@ -1,6 +1,6 @@
 import type { BookingStatus } from "@/server/domain/booking/booking.entity";
 
-export type BookingAction = "confirm" | "cancel" | "complete" | "no_show";
+export type BookingAction = "confirm" | "cancel" | "complete" | "no_show" | "reschedule";
 
 /**
  * Desde qué estados se puede aplicar cada acción. Una reserva cancelada,
@@ -15,6 +15,7 @@ const ALLOWED_FROM: Record<BookingAction, readonly BookingStatus[]> = {
   cancel: ["pending", "confirmed"],
   complete: ["pending", "confirmed"],
   no_show: ["pending", "confirmed"],
+  reschedule: ["pending", "confirmed"],
 };
 
 export function canApplyBookingAction(status: BookingStatus, action: BookingAction): boolean {

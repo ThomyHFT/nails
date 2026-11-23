@@ -1,7 +1,7 @@
 export interface NewEmailNotification {
   professionalId: string;
   bookingId: string;
-  type: "confirmation" | "cancellation" | "pending";
+  type: "confirmation" | "cancellation" | "pending" | "reschedule" | "reminder";
   status: "sent" | "failed";
   errorMessage: string | null;
 }

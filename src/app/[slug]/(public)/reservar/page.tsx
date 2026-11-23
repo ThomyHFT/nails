@@ -65,6 +65,8 @@ export default async function ReservarPage({
       initialServiceId={initialService?.id}
       initialVariantId={initialVariantId}
       vertical={professional.vertical}
+      cancellationDeadlineHours={professional.bookingPolicy.cancellationDeadlineHours}
+      autoConfirm={professional.bookingPolicy.autoConfirm}
     />
   );
 }

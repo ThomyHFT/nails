@@ -91,6 +91,41 @@ export class InMemoryBookingRepository implements BookingRepository {
     return booking;
   }
 
+  /** Reservas con recordatorio enviado (`reminder_sent_at` no nulo). */
+  remindedIds = new Set<string>();
+
+  async listAwaitingReminder(from: Date, to: Date): Promise<Booking[]> {
+    return this.bookings.filter(
+      (b) =>
+        b.status === "confirmed" &&
+        !this.remindedIds.has(b.id) &&
+        b.startsAt.getTime() >= from.getTime() &&
+        b.startsAt.getTime() < to.getTime(),
+    );
+  }
+
+  async claimReminder(id: string): Promise<boolean> {
+    if (this.remindedIds.has(id)) return false;
+    this.remindedIds.add(id);
+    return true;
+  }
+
+  async reschedule(
+    id: string,
+    startsAt: Date,
+    endsAt: Date,
+    fromStatuses: readonly BookingStatus[],
+  ): Promise<Booking | null> {
+    const booking = this.bookings.find((b) => b.id === id);
+    if (!booking) throw new Error(`Booking ${id} not found`);
+    if (!fromStatuses.includes(booking.status)) return null;
+    booking.startsAt = startsAt;
+    booking.endsAt = endsAt;
+    booking.updatedAt = new Date();
+    this.remindedIds.delete(id);
+    return booking;
+  }
+
   async cancel(id: string, cancelledBy: BookingActor, fromStatuses?: readonly BookingStatus[]): Promise<Booking | null> {
     const booking = this.bookings.find((b) => b.id === id);
     if (!booking) throw new Error(`Booking ${id} not found`);

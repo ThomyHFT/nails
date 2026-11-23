@@ -19,6 +19,15 @@ export class BookingInvalidStateError extends Error {
   }
 }
 
+export class ClientChangeWindowClosedError extends Error {
+  constructor(deadlineHours: number) {
+    super(
+      `Solo se puede cancelar o reagendar en línea hasta ${deadlineHours} horas antes. Escríbele a la profesional para coordinar.`,
+    );
+    this.name = "ClientChangeWindowClosedError";
+  }
+}
+
 export class BookingTooEarlyError extends Error {
   constructor() {
     super("No se puede marcar la reserva antes de que termine la cita");

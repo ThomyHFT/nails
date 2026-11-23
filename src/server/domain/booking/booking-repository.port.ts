@@ -60,9 +60,27 @@ export interface BookingRepository {
    * escritura ganó la carrera.
    */
   updateStatus(id: string, status: BookingStatus, fromStatuses: readonly BookingStatus[]): Promise<Booking | null>;
+  /**
+   * Mueve la reserva (SPEC 19) solo si sigue en `fromStatuses`; `null` si no.
+   * Limpia el recordatorio enviado. Lanza BookingSlotTakenError si la nueva
+   * hora se solapa con otra reserva activa.
+   */
+  reschedule(
+    id: string,
+    startsAt: Date,
+    endsAt: Date,
+    fromStatuses: readonly BookingStatus[],
+  ): Promise<Booking | null>;
   /** Igual que `updateStatus`: `null` si la reserva ya no estaba en `fromStatuses`. */
   cancel(id: string, cancelledBy: BookingActor, fromStatuses: readonly BookingStatus[]): Promise<Booking | null>;
   setGoogleEventId(id: string, googleEventId: string | null): Promise<void>;
+  /** Confirmadas que empiezan en [from, to) y todavía no tienen recordatorio (SPEC 19). */
+  listAwaitingReminder(from: Date, to: Date): Promise<Booking[]>;
+  /**
+   * Marca el recordatorio como enviado solo si nadie lo marcó antes. `true` si
+   * esta llamada lo tomó: dos corridas del cron no mandan dos correos.
+   */
+  claimReminder(id: string): Promise<boolean>;
   /** Confirmadas, futuras, sin evento en Google — lo que un backfill tiene que subir. */
   listConfirmedFutureWithoutCalendarEvent(professionalId: string, now: Date): Promise<Booking[]>;
   countClientStrikes(professionalId: string, clientUserId: string): Promise<number>;

@@ -144,3 +144,67 @@ export function buildClientCancelledEmail(input: ClientCancelledEmailInput): Ema
     html: renderShell({ booking, branding: input.branding, professionalName: input.professionalName }, "Reserva cancelada", body),
   };
 }
+
+export interface RescheduledEmailInput extends EmailTemplateInput {
+  previousStartsAt: Date;
+  /** Quién movió la reserva: define a quién va el correo y cómo se redacta. */
+  movedBy: "client" | "professional";
+  clientName: string;
+  /** Al avisarle a la profesional: el WhatsApp de la clienta. */
+  clientWhatsAppUrl?: string | null;
+}
+
+/**
+ * Aviso de reserva movida (SPEC 19). Si la movió la clienta, va a la
+ * profesional; si la movió la profesional, va a la clienta.
+ */
+export function buildRescheduledEmail(input: RescheduledEmailInput): EmailTemplate {
+  const { booking, previousStartsAt, movedBy } = input;
+  const primaryColor = safeColor(input.branding.primaryColorHex, "#111111");
+  if (movedBy === "client") {
+    const whatsApp = safeUrl(input.clientWhatsAppUrl ?? null);
+    const body = `
+      <p><strong>${escapeHtml(input.clientName)}</strong> movió su hora.</p>
+      <p><strong>Antes:</strong> ${formatDateTimeSantiago(previousStartsAt)}</p>
+      <p><strong>Ahora:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
+      ${whatsApp ? `<p><a href="${whatsApp}" style="color:${primaryColor};">Escribirle por WhatsApp</a></p>` : ""}
+    `.trim();
+    return {
+      subject: `${input.clientName} reagendó su reserva`,
+      html: renderShell({ ...input, professionalWhatsAppUrl: null }, "Reserva reagendada", body),
+    };
+  }
+  const body = `
+    <p>${escapeHtml(input.professionalName)} cambió la hora de tu reserva.</p>
+    <p><strong>Antes:</strong> ${formatDateTimeSantiago(previousStartsAt)}</p>
+    <p><strong>Ahora:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
+  `.trim();
+  return {
+    subject: `Tu reserva con ${input.professionalName} cambió de hora`,
+    html: renderShell(input, "Reserva reagendada", body),
+  };
+}
+
+export interface ReminderEmailInput extends EmailTemplateInput {
+  serviceName: string | null;
+  /** "Mis reservas" en el micrositio, para cancelar o reagendar. */
+  accountUrl: string | null;
+}
+
+/** Recordatorio del día antes (SPEC 19). */
+export function buildReminderEmail(input: ReminderEmailInput): EmailTemplate {
+  const { booking, professionalName } = input;
+  const primaryColor = safeColor(input.branding.primaryColorHex, "#111111");
+  const account = safeUrl(input.accountUrl);
+  const body = `
+    <p>Te esperamos mañana en <strong>${escapeHtml(professionalName)}</strong>.</p>
+    <p><strong>Fecha:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
+    ${input.serviceName ? `<p><strong>Servicio:</strong> ${escapeHtml(input.serviceName)}</p>` : ""}
+    <p><strong>Duración:</strong> ${booking.durationMinutes} minutos</p>
+    ${account ? `<p><a href="${account}" style="color:${primaryColor};">Ver, cambiar o cancelar mi reserva</a></p>` : ""}
+  `.trim();
+  return {
+    subject: `Recordatorio: mañana tienes hora con ${professionalName}`,
+    html: renderShell(input, "Recordatorio de tu hora", body),
+  };
+}

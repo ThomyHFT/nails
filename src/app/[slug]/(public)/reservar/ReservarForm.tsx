@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Loader2,
   Sparkles,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { verticalCopy, verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
@@ -142,12 +143,17 @@ export function ReservarForm({
   initialServiceId,
   initialVariantId,
   vertical,
+  cancellationDeadlineHours = 0,
+  autoConfirm = false,
 }: {
   slug: string;
   services: ServiceOption[];
   initialServiceId?: string;
   initialVariantId?: string;
   vertical: Vertical;
+  /** Plazo de la profesional para cancelar o reagendar en línea (SPEC 19). */
+  cancellationDeadlineHours?: number;
+  autoConfirm?: boolean;
 }) {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
@@ -690,6 +696,15 @@ export function ReservarForm({
                 icon={<Banknote className="size-5" />}
                 title="Pago presencial"
                 detail="Se abona en el local al terminar el servicio."
+              />
+              <SummaryRow
+                icon={<CalendarClock className="size-5" />}
+                title={autoConfirm ? "Se confirma al instante" : "La profesional confirma tu hora"}
+                detail={
+                  cancellationDeadlineHours > 0
+                    ? `Puedes cancelar o reagendar en línea hasta ${cancellationDeadlineHours} horas antes.`
+                    : "Puedes cancelar o reagendar desde Mis reservas."
+                }
               />
             </div>
 

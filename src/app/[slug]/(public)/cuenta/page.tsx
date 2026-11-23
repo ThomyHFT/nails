@@ -10,6 +10,9 @@ import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/d
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { DrizzleReviewsRepository } from "@/server/infrastructure/repositories/drizzle-reviews.repository";
 import { verticalCopy } from "@/server/domain/tenant/vertical";
+import { isWithinClientChangeWindow } from "@/server/domain/professional/booking-policy";
+import { isPhoneVisible } from "@/server/domain/professional/professional.entity";
+import { whatsAppLink } from "@/server/domain/user/client-contact";
 import {
   BrandButton,
   Caption,
@@ -81,7 +84,16 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
   const variantAxisLabel = verticalCopy(professional?.vertical ?? "nails").variantAxisLabel;
 
   const bookingRepository = new DrizzleBookingRepository();
-  const bookings = await bookingRepository.listByClient(session.user.id);
+  // Solo las reservas de este negocio: la clienta puede tener cuenta en varios
+  // tenants, y cada uno aplica su propio plazo de cancelación.
+  const bookings = (await bookingRepository.listByClient(session.user.id)).filter(
+    (b) => !professional || b.professionalId === professional.id,
+  );
+  const policy = professional?.bookingPolicy;
+  const deadlineHours = policy?.cancellationDeadlineHours ?? 0;
+  const professionalWhatsApp =
+    professional && isPhoneVisible(professional) && professional.phone ? whatsAppLink(professional.phone) : null;
+  const now = new Date();
 
   const variantIds = Array.from(new Set(bookings.map((b) => b.serviceVariantId)));
   const variantRows = variantIds.length
@@ -108,6 +120,9 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
           <Caption>
             Sesión iniciada como <strong className="font-medium text-foreground">{session.user.email}</strong>
           </Caption>
+          {deadlineHours > 0 && (
+            <Caption>Puedes cancelar o reagendar en línea hasta {deadlineHours} horas antes de tu cita.</Caption>
+          )}
         </div>
 
         {bookings.length === 0 ? (
@@ -122,7 +137,9 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
             {bookings.map((booking) => {
               const variant = variantById.get(booking.serviceVariantId);
               const status = BOOKING_STATUS[booking.status];
-              const showActions = CANCELLABLE_STATUSES.has(booking.status) || booking.status === "completed";
+              const active = CANCELLABLE_STATUSES.has(booking.status);
+              const canChange = active && (!policy || isWithinClientChangeWindow(policy, booking.startsAt, now));
+              const showActions = active || booking.status === "completed";
               return (
                 <Panel key={booking.id} padding="sm" className="flex flex-col gap-4">
                   <div className="flex items-start justify-between gap-3">
@@ -143,8 +160,33 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
                   </div>
 
                   {showActions && (
-                    <div className="flex items-center justify-end gap-3 border-t border-outline-variant pt-3">
-                      {CANCELLABLE_STATUSES.has(booking.status) && <CancelBookingButton bookingId={booking.id} />}
+                    <div className="flex flex-wrap items-center justify-end gap-3 border-t border-outline-variant pt-3">
+                      {canChange && (
+                        <>
+                          <BrandButton size="sm" variant="outline" href={`/${slug}/cuenta/reagendar/${booking.id}`}>
+                            Reagendar
+                          </BrandButton>
+                          <CancelBookingButton bookingId={booking.id} />
+                        </>
+                      )}
+                      {active && !canChange && (
+                        <Caption className="mr-auto">
+                          Para cambiar esta cita, escríbele a la profesional.
+                          {professionalWhatsApp && (
+                            <>
+                              {" "}
+                              <a
+                                href={professionalWhatsApp}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-foreground underline underline-offset-4"
+                              >
+                                WhatsApp
+                              </a>
+                            </>
+                          )}
+                        </Caption>
+                      )}
                       {booking.status === "completed" && (
                         <ReviewAction
                           slug={slug}
