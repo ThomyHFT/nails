@@ -1,6 +1,6 @@
 # SPEC 19 — Reglas de reserva, recordatorios, reagendar y vista de agenda (fase 2)
 
-**Estado:** Approved
+**Estado:** Implemented
 **Alcance:** que la profesional decida cómo se reserva (confirmación automática, intervalo de horarios, anticipación mínima y máxima, plazo para cancelar), que las clientas reciban un recordatorio el día antes, que cualquiera de las dos pueda reagendar sin cancelar, y que la profesional vea su semana como una agenda y no como una lista.
 
 Roadmap y contexto: [SPEC 18](18-agenda-confiable.md).
