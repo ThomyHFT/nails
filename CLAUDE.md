@@ -78,6 +78,7 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [17](specs/17-google-calendar.md) | Sincronización de reservas confirmadas con Google Calendar por OAuth2 (crear al confirmar, borrar al cancelar, reconexión manual) | Approved |
 | [18](specs/18-agenda-confiable.md) | Agenda confiable: horario semanal recurrente, bloqueo de rangos, reserva manual (clienta sin cuenta), teléfono y nota de la clienta, aviso de cancelación, WhatsApp `wa.me`. Incluye el roadmap de producto (fases 2-5) | Implemented |
 | [19](specs/19-reglas-recordatorios-agenda.md) | Reglas de reserva por profesional (confirmación automática, intervalo, anticipación, plazo de cancelación), recordatorio del día antes por cron, reagendar, vista de agenda semanal | Implemented |
+| [20](specs/20-acceso-ficha-reportes.md) | Entrar y reservar con código por correo, ficha de clienta con nota privada, cuenta (perfil, contraseña, correo), exportar CSV, reportes del mes, app instalable (PWA) del micrositio y del panel | Implemented |
 
 El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` solo tiene filas de seed; `designs` ya tiene escritor real desde el SPEC 07 (`reference_image_url`). `professionals.tagline` existe desde el SPEC 08.
 
