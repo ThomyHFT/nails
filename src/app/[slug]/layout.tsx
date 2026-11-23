@@ -35,6 +35,10 @@ export async function generateMetadata({
       description,
       images: branding?.coverImageUrl ? [{ url: branding.coverImageUrl }] : undefined,
     },
+    // SPEC 20: instalable en el teléfono. El panel pisa este manifiesto con el suyo.
+    manifest: `/${slug}/manifest.webmanifest`,
+    icons: { apple: `/${slug}/icono/apple` },
+    appleWebApp: { capable: true, title: professional.businessName, statusBarStyle: "default" },
   };
 }
 

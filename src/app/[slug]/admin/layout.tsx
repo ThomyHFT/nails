@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { requireTenantOwner } from "@/server/interface/guards";
 import { ListReviewsUseCase } from "@/server/application/review/list-reviews.use-case";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
@@ -10,6 +11,15 @@ import { AdminNav } from "@/app/[slug]/admin/AdminNav";
 import { AccountBanners } from "@/app/[slug]/admin/AccountBanners";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// SPEC 20: instalado desde el panel, el ícono abre el panel y no la portada.
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  return {
+    manifest: `/${slug}/panel.webmanifest`,
+    appleWebApp: { capable: true, title: "Mi panel", statusBarStyle: "default" },
+  };
+}
 
 export default async function AdminLayout({
   children,
