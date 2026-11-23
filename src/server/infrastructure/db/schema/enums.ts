@@ -63,3 +63,6 @@ export const emailNotificationTypeEnum = pgEnum("email_notification_type", [
 export const emailNotificationStatusEnum = pgEnum("email_notification_status", ["sent", "failed"]);
 
 export const calendarConnectionStatusEnum = pgEnum("calendar_connection_status", ["active", "revoked"]);
+
+/** Para qué sirve un código enviado por correo (SPEC 20). */
+export const emailCodePurposeEnum = pgEnum("email_code_purpose", ["login", "change_email"]);

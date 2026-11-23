@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "crypto";
+import { createHash, randomBytes, randomInt } from "crypto";
 import type { TokenGenerator } from "@/server/domain/auth/token-generator.port";
 
 export class CryptoTokenGenerator implements TokenGenerator {
@@ -8,5 +8,9 @@ export class CryptoTokenGenerator implements TokenGenerator {
 
   hashToken(token: string): string {
     return createHash("sha256").update(token).digest("hex");
+  }
+
+  generateCode(): string {
+    return String(randomInt(0, 1_000_000)).padStart(6, "0");
   }
 }

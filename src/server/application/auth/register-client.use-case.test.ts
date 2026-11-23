@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FakePasswordHasher } from "@/server/application/auth/__fakes__/fake-password-hasher";
 import { InMemoryUserRepository } from "@/server/application/auth/__fakes__/in-memory-user-repository";
 import {
+  AccountWithoutPasswordError,
   EmailAlreadyRegisteredError,
   InvalidPhoneError,
   RegisterClientUseCase,
@@ -84,7 +85,7 @@ describe("RegisterClientUseCase", () => {
     ).rejects.toBeInstanceOf(InvalidPhoneError);
   });
 
-  it("activates an account the professional created by hand instead of rejecting the email", async () => {
+  it("does not hand an account without password to whoever registers its email", async () => {
     const { useCase, userRepository } = makeUseCase();
     const manual = await userRepository.create({
       email: "camila@example.com",
@@ -94,17 +95,9 @@ describe("RegisterClientUseCase", () => {
       role: "client",
     });
 
-    const user = await useCase.execute({
-      email: "camila@example.com",
-      password: "super-secreta",
-      name: "Camila Rojas",
-      phone: "+56 9 8765 4321",
-    });
-
-    expect(user.id).toBe(manual.id);
-    const stored = await userRepository.findById(manual.id);
-    expect(stored?.passwordHash).toBe("hashed:super-secreta");
-    expect(stored?.name).toBe("Camila Rojas");
-    expect(stored?.phone).toBe("+56 9 8765 4321");
+    await expect(
+      useCase.execute({ email: "camila@example.com", password: "super-secreta", name: "Otra", phone: "+56 9 8765 4321" }),
+    ).rejects.toBeInstanceOf(AccountWithoutPasswordError);
+    expect((await userRepository.findById(manual.id))?.passwordHash).toBe(UNUSABLE_PASSWORD_HASH);
   });
 });

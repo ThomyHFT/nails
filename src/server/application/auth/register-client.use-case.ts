@@ -10,6 +10,19 @@ export class EmailAlreadyRegisteredError extends Error {
   }
 }
 
+/**
+ * El correo ya tiene una cuenta de clienta sin contraseña (creada a mano por
+ * la profesional o al entrar con código). Registrarse no la activa: eso le
+ * daría la cuenta, con su historial, a quien escriba el correo sin probar que
+ * es suyo. Entra con un código por correo y, si quiere, crea su contraseña.
+ */
+export class AccountWithoutPasswordError extends Error {
+  constructor() {
+    super("Ya tienes una cuenta con este correo. Entra con un código por correo y, si quieres, crea tu contraseña desde tu perfil.");
+    this.name = "AccountWithoutPasswordError";
+  }
+}
+
 export class InvalidPhoneError extends Error {
   constructor() {
     super("El teléfono no es válido");
@@ -41,13 +54,8 @@ export class RegisterClientUseCase {
 
     const existing = await this.userRepository.findByEmail(normalizedEmail);
     if (existing) {
-      // Una clienta que la profesional agendó a mano con su correo (SPEC 18)
-      // ya tiene usuario, pero sin contraseña: registrarse la activa, con su
-      // historial, en vez de rechazarla por "correo ya registrado".
       if (existing.role === "client" && existing.passwordHash === UNUSABLE_PASSWORD_HASH) {
-        const passwordHash = await this.passwordHasher.hash(input.password);
-        await this.userRepository.updateProfile(existing.id, { name: input.name, phone, passwordHash });
-        return { ...existing, name: input.name, phone, passwordHash };
+        throw new AccountWithoutPasswordError();
       }
       throw new EmailAlreadyRegisteredError(normalizedEmail);
     }

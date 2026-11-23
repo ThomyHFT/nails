@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
+  AccountWithoutPasswordError,
   EmailAlreadyRegisteredError,
   InvalidPhoneError,
   RegisterClientUseCase,
@@ -40,6 +41,9 @@ export async function POST(request: Request) {
   } catch (err) {
     if (err instanceof InvalidPhoneError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    if (err instanceof AccountWithoutPasswordError) {
+      return NextResponse.json({ error: err.message, code: "USE_EMAIL_CODE" }, { status: 409 });
     }
     if (err instanceof EmailAlreadyRegisteredError) {
       return NextResponse.json({ error: err.message }, { status: 409 });

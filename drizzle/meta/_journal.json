@@ -169,6 +169,13 @@
       "when": 1786196035019,
       "tag": "0023_booking_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795397423606,
+      "tag": "0024_client_notes_email_codes",
+      "breakpoints": true
     }
   ]
 }
