@@ -15,8 +15,10 @@ export interface UserRepository {
   updatePasswordHash(userId: string, passwordHash: string): Promise<void>;
   markEmailVerified(userId: string): Promise<void>;
   updatePhone(userId: string, phone: string): Promise<void>;
-  /** Activa una cuenta creada por la profesional: nombre, teléfono y contraseña propios. */
-  updateProfile(userId: string, profile: { name: string; phone: string; passwordHash: string }): Promise<void>;
+  /** Nombre y teléfono desde la página de cuenta (SPEC 20). */
+  updateContact(userId: string, contact: { name: string; phone: string }): Promise<void>;
+  /** Cambia el correo y lo deja verificado: solo se llama después de validar el código enviado al correo nuevo. */
+  updateEmail(userId: string, email: string): Promise<void>;
   /** La clienta más reciente con ese teléfono (comparando solo dígitos), para no duplicarla en una reserva manual. */
   findClientByPhone(phone: string): Promise<User | null>;
 }

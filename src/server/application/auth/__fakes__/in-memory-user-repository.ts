@@ -38,9 +38,14 @@ export class InMemoryUserRepository implements UserRepository {
     if (user) this.usersById.set(userId, { ...user, phone, updatedAt: new Date() });
   }
 
-  async updateProfile(userId: string, profile: { name: string; phone: string; passwordHash: string }): Promise<void> {
+  async updateContact(userId: string, contact: { name: string; phone: string }): Promise<void> {
     const user = this.usersById.get(userId);
-    if (user) this.usersById.set(userId, { ...user, ...profile, updatedAt: new Date() });
+    if (user) this.usersById.set(userId, { ...user, ...contact, updatedAt: new Date() });
+  }
+
+  async updateEmail(userId: string, email: string): Promise<void> {
+    const user = this.usersById.get(userId);
+    if (user) this.usersById.set(userId, { ...user, email, emailVerifiedAt: new Date(), updatedAt: new Date() });
   }
 
   async findClientByPhone(phone: string): Promise<User | null> {

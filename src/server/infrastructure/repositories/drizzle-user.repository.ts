@@ -55,11 +55,16 @@ export class DrizzleUserRepository implements UserRepository {
     await db.update(users).set({ phone, updatedAt: new Date() }).where(eq(users.id, userId));
   }
 
-  async updateProfile(userId: string, profile: { name: string; phone: string; passwordHash: string }): Promise<void> {
+  async updateContact(userId: string, contact: { name: string; phone: string }): Promise<void> {
     await db
       .update(users)
-      .set({ ...profile, updatedAt: new Date() })
+      .set({ ...contact, updatedAt: new Date() })
       .where(eq(users.id, userId));
+  }
+
+  async updateEmail(userId: string, email: string): Promise<void> {
+    const now = new Date();
+    await db.update(users).set({ email, emailVerifiedAt: now, updatedAt: now }).where(eq(users.id, userId));
   }
 
   async findClientByPhone(phone: string): Promise<User | null> {

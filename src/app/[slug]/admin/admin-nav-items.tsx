@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CalendarClock, CalendarRange, Images, LayoutDashboard, Palette, Sparkles, Star, Tag, Users } from "lucide-react";
+import { CalendarClock, CalendarRange, Images, LayoutDashboard, Palette, Sparkles, Star, Tag, UserRound, Users } from "lucide-react";
 import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 
 export type AdminNavItem = {
@@ -49,5 +49,6 @@ export function getAdminNavItems(
       badge: pendingReviewsCount > 0 ? pendingReviewsCount : undefined,
     },
     { href: `${base}/marca`, label: "Marca", icon: <Palette />, exact: false },
+    { href: `${base}/cuenta`, label: "Mi cuenta", icon: <UserRound />, exact: false },
   ];
 }

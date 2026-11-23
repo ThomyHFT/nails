@@ -119,6 +119,10 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
           <Display as="h1">Mis reservas</Display>
           <Caption>
             Sesión iniciada como <strong className="font-medium text-foreground">{session.user.email}</strong>
+            {" · "}
+            <a href={`/${slug}/cuenta/perfil`} className="font-medium text-foreground underline underline-offset-4">
+              Mi perfil
+            </a>
           </Caption>
           {deadlineHours > 0 && (
             <Caption>Puedes cancelar o reagendar en línea hasta {deadlineHours} horas antes de tu cita.</Caption>
