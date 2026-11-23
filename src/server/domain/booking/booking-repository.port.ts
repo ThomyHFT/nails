@@ -54,6 +54,8 @@ export interface BookingRepository {
   listActiveByProfessionalInRange(professionalId: string, rangeStart: Date, rangeEnd: Date): Promise<Booking[]>;
   listByProfessional(professionalId: string, status?: BookingStatus): Promise<Booking[]>;
   listByClient(clientUserId: string): Promise<Booking[]>;
+  /** Historial de una clienta con un negocio (ficha de clienta, SPEC 20). */
+  listByProfessionalAndClient(professionalId: string, clientUserId: string): Promise<Booking[]>;
   /**
    * Cambia el estado solo si la reserva sigue en uno de `fromStatuses`
    * (escritura condicional). Devuelve `null` si no estaba en ninguno: otra

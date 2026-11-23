@@ -76,6 +76,10 @@ export class InMemoryBookingRepository implements BookingRepository {
     );
   }
 
+  async listByProfessionalAndClient(professionalId: string, clientUserId: string): Promise<Booking[]> {
+    return this.bookings.filter((b) => b.professionalId === professionalId && b.clientUserId === clientUserId);
+  }
+
   async listByClient(clientUserId: string): Promise<Booking[]> {
     return this.bookings.filter((booking) => booking.clientUserId === clientUserId);
   }

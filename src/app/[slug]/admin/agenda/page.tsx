@@ -190,7 +190,7 @@ export default async function AgendaPage({
                   return (
                     <Link
                       key={booking.id}
-                      href={`/${slug}/admin/reservas`}
+                      href={`/${slug}/admin/reservas#${booking.id}`}
                       title={`${formatTime(start)}–${formatTime(end)} · ${serviceName.get(booking.serviceVariantId) ?? "Servicio"} · ${clientName.get(booking.clientUserId) ?? "Clienta"}${pending ? " · pendiente" : ""}`}
                       className={cn(
                         "absolute inset-x-1 overflow-hidden rounded-md border-l-4 px-2 py-1 text-xs leading-tight",

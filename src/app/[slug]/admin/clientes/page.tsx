@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { MessageCircle, Users } from "lucide-react";
@@ -71,7 +72,12 @@ export default async function ClientesAdminPage({ params }: { params: Promise<{ 
                 return (
                   <tr key={stat.clientUserId} className="border-b border-outline-variant last:border-0">
                     <td className="p-2">
-                      <div className="font-medium">{client?.name ?? "Clienta"}</div>
+                      <Link
+                        href={`/${slug}/admin/clientes/${stat.clientUserId}`}
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                      >
+                        {client?.name ?? "Clienta"}
+                      </Link>
                       {client?.email && !isPlaceholderEmail(client.email) && (
                         <Caption className="text-xs">{client.email}</Caption>
                       )}

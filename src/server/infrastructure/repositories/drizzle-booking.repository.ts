@@ -149,6 +149,15 @@ export class DrizzleBookingRepository implements BookingRepository {
     return rows.map(toDomain);
   }
 
+  async listByProfessionalAndClient(professionalId: string, clientUserId: string): Promise<Booking[]> {
+    const rows = await db
+      .select()
+      .from(bookings)
+      .where(and(eq(bookings.professionalId, professionalId), eq(bookings.clientUserId, clientUserId)))
+      .orderBy(desc(bookings.startsAt));
+    return rows.map(toDomain);
+  }
+
   async listByProfessional(professionalId: string, status?: BookingStatus): Promise<Booking[]> {
     const rows = await db
       .select()
