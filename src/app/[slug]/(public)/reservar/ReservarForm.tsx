@@ -148,6 +148,7 @@ export function ReservarForm({
   autoConfirm = false,
   depositClp = null,
   depositInfo = null,
+  initialDate,
 }: {
   slug: string;
   services: ServiceOption[];
@@ -160,6 +161,8 @@ export function ReservarForm({
   /** Abono configurado (SPEC 21); el de la reserva nunca supera su precio. */
   depositClp?: number | null;
   depositInfo?: DepositInfo | null;
+  /** Día preelegido (`?fecha=`), p. ej. desde el aviso de lista de espera (SPEC 21). */
+  initialDate?: string;
 }) {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
@@ -196,9 +199,13 @@ export function ReservarForm({
 
   const [design, setDesign] = useState<NailDesignerResult | null>(null);
 
-  const [date, setDate] = useState("");
-  const [calendarMonth, setCalendarMonth] = useState(currentMonth());
+  const [date, setDate] = useState(initialDate ?? "");
+  const [calendarMonth, setCalendarMonth] = useState(initialDate ? `${initialDate.slice(0, 7)}-01` : currentMonth());
   const [calendarDays, setCalendarDays] = useState<string[]>([]);
+  // Días con horario pero sin cupo: admiten lista de espera (SPEC 21).
+  const [calendarFullDays, setCalendarFullDays] = useState<string[]>([]);
+  const [waitlistStatus, setWaitlistStatus] = useState<{ date: string; message: string; ok: boolean } | null>(null);
+  const [isJoiningWaitlist, setIsJoiningWaitlist] = useState(false);
   // Empieza en `true`: el useEffect que carga el mes siempre dispara al
   // entrar al paso de horario, y arrancar en `false` dejaba una fracción de
   // segundo con el grid vacío mostrando "sin cupo" antes de que el fetch
@@ -276,6 +283,7 @@ export function ReservarForm({
       );
       const data = await response.json();
       setCalendarDays(data.days ?? []);
+      setCalendarFullDays(data.fullDays ?? []);
     } finally {
       setIsLoadingCalendarDays(false);
     }
@@ -288,8 +296,35 @@ export function ReservarForm({
     if (step !== "schedule") return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga async (fetch + finally), no setState síncrono
     void loadCalendarDays(calendarMonth);
+    // Día que llegó preelegido: sus horarios se cargan al entrar al paso.
+    if (date && slots.length === 0) void loadSlots(date);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, calendarMonth, variantId]);
+
+  async function joinWaitlist() {
+    if (!date || !variantId || isJoiningWaitlist) return;
+    if (sessionStatus !== "authenticated") {
+      const back = `/${slug}/reservar?service=${serviceId}&variant=${variantId}&fecha=${date}`;
+      router.push(`/${slug}/login?next=${encodeURIComponent(back)}`);
+      return;
+    }
+    setIsJoiningWaitlist(true);
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, serviceVariantId: variantId, date }),
+      });
+      const data = await response.json().catch(() => ({}));
+      setWaitlistStatus(
+        response.ok
+          ? { date, ok: true, message: "Listo. Te escribimos por correo si se libera una hora ese día." }
+          : { date, ok: false, message: typeof data.error === "string" ? data.error : "No pudimos anotarte." },
+      );
+    } finally {
+      setIsJoiningWaitlist(false);
+    }
+  }
 
   async function confirmBooking() {
     if (!selectedSlot || !variantId) return;
@@ -613,9 +648,10 @@ export function ReservarForm({
                     const day = i + 1;
                     const cellDate = dateAt(calendarMonth, day);
                     const hasSlots = calendarDays.includes(cellDate);
+                    const isFull = calendarFullDays.includes(cellDate);
                     const isPast = cellDate < todayISO();
                     const isSelected = date === cellDate;
-                    const disabled = isPast || !hasSlots;
+                    const disabled = isPast || (!hasSlots && !isFull);
 
                     return (
                       <button
@@ -623,6 +659,7 @@ export function ReservarForm({
                         type="button"
                         disabled={disabled}
                         aria-pressed={isSelected}
+                        aria-label={isFull ? `${day}, sin horas libres` : undefined}
                         onClick={() => {
                           setDate(cellDate);
                           loadSlots(cellDate);
@@ -633,7 +670,9 @@ export function ReservarForm({
                             ? "bg-primary text-primary-foreground"
                             : disabled
                               ? "text-muted-foreground/40"
-                              : "text-foreground hover:bg-surface-2",
+                              : isFull
+                                ? "text-muted-foreground line-through hover:bg-surface-2"
+                                : "text-foreground hover:bg-surface-2",
                         )}
                       >
                         {day}
@@ -658,6 +697,20 @@ export function ReservarForm({
             {design ? ` considerando los ${design.quote.extraMinutes} minutos extra del diseño` : ""}. Puedes elegir
             otro día{design ? " o volver a editar el diseño" : ""}.
           </InfoNote>
+        )}
+
+        {!isLoadingSlots && date && slots.length === 0 && calendarFullDays.includes(date) && (
+          <div className="flex flex-col items-start gap-2">
+            {waitlistStatus?.date === date ? (
+              <p role="status" className={cn("text-sm", waitlistStatus.ok ? "text-foreground" : "text-destructive")}>
+                {waitlistStatus.message}
+              </p>
+            ) : (
+              <BrandButton variant="outline" size="sm" disabled={isJoiningWaitlist} onClick={joinWaitlist}>
+                {isJoiningWaitlist ? "Anotándote…" : "Avisarme si se libera una hora"}
+              </BrandButton>
+            )}
+          </div>
         )}
 
         {slots.length > 0 && (

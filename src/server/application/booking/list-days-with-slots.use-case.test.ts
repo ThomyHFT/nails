@@ -89,6 +89,10 @@ describe("ListDaysWithSlotsUseCase", () => {
     const days = await useCase.execute({ professionalId: PROFESSIONAL_ID, timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
 
     expect(days).toEqual(["2026-08-03", "2026-08-10", "2026-08-24", "2026-08-31"]);
+
+    // SPEC 21: el lunes ocupado es un día completo (admite lista de espera); los martes, cerrados, no.
+    const detailed = await useCase.executeDetailed({ professionalId: PROFESSIONAL_ID, timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
+    expect(detailed.fullDays).toEqual(["2026-08-17"]);
   });
 
   it("agrees day by day with the single-day slot calculation", async () => {

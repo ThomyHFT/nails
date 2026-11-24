@@ -13,10 +13,11 @@ export default async function ReservarPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ service?: string; variant?: string }>;
+  searchParams: Promise<{ service?: string; variant?: string; fecha?: string }>;
 }) {
   const { slug } = await params;
-  const { service: preselectedServiceId, variant: preselectedVariantId } = await searchParams;
+  const { service: preselectedServiceId, variant: preselectedVariantId, fecha } = await searchParams;
+  const initialDate = fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : undefined;
 
   const useCase = new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository());
   const professional = await useCase.execute(slug);
@@ -71,6 +72,7 @@ export default async function ReservarPage({
       autoConfirm={professional.bookingPolicy.autoConfirm}
       depositClp={isCompleteBankDetails(professional.commerce.bankDetails) ? professional.commerce.depositClp : null}
       depositInfo={depositInfoFor(professional)}
+      initialDate={initialDate}
     />
   );
 }

@@ -34,6 +34,14 @@ export class ListDaysWithSlotsUseCase {
   ) {}
 
   async execute(input: ListDaysWithSlotsInput): Promise<string[]> {
+    return (await this.executeDetailed(input)).days;
+  }
+
+  /**
+   * Además de los días con cupo, los días completos (SPEC 21): la profesional
+   * atiende pero las reservas ocupan todo. Son los que admiten lista de espera.
+   */
+  async executeDetailed(input: ListDaysWithSlotsInput): Promise<{ days: string[]; fullDays: string[] }> {
     const { professionalId, timezone, bufferMinutes, month, durationMinutes } = input;
     const now = input.now ?? new Date();
 
@@ -55,16 +63,17 @@ export class ListDaysWithSlotsUseCase {
     // Sin reglas ni horarios extra el mes no tiene nada abierto: no hace falta
     // recorrer los días.
     if (rules.length === 0 && !exceptions.some((exception) => exception.kind === "extra")) {
-      return [];
+      return { days: [], fullDays: [] };
     }
 
     const days: string[] = [];
+    const fullDays: string[] = [];
 
     for (let day = 1; day <= total; day++) {
       const date = dateOf(day);
       const { start, end } = dayRangeUtc(date, timezone);
 
-      const slots = computeDaySlots({
+      const dayInput = {
         rules,
         exceptions: exceptions.filter((exception) => exception.date === date),
         // El mismo criterio de cruce que usa la consulta por día.
@@ -75,11 +84,15 @@ export class ListDaysWithSlotsUseCase {
         durationMinutes,
         now,
         policy: input.policy,
-      });
+      };
+      const slots = computeDaySlots(dayInput);
 
       if (slots.length > 0) days.push(date);
+      else if (dayInput.bookings.length > 0 && computeDaySlots({ ...dayInput, bookings: [] }).length > 0) {
+        fullDays.push(date);
+      }
     }
 
-    return days;
+    return { days, fullDays };
   }
 }

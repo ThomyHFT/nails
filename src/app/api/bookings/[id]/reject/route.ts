@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { notifyWaitlistOfFreedSlot } from "@/app/api/bookings/_shared/notify-waitlist";
 import { auth } from "@/auth";
 import { CancelBookingByProfessionalUseCase } from "@/server/application/booking/cancel-booking.use-case";
 import { BookingInvalidStateError, BookingNotFoundError, BookingNotOwnedError } from "@/server/application/booking/booking-guard-errors";
@@ -61,6 +62,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     } catch {
       // Un fallo de Google Calendar nunca debe cambiar la respuesta de rechazar la reserva.
     }
+
+    // SPEC 21: la hora quedó libre; avisa a quien esperaba ese día.
+    await notifyWaitlistOfFreedSlot(booking);
 
     return NextResponse.json({ booking });
   } catch (err) {

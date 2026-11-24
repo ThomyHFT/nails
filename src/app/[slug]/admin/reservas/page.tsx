@@ -9,6 +9,8 @@ import { serviceVariants, services } from "@/server/infrastructure/db/schema/ser
 import { users } from "@/server/infrastructure/db/schema/users";
 import { reviews } from "@/server/infrastructure/db/schema/content";
 import { siteUrl } from "@/app/_lib/site-url";
+import { DrizzleWaitlistRepository } from "@/server/infrastructure/repositories/drizzle-waitlist.repository";
+import { localDateIn } from "@/server/domain/waitlist/waitlist";
 import type { Booking, BookingStatus } from "@/server/domain/booking/booking.entity";
 import { BookingActions } from "@/app/[slug]/admin/reservas/BookingActions";
 import { ManualBookingForm } from "@/app/[slug]/admin/reservas/ManualBookingForm";
@@ -70,10 +72,15 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
   }
 
   const bookingRepository = new DrizzleBookingRepository();
-  const bookings = await bookingRepository.listByProfessional(professional.id);
+  const [bookings, waitlist] = await Promise.all([
+    bookingRepository.listByProfessional(professional.id),
+    new DrizzleWaitlistRepository().listByProfessional(professional.id, localDateIn(new Date(), professional.timezone)),
+  ]);
 
-  const clientIds = Array.from(new Set(bookings.map((b) => b.clientUserId)));
-  const variantIds = Array.from(new Set(bookings.map((b) => b.serviceVariantId)));
+  const clientIds = Array.from(new Set([...bookings.map((b) => b.clientUserId), ...waitlist.map((w) => w.clientUserId)]));
+  const variantIds = Array.from(
+    new Set([...bookings.map((b) => b.serviceVariantId), ...waitlist.map((w) => w.serviceVariantId)]),
+  );
   const designIds = Array.from(new Set(bookings.map((b) => b.designId).filter((id): id is string => id !== null)));
   const completedIds = bookings.filter((b) => b.status === "completed").map((b) => b.id);
 
@@ -103,7 +110,7 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
   const designById = new Map(designRows.map((d) => [d.id, d]));
 
   const strikesByClient = new Map<string, number>();
-  for (const clientId of clientIds) {
+  for (const clientId of new Set(bookings.map((b) => b.clientUserId))) {
     strikesByClient.set(clientId, await bookingRepository.countClientStrikes(professional.id, clientId));
   }
 
@@ -120,7 +127,9 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
           label: `${service.name} · ${variant.label} · $${variant.priceClp.toLocaleString("es-CL")} · ${variant.durationMinutes} min`,
         })),
     );
+  const bookingClientIds = new Set(bookings.map((b) => b.clientUserId));
   const clientOptions = clientRows
+    .filter((client) => bookingClientIds.has(client.id))
     .map((client) => ({ id: client.id, name: client.name, phone: client.phone }))
     .sort((a, b) => a.name.localeCompare(b.name, "es"));
 
@@ -146,6 +155,52 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
       />
 
       <ManualBookingForm variants={variantOptions} clients={clientOptions} />
+
+      {waitlist.length > 0 && (
+        <Panel padding="sm" className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <Overline>Lista de espera</Overline>
+            <Chip>{waitlist.length}</Chip>
+          </div>
+          <Caption>
+            Clientas que quieren hora un día completo. Les avisamos por correo cuando se libera una; también puedes
+            escribirles.
+          </Caption>
+          <ul className="flex flex-col divide-y divide-outline-variant">
+            {waitlist.map((entry) => {
+              const client = clientById.get(entry.clientUserId);
+              const variant = variantById.get(entry.serviceVariantId);
+              return (
+                <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <span>
+                    <strong className="font-medium">{client?.name ?? "Clienta"}</strong>
+                    {" · "}
+                    {new Date(`${entry.date}T12:00:00Z`).toLocaleDateString("es-CL", {
+                      timeZone: "UTC",
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                    })}
+                    {variant && <span className="text-muted-foreground"> · {variant.serviceName}</span>}
+                    {entry.notifiedAt && <span className="text-muted-foreground"> · avisada</span>}
+                  </span>
+                  {client?.phone && (
+                    <a
+                      href={whatsAppUrl(client.phone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-sm text-xs font-semibold text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <MessageCircle className="size-3.5" aria-hidden />
+                      WhatsApp
+                    </a>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Panel>
+      )}
 
       {bookings.length === 0 && (
         <EmptyState

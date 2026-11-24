@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { notifyWaitlistOfFreedSlot } from "@/app/api/bookings/_shared/notify-waitlist";
 import { z } from "zod";
 import { auth } from "@/auth";
 import {
@@ -127,6 +128,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     } catch {
       // Un fallo de Google Calendar nunca debe cambiar la respuesta de reagendar.
     }
+
+    // SPEC 21: la hora anterior quedó libre.
+    await notifyWaitlistOfFreedSlot({ ...booking, startsAt: previousStartsAt });
 
     return NextResponse.json({ booking });
   } catch (err) {

@@ -234,3 +234,64 @@ export function buildReminderEmail(input: ReminderEmailInput): EmailTemplate {
     html: renderShell(input, "Recordatorio de tu hora", body),
   };
 }
+
+function renderButton(href: string, label: string, color: string): string {
+  return `
+    <p style="margin-top:24px;">
+      <a href="${href}" style="display:inline-block;background:${color};color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;">
+        ${label}
+      </a>
+    </p>
+  `;
+}
+
+function formatLocalDate(date: string): string {
+  // Mediodía UTC: el día no se corre al formatear en cualquier zona del continente.
+  return new Intl.DateTimeFormat("es-CL", { timeZone: "UTC", dateStyle: "full" }).format(new Date(`${date}T12:00:00Z`));
+}
+
+export interface WaitlistEmailInput extends EmailTemplateInput {
+  /** Día que se liberó, `YYYY-MM-DD` local. */
+  date: string;
+  serviceName: string | null;
+  bookUrl: string;
+}
+
+/** Aviso a una clienta en lista de espera: se liberó una hora ese día (SPEC 21). */
+export function buildWaitlistEmail(input: WaitlistEmailInput): EmailTemplate {
+  const primaryColor = safeColor(input.branding.primaryColorHex, "#111111");
+  const href = safeUrl(input.bookUrl) ?? "";
+  const body = `
+    <p>Se liberó una hora el <strong>${formatLocalDate(input.date)}</strong> en
+    <strong>${escapeHtml(input.professionalName)}</strong>${input.serviceName ? ` para ${escapeHtml(input.serviceName)}` : ""}.</p>
+    <p>Avisamos a todas las que estaban esperando ese día: la primera que reserva se la queda.</p>
+    ${renderButton(href, "Reservar ahora", primaryColor)}
+  `.trim();
+  return {
+    subject: `Se liberó una hora con ${input.professionalName}`,
+    html: renderShell(input, "Se liberó una hora", body),
+  };
+}
+
+export interface RebookEmailInput extends EmailTemplateInput {
+  clientName: string;
+  serviceName: string | null;
+  bookUrl: string;
+}
+
+/** "Vuelve a reservar" (SPEC 21), N días después de una hora completada. */
+export function buildRebookEmail(input: RebookEmailInput): EmailTemplate {
+  const primaryColor = safeColor(input.branding.primaryColorHex, "#111111");
+  const href = safeUrl(input.bookUrl) ?? "";
+  const firstName = input.clientName.split(" ")[0] ?? "";
+  const body = `
+    <p>Hola${firstName ? ` ${escapeHtml(firstName)}` : ""}, ya pasó un tiempo desde tu última visita a
+    <strong>${escapeHtml(input.professionalName)}</strong>${input.serviceName ? ` (${escapeHtml(input.serviceName)})` : ""}.</p>
+    <p>¿Agendamos la próxima? Elige el día y la hora que te acomoden.</p>
+    ${renderButton(href, "Reservar mi hora", primaryColor)}
+  `.trim();
+  return {
+    subject: `¿Agendamos tu próxima hora con ${input.professionalName}?`,
+    html: renderShell(input, "Te esperamos de vuelta", body),
+  };
+}

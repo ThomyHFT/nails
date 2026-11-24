@@ -31,6 +31,9 @@ import { CancelBookingButton } from "@/app/[slug]/(public)/cuenta/CancelBookingB
 import { SignOutButton } from "@/app/[slug]/(public)/cuenta/SignOutButton";
 import { DepositInstructions } from "@/app/[slug]/(public)/_deposit/DepositInstructions";
 import { depositInfoFor } from "@/app/[slug]/(public)/_deposit/deposit-info";
+import { LeaveWaitlistButton } from "@/app/[slug]/(public)/cuenta/LeaveWaitlistButton";
+import { DrizzleWaitlistRepository } from "@/server/infrastructure/repositories/drizzle-waitlist.repository";
+import { localDateIn } from "@/server/domain/waitlist/waitlist";
 
 const CANCELLABLE_STATUSES = new Set<BookingStatus>(["pending", "confirmed"]);
 
@@ -97,6 +100,14 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
     professional && isPhoneVisible(professional) && professional.phone ? whatsAppLink(professional.phone) : null;
   const now = new Date();
   const depositInfo = professional ? depositInfoFor(professional) : null;
+  // SPEC 21: los días en que espera que se libere una hora.
+  const waitlist = professional
+    ? await new DrizzleWaitlistRepository().listByClient(
+        professional.id,
+        session.user.id,
+        localDateIn(now, professional.timezone),
+      )
+    : [];
 
   const variantIds = Array.from(new Set(bookings.map((b) => b.serviceVariantId)));
   const variantRows = variantIds.length
@@ -231,6 +242,27 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
               );
             })}
           </div>
+        )}
+
+        {waitlist.length > 0 && (
+          <Panel padding="sm" className="flex flex-col gap-3">
+            <Title>Lista de espera</Title>
+            <Caption>Te avisamos por correo si se libera una hora esos días.</Caption>
+            <ul className="flex flex-col divide-y divide-outline-variant">
+              {waitlist.map((entry) => (
+                <li key={entry.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span>
+                    {new Date(`${entry.date}T12:00:00Z`).toLocaleDateString("es-CL", {
+                      timeZone: "UTC",
+                      dateStyle: "full",
+                    })}
+                    {entry.notifiedAt && <span className="text-muted-foreground"> · ya te avisamos</span>}
+                  </span>
+                  <LeaveWaitlistButton entryId={entry.id} />
+                </li>
+              ))}
+            </ul>
+          </Panel>
         )}
 
         {/* Discreta y al final: es una acción de servicio, no debería

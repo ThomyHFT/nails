@@ -54,7 +54,7 @@ export async function GET(request: Request) {
   }
 
   const useCase = new ListDaysWithSlotsUseCase(new DrizzleAvailabilityRepository(), new DrizzleBookingRepository());
-  const days = await useCase.execute({
+  const { days, fullDays } = await useCase.executeDetailed({
     professionalId: professional.id,
     timezone: professional.timezone,
     bufferMinutes: professional.bufferMinutes,
@@ -63,5 +63,5 @@ export async function GET(request: Request) {
     policy: professional.bookingPolicy,
   });
 
-  return NextResponse.json({ days });
+  return NextResponse.json({ days, fullDays });
 }
