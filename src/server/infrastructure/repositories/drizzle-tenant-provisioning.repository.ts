@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { inviteCodes } from "@/server/infrastructure/db/schema/invites";
 import { professionals, users } from "@/server/infrastructure/db/schema/users";
+import { staffMembers } from "@/server/infrastructure/db/schema/staff";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { designElements } from "@/server/infrastructure/db/schema/designs";
 import { defaultDesignElements, defaultServices } from "@/server/domain/tenant/default-catalog";
@@ -66,6 +67,9 @@ export class DrizzleTenantProvisioningRepository implements TenantProvisioningRe
           trialEndsAt: input.professional.trialEndsAt,
         })
         .returning(),
+      // SPEC 22: todo negocio nace con su integrante dueña; el horario y las
+      // reservas cuelgan de ella.
+      db.insert(staffMembers).values({ professionalId, userId, name: input.owner.name, isOwner: true }),
       // Sin diseñador (verticalModules) no hay catálogo que sembrar: se omite
       // la inserción entera en vez de insertar una lista vacía.
       ...(catalogElements.length > 0 ? [db.insert(designElements).values(catalogElements)] : []),

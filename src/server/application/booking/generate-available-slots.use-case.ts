@@ -18,6 +18,8 @@ export interface AvailableSlot {
 
 export interface GenerateAvailableSlotsInput {
   professionalId: string;
+  /** De quién es la agenda (SPEC 22): horario, bloqueos y reservas son por integrante. */
+  staffId: string;
   timezone: string;
   bufferMinutes: number;
   date: string;
@@ -123,14 +125,14 @@ export class GenerateAvailableSlotsUseCase {
   ) {}
 
   async execute(input: GenerateAvailableSlotsInput): Promise<AvailableSlot[]> {
-    const { professionalId, timezone, bufferMinutes, date, durationMinutes, policy } = input;
+    const { staffId, timezone, bufferMinutes, date, durationMinutes, policy } = input;
     const now = input.now ?? new Date();
     const effectiveMonth = `${date.slice(0, 7)}-01`;
 
     const [monthRules, weeklyRules, exceptions] = await Promise.all([
-      this.availabilityRepository.listRulesByProfessionalAndMonth(professionalId, effectiveMonth),
-      this.availabilityRepository.listRulesByProfessionalAndMonth(professionalId, null),
-      this.availabilityRepository.listExceptionsByProfessionalAndDate(professionalId, date),
+      this.availabilityRepository.listRules(staffId, effectiveMonth),
+      this.availabilityRepository.listRules(staffId, null),
+      this.availabilityRepository.listExceptionsByDate(staffId, date),
     ]);
     const rules = resolveRulesForMonth(monthRules, weeklyRules);
 
@@ -141,7 +143,7 @@ export class GenerateAvailableSlotsUseCase {
     }
 
     const { start, end } = dayRangeUtc(date, timezone);
-    const bookings = (await this.bookingRepository.listActiveByProfessionalInRange(professionalId, start, end)).filter(
+    const bookings = (await this.bookingRepository.listActiveByStaffInRange(staffId, start, end)).filter(
       (booking) => booking.id !== input.excludeBookingId,
     );
 

@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { userRoleEnum, verticalEnum } from "@/server/infrastructure/db/schema/enums";
+import { planEnum, userRoleEnum, verticalEnum } from "@/server/infrastructure/db/schema/enums";
 
 export const users = pgTable("users", {
   id: uuid("id")
@@ -92,6 +92,9 @@ export const professionals = pgTable("professionals", {
   // "Vuelve a reservar" a los N días de una completada (SPEC 21). NULL = apagado.
   rebookAfterDays: integer("rebook_after_days"),
   giftCardsEnabled: boolean("gift_cards_enabled").notNull().default(false),
+  // Plan Salón (SPEC 22): cuántas integrantes activas puede tener, contando a la dueña.
+  plan: planEnum("plan").notNull().default("solo"),
+  staffLimit: integer("staff_limit").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

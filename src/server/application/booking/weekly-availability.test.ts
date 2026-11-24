@@ -6,7 +6,7 @@ import { ListDaysWithSlotsUseCase } from "@/server/application/booking/list-days
 
 const PROFESSIONAL_ID = "prof-1";
 const NOW = new Date("2026-08-01T00:00:00Z");
-const base = { professionalId: PROFESSIONAL_ID, timezone: "UTC", bufferMinutes: 0, durationMinutes: 60, now: NOW };
+const base = { professionalId: PROFESSIONAL_ID, staffId: "staff-1", timezone: "UTC", bufferMinutes: 0, durationMinutes: 60, now: NOW };
 
 function make() {
   const availability = new InMemoryAvailabilityRepository();

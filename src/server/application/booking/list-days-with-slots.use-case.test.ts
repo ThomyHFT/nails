@@ -23,6 +23,7 @@ describe("ListDaysWithSlotsUseCase", () => {
     const days = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
       timezone: "UTC",
+      staffId: "staff-1",
       bufferMinutes: 0,
       month: MONTH,
       durationMinutes: 60,
@@ -45,6 +46,7 @@ describe("ListDaysWithSlotsUseCase", () => {
     const days = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
       timezone: "UTC",
+      staffId: "staff-1",
       bufferMinutes: 0,
       month: MONTH,
       durationMinutes: 60,
@@ -59,7 +61,7 @@ describe("ListDaysWithSlotsUseCase", () => {
     await availabilityRepository.createRule({ professionalId: PROFESSIONAL_ID, weekday: 1, startTime: "09:00", endTime: "12:00", effectiveMonth: MONTH });
     await availabilityRepository.createException({ professionalId: PROFESSIONAL_ID, date: "2026-08-10", kind: "blocked" });
 
-    const days = await useCase.execute({ professionalId: PROFESSIONAL_ID, timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
+    const days = await useCase.execute({ professionalId: PROFESSIONAL_ID, staffId: "staff-1", timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
 
     expect(days).toEqual(["2026-08-03", "2026-08-17", "2026-08-24", "2026-08-31"]);
   });
@@ -68,7 +70,7 @@ describe("ListDaysWithSlotsUseCase", () => {
     const { useCase, availabilityRepository } = makeUseCase();
     await availabilityRepository.createException({ professionalId: PROFESSIONAL_ID, date: "2026-08-15", kind: "extra", startTime: "10:00", endTime: "12:00" });
 
-    const days = await useCase.execute({ professionalId: PROFESSIONAL_ID, timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
+    const days = await useCase.execute({ professionalId: PROFESSIONAL_ID, staffId: "staff-1", timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
 
     expect(days).toEqual(["2026-08-15"]);
   });
@@ -86,12 +88,12 @@ describe("ListDaysWithSlotsUseCase", () => {
       durationMinutes: 60,
     });
 
-    const days = await useCase.execute({ professionalId: PROFESSIONAL_ID, timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
+    const days = await useCase.execute({ professionalId: PROFESSIONAL_ID, staffId: "staff-1", timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
 
     expect(days).toEqual(["2026-08-03", "2026-08-10", "2026-08-24", "2026-08-31"]);
 
     // SPEC 21: el lunes ocupado es un día completo (admite lista de espera); los martes, cerrados, no.
-    const detailed = await useCase.executeDetailed({ professionalId: PROFESSIONAL_ID, timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
+    const detailed = await useCase.executeDetailed({ professionalId: PROFESSIONAL_ID, staffId: "staff-1", timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
     expect(detailed.fullDays).toEqual(["2026-08-17"]);
   });
 
@@ -110,7 +112,7 @@ describe("ListDaysWithSlotsUseCase", () => {
       priceClp: 15_000,
       durationMinutes: 60,
     });
-    const input = { professionalId: PROFESSIONAL_ID, timezone: "America/Santiago", bufferMinutes: 15, durationMinutes: 60, now: NOW };
+    const input = { professionalId: PROFESSIONAL_ID, staffId: "staff-1", timezone: "America/Santiago", bufferMinutes: 15, durationMinutes: 60, now: NOW };
 
     const days = await useCase.execute({ ...input, month: MONTH });
 
@@ -128,13 +130,13 @@ describe("ListDaysWithSlotsUseCase", () => {
     const { useCase, availabilityRepository, bookingRepository } = makeUseCase();
     await availabilityRepository.createRule({ professionalId: PROFESSIONAL_ID, weekday: 1, startTime: "09:00", endTime: "12:00", effectiveMonth: MONTH });
     const spies = [
-      vi.spyOn(availabilityRepository, "listRulesByProfessionalAndMonth"),
-      vi.spyOn(availabilityRepository, "listExceptionsByProfessionalInMonth"),
-      vi.spyOn(availabilityRepository, "listExceptionsByProfessionalAndDate"),
-      vi.spyOn(bookingRepository, "listActiveByProfessionalInRange"),
+      vi.spyOn(availabilityRepository, "listRules"),
+      vi.spyOn(availabilityRepository, "listExceptionsInMonth"),
+      vi.spyOn(availabilityRepository, "listExceptionsByDate"),
+      vi.spyOn(bookingRepository, "listActiveByStaffInRange"),
     ];
 
-    await useCase.execute({ professionalId: PROFESSIONAL_ID, timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
+    await useCase.execute({ professionalId: PROFESSIONAL_ID, staffId: "staff-1", timezone: "UTC", bufferMinutes: 0, month: MONTH, durationMinutes: 60, now: NOW });
 
     // Reglas del mes + horario semanal + excepciones del mes + reservas del rango.
     expect(spies.reduce((total, spy) => total + spy.mock.calls.length, 0)).toBe(4);

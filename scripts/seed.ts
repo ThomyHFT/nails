@@ -1,9 +1,10 @@
 import "dotenv/config";
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { professionals, users } from "@/server/infrastructure/db/schema/users";
+import { staffMembers } from "@/server/infrastructure/db/schema/staff";
 import { services, serviceVariants } from "@/server/infrastructure/db/schema/services";
 import { designElements } from "@/server/infrastructure/db/schema/designs";
 import { bookings } from "@/server/infrastructure/db/schema/bookings";
@@ -104,6 +105,16 @@ async function seedReviews(professionalId: string) {
     return;
   }
 
+  const [ownerStaff] = await db
+    .select({ id: staffMembers.id })
+    .from(staffMembers)
+    .where(and(eq(staffMembers.professionalId, professionalId), eq(staffMembers.isOwner, true)))
+    .limit(1);
+  if (!ownerStaff) {
+    console.log("El tenant no tiene integrante dueña (¿falta migrar 0026?). Opiniones omitidas.");
+    return;
+  }
+
   const days = ["2026-07-01", "2026-07-08", "2026-07-15"];
   const insertedBookings = await db
     .insert(bookings)
@@ -111,6 +122,7 @@ async function seedReviews(professionalId: string) {
       days.map((day) => ({
         professionalId,
         clientUserId: client.id,
+        staffId: ownerStaff.id,
         serviceVariantId: variant.id,
         startsAt: new Date(`${day}T14:00:00Z`),
         endsAt: new Date(`${day}T14:45:00Z`),
@@ -196,6 +208,9 @@ async function main() {
       timezone: "America/Santiago",
     })
     .returning();
+
+  // SPEC 22: la integrante dueña, de la que cuelgan horario y reservas.
+  await db.insert(staffMembers).values({ professionalId: professional.id, userId: owner.id, name: "Karla", isOwner: true });
 
   const [manicure, acrilicas, retiro] = await db
     .insert(services)

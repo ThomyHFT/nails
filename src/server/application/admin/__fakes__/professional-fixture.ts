@@ -23,6 +23,8 @@ export function makeProfessional(overrides: Partial<Professional> = {}): Profess
     bufferMinutes: 0,
     bookingPolicy: DEFAULT_BOOKING_POLICY,
     commerce: DEFAULT_PROFESSIONAL_COMMERCE,
+    plan: "solo",
+    staffLimit: 1,
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-01T00:00:00Z"),
     ...overrides,

@@ -3,6 +3,7 @@ import type { AvailabilityException, AvailabilityExceptionKind } from "@/server/
 
 export interface CreateAvailabilityExceptionInput {
   professionalId: string;
+  staffId: string;
   date: string;
   kind: AvailabilityExceptionKind;
   startTime?: string | null;

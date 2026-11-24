@@ -1,6 +1,7 @@
 import type { BookingPolicy } from "@/server/domain/professional/booking-policy";
 import type { Vertical } from "@/server/domain/tenant/vertical";
 import type { ProfessionalCommerce } from "@/server/domain/professional/commerce";
+import type { Plan } from "@/server/domain/staff/staff-member";
 
 export interface Professional {
   id: string;
@@ -26,6 +27,9 @@ export interface Professional {
   bookingPolicy: BookingPolicy;
   /** Abono, vuelve a reservar y gift cards (SPEC 21). */
   commerce: ProfessionalCommerce;
+  /** Plan Salón (SPEC 22): integrantes activas permitidas, contando a la dueña. */
+  plan: Plan;
+  staffLimit: number;
   createdAt: Date;
   updatedAt: Date;
 }

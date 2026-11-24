@@ -51,6 +51,8 @@ async function setup({ withEmailSender = true }: { withEmailSender?: boolean } =
     bufferMinutes: 15,
     bookingPolicy: DEFAULT_BOOKING_POLICY,
     commerce: DEFAULT_PROFESSIONAL_COMMERCE,
+    plan: "solo",
+    staffLimit: 1,
     createdAt: new Date(),
     updatedAt: new Date(),
   });

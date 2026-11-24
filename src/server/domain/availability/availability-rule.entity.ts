@@ -1,6 +1,8 @@
 export interface AvailabilityRule {
   id: string;
   professionalId: string;
+  /** De quién es el horario (SPEC 22). */
+  staffId: string;
   weekday: number;
   startTime: string;
   endTime: string;

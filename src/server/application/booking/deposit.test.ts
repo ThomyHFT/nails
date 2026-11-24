@@ -40,6 +40,7 @@ async function setup(commerce: ProfessionalCommerce, autoConfirm = false, priceC
   });
   const booking = await new CreateBookingUseCase(availability, bookings, new InMemoryDesignRepository()).execute({
     professionalId: "prof-1",
+    staffIds: ["staff-1"],
     professionalVertical: "nails",
     timezone: "UTC",
     bufferMinutes: 0,

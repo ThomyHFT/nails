@@ -41,6 +41,7 @@ describe("CreateBookingUseCase", () => {
 
     const booking = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      staffIds: ["staff-1"],
       professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
@@ -64,6 +65,7 @@ describe("CreateBookingUseCase", () => {
 
     await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      staffIds: ["staff-1"],
       professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
@@ -79,6 +81,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        staffIds: ["staff-1"],
         professionalVertical: "nails",
         timezone: "UTC",
         bufferMinutes: 0,
@@ -102,6 +105,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        staffIds: ["staff-1"],
         professionalVertical: "nails",
         timezone: "UTC",
         bufferMinutes: 0,
@@ -123,6 +127,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        staffIds: ["staff-1"],
         professionalVertical: "nails",
         timezone: "UTC",
         bufferMinutes: 0,
@@ -144,6 +149,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        staffIds: ["staff-1"],
         professionalVertical: "nails",
         timezone: "UTC",
         bufferMinutes: 0,
@@ -198,6 +204,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        staffIds: ["staff-1"],
         professionalVertical: "nails",
         timezone: "UTC",
         bufferMinutes: 0,
@@ -214,6 +221,7 @@ describe("CreateBookingUseCase", () => {
 
     const booking = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      staffIds: ["staff-1"],
       professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
@@ -260,6 +268,7 @@ describe("CreateBookingUseCase", () => {
 
     const booking = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      staffIds: ["staff-1"],
       professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
@@ -309,6 +318,7 @@ describe("CreateBookingUseCase", () => {
 
     const booking = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      staffIds: ["staff-1"],
       professionalVertical: "nails",
       timezone: "UTC",
       bufferMinutes: 0,
@@ -345,6 +355,7 @@ describe("CreateBookingUseCase", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        staffIds: ["staff-1"],
         professionalVertical: "barbershop",
         timezone: "UTC",
         bufferMinutes: 0,

@@ -28,6 +28,12 @@ export class DesignerNotAvailableError extends Error {
 
 export interface CreateBookingInput {
   professionalId: string;
+  /**
+   * Quién puede atender, en orden de prioridad (SPEC 22). Una sola si la
+   * clienta eligió; todas las que hacen el servicio con "sin preferencia".
+   * La reserva queda con la primera libre en ese horario.
+   */
+  staffIds: string[];
   professionalVertical: Vertical;
   timezone: string;
   bufferMinutes: number;
@@ -72,32 +78,37 @@ export class CreateBookingUseCase {
     const totalDurationMinutes = input.durationMinutes + extraMinutes;
 
     const generateSlots = new GenerateAvailableSlotsUseCase(this.availabilityRepository, this.bookingRepository);
-    const availableSlots = await generateSlots.execute({
-      professionalId: input.professionalId,
-      timezone: input.timezone,
-      bufferMinutes: input.bufferMinutes,
-      date: input.date,
-      durationMinutes: totalDurationMinutes,
-      now: input.now,
-      policy: input.policy,
-    });
+    for (const staffId of input.staffIds) {
+      const availableSlots = await generateSlots.execute({
+        professionalId: input.professionalId,
+        staffId,
+        timezone: input.timezone,
+        bufferMinutes: input.bufferMinutes,
+        date: input.date,
+        durationMinutes: totalDurationMinutes,
+        now: input.now,
+        policy: input.policy,
+      });
 
-    const matchingSlot = availableSlots.find((slot) => slot.startsAt === input.startsAt);
-    if (!matchingSlot) {
-      throw new SlotNotAvailableError();
+      const matchingSlot = availableSlots.find((slot) => slot.startsAt === input.startsAt);
+      if (!matchingSlot) continue;
+
+      try {
+        return await this.persist(input, staffId, matchingSlot, totalDurationMinutes, extraPriceClp, extraMinutes);
+      } catch (err) {
+        // Otra reserva tomó el horario entre el cálculo de slots y el insert:
+        // con "sin preferencia" queda la siguiente integrante.
+        if (err instanceof BookingSlotTakenError) continue;
+        throw err;
+      }
     }
 
-    try {
-      return await this.persist(input, matchingSlot, totalDurationMinutes, extraPriceClp, extraMinutes);
-    } catch (err) {
-      // Otra reserva tomó el horario entre el cálculo de slots y el insert.
-      if (err instanceof BookingSlotTakenError) throw new SlotNotAvailableError();
-      throw err;
-    }
+    throw new SlotNotAvailableError();
   }
 
   private persist(
     input: CreateBookingInput,
+    staffId: string,
     matchingSlot: AvailableSlot,
     totalDurationMinutes: number,
     extraPriceClp: number,
@@ -113,6 +124,7 @@ export class CreateBookingUseCase {
       return this.bookingRepository.createWithDesign({
         professionalId: input.professionalId,
         clientUserId: input.clientUserId,
+        staffId,
         serviceVariantId: input.serviceVariantId,
         startsAt: new Date(matchingSlot.startsAt),
         endsAt: new Date(matchingSlot.endsAt),
@@ -133,6 +145,7 @@ export class CreateBookingUseCase {
     return this.bookingRepository.create({
       professionalId: input.professionalId,
       clientUserId: input.clientUserId,
+      staffId,
       serviceVariantId: input.serviceVariantId,
       startsAt: new Date(matchingSlot.startsAt),
       endsAt: new Date(matchingSlot.endsAt),

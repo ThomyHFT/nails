@@ -13,7 +13,11 @@ import { SlotNotAvailableError } from "@/server/application/booking/create-booki
 import { GenerateAvailableSlotsUseCase } from "@/server/application/booking/generate-available-slots.use-case";
 import { zonedDateTimeToUtc } from "@/server/application/booking/zoned-time";
 
-export type RescheduleActor = { kind: "client"; userId: string } | { kind: "professional"; professionalId: string };
+export type RescheduleActor =
+  | { kind: "client"; userId: string }
+  | { kind: "professional"; professionalId: string }
+  // Integrante del salón (SPEC 22): mueve sus propias reservas, con el mismo criterio que la dueña.
+  | { kind: "staff"; staffId: string };
 
 export interface RescheduleBookingInput {
   bookingId: string;
@@ -52,7 +56,9 @@ export class RescheduleBookingUseCase {
     const owns =
       input.actor.kind === "client"
         ? booking.clientUserId === input.actor.userId
-        : booking.professionalId === input.actor.professionalId;
+        : input.actor.kind === "staff"
+          ? booking.staffId === input.actor.staffId
+          : booking.professionalId === input.actor.professionalId;
     if (!owns) throw new BookingNotOwnedError();
     if (!canApplyBookingAction(booking.status, "reschedule")) throw new BookingInvalidStateError();
 
@@ -66,6 +72,7 @@ export class RescheduleBookingUseCase {
       await assertClientChangeAllowed(this.professionalRepository, booking, now);
       const slots = await new GenerateAvailableSlotsUseCase(this.availabilityRepository, this.bookingRepository).execute({
         professionalId: professional.id,
+        staffId: booking.staffId,
         timezone: professional.timezone,
         bufferMinutes: professional.bufferMinutes,
         date: input.date,

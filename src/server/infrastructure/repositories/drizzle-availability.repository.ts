@@ -21,6 +21,7 @@ function ruleToDomain(row: typeof availabilityRules.$inferSelect): AvailabilityR
   return {
     id: row.id,
     professionalId: row.professionalId,
+    staffId: row.staffId,
     weekday: row.weekday,
     startTime: toHourMinute(row.startTime),
     endTime: toHourMinute(row.endTime),
@@ -33,6 +34,7 @@ function exceptionToDomain(row: typeof availabilityExceptions.$inferSelect): Ava
   return {
     id: row.id,
     professionalId: row.professionalId,
+    staffId: row.staffId,
     date: row.date,
     kind: row.kind,
     startTime: toHourMinute(row.startTime),
@@ -55,16 +57,11 @@ function nextMonthStart(effectiveMonth: string): string {
 }
 
 export class DrizzleAvailabilityRepository implements AvailabilityRepository {
-  async listRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string | null): Promise<AvailabilityRule[]> {
+  async listRules(staffId: string, effectiveMonth: string | null): Promise<AvailabilityRule[]> {
     const rows = await db
       .select()
       .from(availabilityRules)
-      .where(
-        and(
-          eq(availabilityRules.professionalId, professionalId),
-          monthCondition(effectiveMonth),
-        ),
-      );
+      .where(and(eq(availabilityRules.staffId, staffId), monthCondition(effectiveMonth)));
     return rows.map(ruleToDomain);
   }
 
@@ -73,6 +70,7 @@ export class DrizzleAvailabilityRepository implements AvailabilityRepository {
       .insert(availabilityRules)
       .values({
         professionalId: rule.professionalId,
+        staffId: rule.staffId,
         weekday: rule.weekday,
         startTime: rule.startTime,
         endTime: rule.endTime,
@@ -88,35 +86,33 @@ export class DrizzleAvailabilityRepository implements AvailabilityRepository {
       .where(and(eq(availabilityRules.id, id), eq(availabilityRules.professionalId, professionalId)));
   }
 
-  async deleteRulesByProfessionalAndMonth(professionalId: string, effectiveMonth: string | null): Promise<void> {
+  async deleteRules(professionalId: string, staffId: string, effectiveMonth: string | null): Promise<void> {
     await db
       .delete(availabilityRules)
       .where(
         and(
           eq(availabilityRules.professionalId, professionalId),
+          eq(availabilityRules.staffId, staffId),
           monthCondition(effectiveMonth),
         ),
       );
   }
 
-  async listExceptionsByProfessionalAndDate(professionalId: string, date: string): Promise<AvailabilityException[]> {
+  async listExceptionsByDate(staffId: string, date: string): Promise<AvailabilityException[]> {
     const rows = await db
       .select()
       .from(availabilityExceptions)
-      .where(and(eq(availabilityExceptions.professionalId, professionalId), eq(availabilityExceptions.date, date)));
+      .where(and(eq(availabilityExceptions.staffId, staffId), eq(availabilityExceptions.date, date)));
     return rows.map(exceptionToDomain);
   }
 
-  async listExceptionsByProfessionalInMonth(
-    professionalId: string,
-    effectiveMonth: string,
-  ): Promise<AvailabilityException[]> {
+  async listExceptionsInMonth(staffId: string, effectiveMonth: string): Promise<AvailabilityException[]> {
     const rows = await db
       .select()
       .from(availabilityExceptions)
       .where(
         and(
-          eq(availabilityExceptions.professionalId, professionalId),
+          eq(availabilityExceptions.staffId, staffId),
           gte(availabilityExceptions.date, effectiveMonth),
           lt(availabilityExceptions.date, nextMonthStart(effectiveMonth)),
         ),
@@ -129,6 +125,7 @@ export class DrizzleAvailabilityRepository implements AvailabilityRepository {
       .insert(availabilityExceptions)
       .values({
         professionalId: exception.professionalId,
+        staffId: exception.staffId,
         date: exception.date,
         kind: exception.kind,
         startTime: exception.startTime ?? null,

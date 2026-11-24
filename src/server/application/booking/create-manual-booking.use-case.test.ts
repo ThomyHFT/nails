@@ -28,6 +28,7 @@ describe("CreateManualBookingUseCase (SPEC 18)", () => {
 
     const booking = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      staffId: "staff-1",
       serviceVariantId: variant.id,
       startsAt: STARTS_AT,
       client: { kind: "new", name: "Fernanda", phone: "+56 9 5555 1234" },
@@ -47,6 +48,7 @@ describe("CreateManualBookingUseCase (SPEC 18)", () => {
     const { useCase, variant } = await make();
     const first = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      staffId: "staff-1",
       serviceVariantId: variant.id,
       startsAt: STARTS_AT,
       client: { kind: "new", name: "Fernanda", phone: "+56 9 5555 1234" },
@@ -54,6 +56,7 @@ describe("CreateManualBookingUseCase (SPEC 18)", () => {
 
     const second = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
+      staffId: "staff-1",
       serviceVariantId: variant.id,
       startsAt: new Date("2026-12-17T13:00:00Z"),
       client: { kind: "new", name: "Feña", phone: "56955551234" },
@@ -69,6 +72,7 @@ describe("CreateManualBookingUseCase (SPEC 18)", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        staffId: "staff-1",
         serviceVariantId: variant.id,
         startsAt: STARTS_AT,
         client: { kind: "existing", userId: stranger.id },
@@ -83,6 +87,7 @@ describe("CreateManualBookingUseCase (SPEC 18)", () => {
     await expect(
       useCase.execute({
         professionalId: PROFESSIONAL_ID,
+        staffId: "staff-1",
         serviceVariantId: variant.id,
         startsAt: STARTS_AT,
         client: { kind: "new", name: "Fernanda", phone: "+56 9 5555 1234" },

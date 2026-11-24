@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { boolean, date, pgTable, smallint, text, time, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { exceptionKindEnum } from "@/server/infrastructure/db/schema/enums";
 import { professionals } from "@/server/infrastructure/db/schema/users";
+import { staffMembers } from "@/server/infrastructure/db/schema/staff";
 
 export const availabilityRules = pgTable(
   "availability_rules",
@@ -12,6 +13,10 @@ export const availabilityRules = pgTable(
     professionalId: uuid("professional_id")
       .notNull()
       .references(() => professionals.id),
+    // De quién es el horario (SPEC 22).
+    staffId: uuid("staff_id")
+      .notNull()
+      .references(() => staffMembers.id),
     weekday: smallint("weekday").notNull(),
     startTime: time("start_time").notNull(),
     endTime: time("end_time").notNull(),
@@ -21,14 +26,10 @@ export const availabilityRules = pgTable(
     effectiveMonth: date("effective_month"),
   },
   (table) => [
-    uniqueIndex("availability_rules_professional_weekday_month_idx").on(
-      table.professionalId,
-      table.weekday,
-      table.effectiveMonth,
-    ),
+    uniqueIndex("availability_rules_staff_weekday_month_idx").on(table.staffId, table.weekday, table.effectiveMonth),
     // El índice de arriba no frena duplicados con NULL (en Postgres NULL <> NULL).
-    uniqueIndex("availability_rules_professional_weekday_weekly_idx")
-      .on(table.professionalId, table.weekday)
+    uniqueIndex("availability_rules_staff_weekday_weekly_idx")
+      .on(table.staffId, table.weekday)
       .where(sql`${table.effectiveMonth} is null`),
   ],
 );
@@ -40,6 +41,9 @@ export const availabilityExceptions = pgTable("availability_exceptions", {
   professionalId: uuid("professional_id")
     .notNull()
     .references(() => professionals.id),
+  staffId: uuid("staff_id")
+    .notNull()
+    .references(() => staffMembers.id),
   date: date("date").notNull(),
   kind: exceptionKindEnum("kind").notNull(),
   startTime: time("start_time"),

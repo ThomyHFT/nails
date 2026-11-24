@@ -26,6 +26,8 @@ async function setup(deadlineHours = 0, slotIntervalMinutes: number | null = nul
       timezone: "UTC",
       bookingPolicy: { ...DEFAULT_BOOKING_POLICY, cancellationDeadlineHours: deadlineHours, slotIntervalMinutes },
       commerce: DEFAULT_PROFESSIONAL_COMMERCE,
+      plan: "solo",
+      staffLimit: 1,
     }),
   );
   await availability.createRule({ professionalId: PROFESSIONAL_ID, weekday: 1, startTime: "09:00", endTime: "12:00", effectiveMonth: null });

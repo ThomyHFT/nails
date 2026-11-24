@@ -7,12 +7,14 @@ import {
 } from "@/server/application/availability/configure-availability-exceptions.use-case";
 import { DrizzleAvailabilityRepository } from "@/server/infrastructure/repositories/drizzle-availability.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
+import { staffForOwner } from "@/server/interface/staff-context";
 
 const timePattern = /^\d{2}:\d{2}$/;
 const monthPattern = /^\d{4}-\d{2}-01$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 const createExceptionSchema = z.object({
+  staffId: z.string().uuid().nullable().optional(),
   date: z.string().regex(datePattern),
   kind: z.enum(["blocked", "extra"]),
   startTime: z.string().regex(timePattern).nullable().optional(),
@@ -51,10 +53,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "month es requerido (YYYY-MM-01)" }, { status: 400 });
   }
 
-  const exceptions = await new DrizzleAvailabilityRepository().listExceptionsByProfessionalInMonth(
-    professional.id,
-    effectiveMonth,
-  );
+  const staff = await staffForOwner(professional, searchParams.get("staff"));
+  if (!staff) return NextResponse.json({ error: "Integrante no encontrada" }, { status: 404 });
+
+  const exceptions = await new DrizzleAvailabilityRepository().listExceptionsInMonth(staff.id, effectiveMonth);
   return NextResponse.json({ exceptions });
 }
 
@@ -68,8 +70,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: z.treeifyError(parsed.error) }, { status: 400 });
   }
 
+  const { staffId, ...data } = parsed.data;
+  const staff = await staffForOwner(professional, staffId);
+  if (!staff) return NextResponse.json({ error: "Integrante no encontrada" }, { status: 404 });
+
   const useCase = new CreateAvailabilityExceptionUseCase(new DrizzleAvailabilityRepository());
-  const exception = await useCase.execute({ professionalId: professional.id, ...parsed.data });
+  const exception = await useCase.execute({ professionalId: professional.id, staffId: staff.id, ...data });
   return NextResponse.json({ exception }, { status: 201 });
 }
 

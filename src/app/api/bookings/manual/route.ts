@@ -20,6 +20,7 @@ import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/
 import { DrizzleEmailNotificationRepository } from "@/server/infrastructure/repositories/drizzle-email-notification.repository";
 import { DrizzleGoogleCalendarConnectionRepository } from "@/server/infrastructure/repositories/drizzle-google-calendar-connection.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
+import { staffForOwner } from "@/server/interface/staff-context";
 import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
 import { DrizzleUserRepository } from "@/server/infrastructure/repositories/drizzle-user.repository";
 import { AesTokenCipher } from "@/server/infrastructure/security/aes-token-cipher";
@@ -38,6 +39,8 @@ const manualBookingSchema = z.object({
     }),
   ]),
   clientNote: z.string().max(500).nullable().optional(),
+  // Con quién (SPEC 22). Sin él, la dueña.
+  staffId: z.string().uuid().nullable().optional(),
 });
 
 /** Reserva que anota la profesional (SPEC 18). Nace confirmada. */
@@ -63,8 +66,13 @@ export async function POST(request: Request) {
 
   let booking;
   try {
+    const staff = await staffForOwner(professional, parsed.data.staffId);
+    if (!staff || !staff.active) {
+      return NextResponse.json({ error: "Integrante no encontrada" }, { status: 404 });
+    }
     booking = await useCase.execute({
       professionalId: professional.id,
+      staffId: staff.id,
       serviceVariantId: parsed.data.serviceVariantId,
       startsAt: zonedDateTimeToUtc(parsed.data.date, parsed.data.time, professional.timezone),
       client: parsed.data.client,

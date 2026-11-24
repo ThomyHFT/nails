@@ -38,6 +38,8 @@ export function professionalRowToDomain(row: typeof professionals.$inferSelect):
       rebookAfterDays: row.rebookAfterDays,
       giftCardsEnabled: row.giftCardsEnabled,
     },
+    plan: row.plan,
+    staffLimit: row.staffLimit,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

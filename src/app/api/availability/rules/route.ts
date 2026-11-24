@@ -4,11 +4,14 @@ import { auth } from "@/auth";
 import { ConfigureAvailabilityRulesUseCase } from "@/server/application/availability/configure-availability-rules.use-case";
 import { DrizzleAvailabilityRepository } from "@/server/infrastructure/repositories/drizzle-availability.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
+import { staffForOwner } from "@/server/interface/staff-context";
 
 const timePattern = /^\d{2}:\d{2}$/;
 const monthPattern = /^\d{4}-\d{2}-01$/;
 
 const configureRulesSchema = z.object({
+  // De quién es el horario (SPEC 22). Sin él, el de la dueña.
+  staffId: z.string().uuid().nullable().optional(),
   // null = horario semanal (se repite todos los meses); un mes = excepción de ese mes (SPEC 18).
   effectiveMonth: z
     .string()
@@ -49,10 +52,10 @@ export async function GET(request: Request) {
   }
   const effectiveMonth = monthParam === "weekly" ? null : monthParam;
 
-  const rules = await new DrizzleAvailabilityRepository().listRulesByProfessionalAndMonth(
-    professional.id,
-    effectiveMonth,
-  );
+  const staff = await staffForOwner(professional, searchParams.get("staff"));
+  if (!staff) return NextResponse.json({ error: "Integrante no encontrada" }, { status: 404 });
+
+  const rules = await new DrizzleAvailabilityRepository().listRules(staff.id, effectiveMonth);
   return NextResponse.json({ rules });
 }
 
@@ -66,7 +69,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: z.treeifyError(parsed.error) }, { status: 400 });
   }
 
+  const { staffId, ...data } = parsed.data;
+  const staff = await staffForOwner(professional, staffId);
+  if (!staff) return NextResponse.json({ error: "Integrante no encontrada" }, { status: 404 });
+
   const useCase = new ConfigureAvailabilityRulesUseCase(new DrizzleAvailabilityRepository());
-  const rules = await useCase.execute({ professionalId: professional.id, ...parsed.data });
+  const rules = await useCase.execute({ professionalId: professional.id, staffId: staff.id, ...data });
   return NextResponse.json({ rules }, { status: 201 });
 }

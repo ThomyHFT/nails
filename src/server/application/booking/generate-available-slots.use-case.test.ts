@@ -29,6 +29,7 @@ describe("GenerateAvailableSlotsUseCase", () => {
     const slots = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
       timezone: "UTC",
+      staffId: "staff-1",
       bufferMinutes: 0,
       date: MONDAY,
       durationMinutes: 60,
@@ -60,6 +61,7 @@ describe("GenerateAvailableSlotsUseCase", () => {
     const slots = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
       timezone: "UTC",
+      staffId: "staff-1",
       bufferMinutes: 0,
       date: MONDAY,
       durationMinutes: 60,
@@ -82,6 +84,7 @@ describe("GenerateAvailableSlotsUseCase", () => {
     const slots = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
       timezone: "UTC",
+      staffId: "staff-1",
       bufferMinutes: 0,
       date: MONDAY,
       durationMinutes: 60,
@@ -113,6 +116,7 @@ describe("GenerateAvailableSlotsUseCase", () => {
     const slots = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
       timezone: "UTC",
+      staffId: "staff-1",
       bufferMinutes: 15,
       date: MONDAY,
       durationMinutes: 60,
@@ -135,6 +139,7 @@ describe("GenerateAvailableSlotsUseCase", () => {
     const slots = await useCase.execute({
       professionalId: PROFESSIONAL_ID,
       timezone: "UTC",
+      staffId: "staff-1",
       bufferMinutes: 0,
       date: MONDAY,
       durationMinutes: 30,

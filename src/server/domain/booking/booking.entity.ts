@@ -5,6 +5,8 @@ export interface Booking {
   id: string;
   professionalId: string;
   clientUserId: string;
+  /** Quién atiende (SPEC 22). */
+  staffId: string;
   serviceVariantId: string;
   designId: string | null;
   startsAt: Date;

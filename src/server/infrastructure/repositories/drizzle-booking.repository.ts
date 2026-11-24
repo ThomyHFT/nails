@@ -39,6 +39,7 @@ function toDomain(row: typeof bookings.$inferSelect): Booking {
     id: row.id,
     professionalId: row.professionalId,
     clientUserId: row.clientUserId,
+    staffId: row.staffId,
     serviceVariantId: row.serviceVariantId,
     designId: row.designId,
     startsAt: row.startsAt,
@@ -75,6 +76,7 @@ export class DrizzleBookingRepository implements BookingRepository {
       .values({
         professionalId: booking.professionalId,
         clientUserId: booking.clientUserId,
+        staffId: booking.staffId,
         serviceVariantId: booking.serviceVariantId,
         designId: booking.designId ?? null,
         startsAt: booking.startsAt,
@@ -113,6 +115,7 @@ export class DrizzleBookingRepository implements BookingRepository {
           id: bookingId,
           professionalId: booking.professionalId,
           clientUserId: booking.clientUserId,
+          staffId: booking.staffId,
           serviceVariantId: booking.serviceVariantId,
           designId,
           startsAt: booking.startsAt,
@@ -151,6 +154,37 @@ export class DrizzleBookingRepository implements BookingRepository {
         ),
       );
     return rows.map(toDomain);
+  }
+
+  async listActiveByStaffInRange(staffId: string, rangeStart: Date, rangeEnd: Date): Promise<Booking[]> {
+    const rows = await db
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.staffId, staffId),
+          inArray(bookings.status, ACTIVE_STATUSES),
+          lt(bookings.startsAt, rangeEnd),
+          gt(bookings.endsAt, rangeStart),
+        ),
+      );
+    return rows.map(toDomain);
+  }
+
+  async listByStaff(staffId: string): Promise<Booking[]> {
+    const rows = await db.select().from(bookings).where(eq(bookings.staffId, staffId)).orderBy(desc(bookings.startsAt));
+    return rows.map(toDomain);
+  }
+
+  async reassign(id: string, staffId: string, fromStatuses: readonly BookingStatus[]): Promise<Booking | null> {
+    const [row] = await translateOverlap(() =>
+      db
+        .update(bookings)
+        .set({ staffId, updatedAt: new Date() })
+        .where(and(eq(bookings.id, id), inArray(bookings.status, [...fromStatuses])))
+        .returning(),
+    );
+    return row ? toDomain(row) : null;
   }
 
   async listByProfessionalAndClient(professionalId: string, clientUserId: string): Promise<Booking[]> {

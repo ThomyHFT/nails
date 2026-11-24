@@ -183,6 +183,13 @@
       "when": 1795482653278,
       "tag": "0025_deposit_waitlist_packages",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795484378420,
+      "tag": "0026_salon_staff",
+      "breakpoints": true
     }
   ]
 }

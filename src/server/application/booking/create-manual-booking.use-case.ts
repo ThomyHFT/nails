@@ -44,6 +44,8 @@ export type ManualBookingClient =
 
 export interface CreateManualBookingInput {
   professionalId: string;
+  /** Quién atiende (SPEC 22). */
+  staffId: string;
   serviceVariantId: string;
   startsAt: Date;
   client: ManualBookingClient;
@@ -82,6 +84,7 @@ export class CreateManualBookingUseCase {
       return await this.bookingRepository.create({
         professionalId: input.professionalId,
         clientUserId,
+        staffId: input.staffId,
         serviceVariantId: variant.id,
         startsAt: input.startsAt,
         endsAt,

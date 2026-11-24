@@ -1,6 +1,10 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
-export const userRoleEnum = pgEnum("user_role", ["client", "professional", "admin"]);
+// "staff": integrante de un salón con acceso limitado (SPEC 22).
+export const userRoleEnum = pgEnum("user_role", ["client", "professional", "admin", "staff"]);
+
+/** Plan del negocio (SPEC 22). Lo cambia el superadmin; no hay cobro en la app. */
+export const planEnum = pgEnum("plan", ["solo", "salon"]);
 
 export const verticalEnum = pgEnum("vertical", ["nails", "barbershop", "wellness"]);
 

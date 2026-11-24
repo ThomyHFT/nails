@@ -1,9 +1,11 @@
+import { DEFAULT_TEST_STAFF_ID } from "@/server/application/booking/__fakes__/in-memory-availability-repository";
 import type { Booking, BookingActor, BookingStatus } from "@/server/domain/booking/booking.entity";
 import type { ClientBookingStats } from "@/server/domain/booking/client-booking-stats.entity";
-import type {
-  BookingRepository,
-  NewBooking,
-  NewBookingWithDesign,
+import {
+  BookingSlotTakenError,
+  type BookingRepository,
+  type NewBooking,
+  type NewBookingWithDesign,
 } from "@/server/domain/booking/booking-repository.port";
 
 const ACTIVE_STATUSES: BookingStatus[] = ["pending", "confirmed"];
@@ -13,12 +15,14 @@ export class InMemoryBookingRepository implements BookingRepository {
   private nextId = 1;
   readonly designs: Array<{ id: string; referenceImageUrl: string | null }> = [];
 
-  async create(booking: NewBooking): Promise<Booking> {
+  // `staffId` opcional solo en el fake: los tests de una sola integrante no lo repiten.
+  async create(booking: Omit<NewBooking, "staffId"> & { staffId?: string }): Promise<Booking> {
     const now = new Date();
     const created: Booking = {
       id: String(this.nextId++),
       professionalId: booking.professionalId,
       clientUserId: booking.clientUserId,
+      staffId: booking.staffId ?? DEFAULT_TEST_STAFF_ID,
       serviceVariantId: booking.serviceVariantId,
       designId: booking.designId ?? null,
       startsAt: booking.startsAt,
@@ -40,13 +44,14 @@ export class InMemoryBookingRepository implements BookingRepository {
     return created;
   }
 
-  async createWithDesign(booking: NewBookingWithDesign): Promise<Booking> {
+  async createWithDesign(booking: Omit<NewBookingWithDesign, "staffId"> & { staffId?: string }): Promise<Booking> {
     const designId = String(this.nextId++);
     this.designs.push({ id: designId, referenceImageUrl: booking.design.referenceImageUrl ?? null });
 
     return this.create({
       professionalId: booking.professionalId,
       clientUserId: booking.clientUserId,
+      staffId: booking.staffId,
       serviceVariantId: booking.serviceVariantId,
       designId,
       startsAt: booking.startsAt,
@@ -71,6 +76,33 @@ export class InMemoryBookingRepository implements BookingRepository {
         booking.startsAt < rangeEnd &&
         booking.endsAt > rangeStart,
     );
+  }
+
+  async listActiveByStaffInRange(staffId: string, rangeStart: Date, rangeEnd: Date): Promise<Booking[]> {
+    return this.bookings.filter(
+      (b) => b.staffId === staffId && ACTIVE_STATUSES.includes(b.status) && b.startsAt < rangeEnd && b.endsAt > rangeStart,
+    );
+  }
+
+  async listByStaff(staffId: string): Promise<Booking[]> {
+    return this.bookings.filter((b) => b.staffId === staffId);
+  }
+
+  async reassign(id: string, staffId: string, fromStatuses: readonly BookingStatus[]): Promise<Booking | null> {
+    const booking = this.bookings.find((b) => b.id === id);
+    if (!booking) throw new Error(`Booking ${id} not found`);
+    if (!fromStatuses.includes(booking.status)) return null;
+    const clash = this.bookings.some(
+      (b) =>
+        b.id !== id &&
+        b.staffId === staffId &&
+        ACTIVE_STATUSES.includes(b.status) &&
+        b.startsAt < booking.endsAt &&
+        b.endsAt > booking.startsAt,
+    );
+    if (clash) throw new BookingSlotTakenError();
+    booking.staffId = staffId;
+    return booking;
   }
 
   async listByProfessional(professionalId: string, status?: BookingStatus): Promise<Booking[]> {

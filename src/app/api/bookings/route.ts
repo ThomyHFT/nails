@@ -9,7 +9,8 @@ import {
   DesignerNotAvailableError,
   SlotNotAvailableError,
 } from "@/server/application/booking/create-booking.use-case";
-import { GenerateAvailableSlotsUseCase } from "@/server/application/booking/generate-available-slots.use-case";
+import { bookableStaff, TeamAvailabilityUseCase } from "@/server/application/staff/team-availability.use-case";
+import { DrizzleStaffRepository } from "@/server/infrastructure/repositories/drizzle-staff.repository";
 import { SendBookingNotificationUseCase } from "@/server/application/notification/send-booking-notification.use-case";
 import { calculateDesignQuote, InvalidDesignElementError } from "@/server/domain/design/calculate-design-quote";
 import type { NailDesignPayload } from "@/server/domain/design/nail-design-payload";
@@ -42,6 +43,7 @@ async function resolveVariant(serviceVariantId: string, professionalId: string) 
   const [variant] = await db
     .select({
       id: serviceVariants.id,
+      serviceId: services.id,
       priceClp: serviceVariants.priceClp,
       durationMinutes: serviceVariants.durationMinutes,
       professionalId: services.professionalId,
@@ -81,15 +83,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Variante no encontrada" }, { status: 404 });
   }
 
-  const useCase = new GenerateAvailableSlotsUseCase(new DrizzleAvailabilityRepository(), new DrizzleBookingRepository());
-  const slots = await useCase.execute({
-    professionalId: professional.id,
-    timezone: professional.timezone,
-    bufferMinutes: professional.bufferMinutes,
-    date,
-    durationMinutes: variant.durationMinutes + extraMinutes,
-    policy: professional.bookingPolicy,
-  });
+  // SPEC 22: `staffId` = con quién; sin él, la unión de quienes hacen el servicio.
+  const staff = await bookableStaff(
+    new DrizzleStaffRepository(),
+    professional,
+    variant.serviceId,
+    searchParams.get("staffId"),
+  );
+  const slots = await new TeamAvailabilityUseCase(
+    new DrizzleAvailabilityRepository(),
+    new DrizzleBookingRepository(),
+  ).slots(
+    staff.map((s) => s.id),
+    {
+      professionalId: professional.id,
+      timezone: professional.timezone,
+      bufferMinutes: professional.bufferMinutes,
+      date,
+      durationMinutes: variant.durationMinutes + extraMinutes,
+      policy: professional.bookingPolicy,
+    },
+  );
 
   return NextResponse.json({ slots });
 }
@@ -115,6 +129,8 @@ const createBookingSchema = z.object({
   startsAt: z.string().datetime(),
   clientNote: z.string().max(500).nullable().optional(),
   clientPhone: z.string().optional(),
+  // Con quién (SPEC 22). Ausente o null = sin preferencia.
+  staffId: z.string().uuid().nullable().optional(),
   design: z
     .object({
       payload: designPayloadSchema,
@@ -193,6 +209,11 @@ export async function POST(request: Request) {
     designPayload = parsed.data.design.payload;
   }
 
+  const staff = await bookableStaff(new DrizzleStaffRepository(), professional, variant.serviceId, parsed.data.staffId);
+  if (staff.length === 0) {
+    return NextResponse.json({ error: "El horario elegido ya no está disponible" }, { status: 409 });
+  }
+
   const useCase = new CreateBookingUseCase(
     new DrizzleAvailabilityRepository(),
     new DrizzleBookingRepository(),
@@ -202,6 +223,7 @@ export async function POST(request: Request) {
   try {
     const booking = await useCase.execute({
       professionalId: professional.id,
+      staffIds: staff.map((s) => s.id),
       professionalVertical: professional.vertical,
       timezone: professional.timezone,
       bufferMinutes: professional.bufferMinutes,

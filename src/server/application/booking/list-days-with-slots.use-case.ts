@@ -5,6 +5,8 @@ import { resolveRulesForMonth } from "@/server/domain/availability/resolve-rules
 
 export interface ListDaysWithSlotsInput {
   professionalId: string;
+  /** De quién es la agenda (SPEC 22). */
+  staffId: string;
   timezone: string;
   bufferMinutes: number;
   month: string; // YYYY-MM-01
@@ -42,7 +44,7 @@ export class ListDaysWithSlotsUseCase {
    * atiende pero las reservas ocupan todo. Son los que admiten lista de espera.
    */
   async executeDetailed(input: ListDaysWithSlotsInput): Promise<{ days: string[]; fullDays: string[] }> {
-    const { professionalId, timezone, bufferMinutes, month, durationMinutes } = input;
+    const { staffId, timezone, bufferMinutes, month, durationMinutes } = input;
     const now = input.now ?? new Date();
 
     const [year, mon] = month.split("-").map(Number);
@@ -53,10 +55,10 @@ export class ListDaysWithSlotsUseCase {
     const monthEnd = dayRangeUtc(dateOf(total), timezone).end;
 
     const [monthRules, weeklyRules, exceptions, bookings] = await Promise.all([
-      this.availabilityRepository.listRulesByProfessionalAndMonth(professionalId, month),
-      this.availabilityRepository.listRulesByProfessionalAndMonth(professionalId, null),
-      this.availabilityRepository.listExceptionsByProfessionalInMonth(professionalId, month),
-      this.bookingRepository.listActiveByProfessionalInRange(professionalId, monthStart, monthEnd),
+      this.availabilityRepository.listRules(staffId, month),
+      this.availabilityRepository.listRules(staffId, null),
+      this.availabilityRepository.listExceptionsInMonth(staffId, month),
+      this.bookingRepository.listActiveByStaffInRange(staffId, monthStart, monthEnd),
     ]);
     const rules = resolveRulesForMonth(monthRules, weeklyRules);
 

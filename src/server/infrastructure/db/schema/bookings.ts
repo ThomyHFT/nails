@@ -4,10 +4,11 @@ import { actorEnum, bookingStatusEnum } from "@/server/infrastructure/db/schema/
 import { designs } from "@/server/infrastructure/db/schema/designs";
 import { serviceVariants } from "@/server/infrastructure/db/schema/services";
 import { professionals, users } from "@/server/infrastructure/db/schema/users";
+import { staffMembers } from "@/server/infrastructure/db/schema/staff";
 
-// Constraint `bookings_no_overlap` (EXCLUDE USING gist) vive solo en la
-// migración 0021: Drizzle no sabe declararlo. Impide dos reservas activas
-// solapadas de la misma profesional.
+// Constraint `bookings_no_overlap` (EXCLUDE USING gist) vive solo en las
+// migraciones (0021, rehecho en 0026 por `staff_id`): Drizzle no sabe
+// declararlo. Impide dos reservas activas solapadas de la misma integrante.
 export const bookings = pgTable("bookings", {
   id: uuid("id")
     .primaryKey()
@@ -18,6 +19,10 @@ export const bookings = pgTable("bookings", {
   clientUserId: uuid("client_user_id")
     .notNull()
     .references(() => users.id),
+  // Quién atiende (SPEC 22).
+  staffId: uuid("staff_id")
+    .notNull()
+    .references(() => staffMembers.id),
   serviceVariantId: uuid("service_variant_id")
     .notNull()
     .references(() => serviceVariants.id),

@@ -18,6 +18,8 @@ export class BookingSlotTakenError extends Error {
 export interface NewBooking {
   professionalId: string;
   clientUserId: string;
+  /** Quién atiende (SPEC 22). */
+  staffId: string;
   serviceVariantId: string;
   designId?: string | null;
   startsAt: Date;
@@ -34,6 +36,7 @@ export interface NewBooking {
 export interface NewBookingWithDesign {
   professionalId: string;
   clientUserId: string;
+  staffId: string;
   serviceVariantId: string;
   startsAt: Date;
   endsAt: Date;
@@ -55,6 +58,15 @@ export interface BookingRepository {
   createWithDesign(booking: NewBookingWithDesign): Promise<Booking>;
   findById(id: string): Promise<Booking | null>;
   listActiveByProfessionalInRange(professionalId: string, rangeStart: Date, rangeEnd: Date): Promise<Booking[]>;
+  /** Activas de una integrante que se cruzan con el rango: lo que ocupa su agenda (SPEC 22). */
+  listActiveByStaffInRange(staffId: string, rangeStart: Date, rangeEnd: Date): Promise<Booking[]>;
+  /** Reservas de una integrante, la más reciente primero (panel de equipo, SPEC 22). */
+  listByStaff(staffId: string): Promise<Booking[]>;
+  /**
+   * Pasa la reserva a otra integrante si sigue en `fromStatuses`; `null` si no.
+   * Lanza BookingSlotTakenError si la otra ya tiene una reserva a esa hora.
+   */
+  reassign(id: string, staffId: string, fromStatuses: readonly BookingStatus[]): Promise<Booking | null>;
   listByProfessional(professionalId: string, status?: BookingStatus): Promise<Booking[]>;
   listByClient(clientUserId: string): Promise<Booking[]>;
   /** Historial de una clienta con un negocio (ficha de clienta, SPEC 20). */

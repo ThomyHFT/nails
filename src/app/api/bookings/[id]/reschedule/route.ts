@@ -26,13 +26,14 @@ import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositor
 import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
 import { DrizzleUserRepository } from "@/server/infrastructure/repositories/drizzle-user.repository";
 import { AesTokenCipher } from "@/server/infrastructure/security/aes-token-cipher";
+import { getSessionStaff } from "@/server/interface/staff-context";
 
 const bodySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
 });
 
-/** La sesión decide quién mueve la reserva: clienta o dueña del tenant. */
+/** La sesión decide quién mueve la reserva: clienta, dueña del tenant o integrante (SPEC 22). */
 async function resolveActor(): Promise<RescheduleActor | null> {
   const session = await auth();
   if (!session) return null;
@@ -40,6 +41,10 @@ async function resolveActor(): Promise<RescheduleActor | null> {
   if (session.user.role === "professional") {
     const professional = await new DrizzleProfessionalRepository().findByOwnerUserId(session.user.id);
     return professional ? { kind: "professional", professionalId: professional.id } : null;
+  }
+  if (session.user.role === "staff") {
+    const staffSession = await getSessionStaff();
+    return staffSession ? { kind: "staff", staffId: staffSession.staff.id } : null;
   }
   return null;
 }
@@ -68,6 +73,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const slots = await new GenerateAvailableSlotsUseCase(new DrizzleAvailabilityRepository(), bookingRepository).execute({
     professionalId: professional.id,
+    staffId: booking.staffId,
     timezone: professional.timezone,
     bufferMinutes: professional.bufferMinutes,
     date,
@@ -104,7 +110,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           ? new ResendEmailSender(env.RESEND_API_KEY, env.EMAIL_FROM_ADDRESS ?? "onboarding@resend.dev")
           : null,
         new DrizzleEmailNotificationRepository(),
-      ).execute({ booking, previousStartsAt, movedBy: actor.kind });
+      // Para la clienta, una integrante que mueve la hora es "el negocio".
+      ).execute({ booking, previousStartsAt, movedBy: actor.kind === "client" ? "client" : "professional" });
     } catch {
       // Un fallo al notificar nunca debe cambiar la respuesta de reagendar.
     }

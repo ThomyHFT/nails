@@ -2,7 +2,8 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/server/infrastructure/db/client";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
-import { ListDaysWithSlotsUseCase } from "@/server/application/booking/list-days-with-slots.use-case";
+import { bookableStaff, TeamAvailabilityUseCase } from "@/server/application/staff/team-availability.use-case";
+import { DrizzleStaffRepository } from "@/server/infrastructure/repositories/drizzle-staff.repository";
 import { DrizzleAvailabilityRepository } from "@/server/infrastructure/repositories/drizzle-availability.repository";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { GetProfessionalBySlugUseCase } from "@/server/application/tenant/get-professional-by-slug.use-case";
@@ -14,6 +15,7 @@ async function resolveVariant(serviceVariantId: string, professionalId: string) 
   const [variant] = await db
     .select({
       id: serviceVariants.id,
+      serviceId: services.id,
       durationMinutes: serviceVariants.durationMinutes,
       professionalId: services.professionalId,
       active: serviceVariants.active,
@@ -37,10 +39,7 @@ export async function GET(request: Request) {
   const month = searchParams.get("month");
 
   if (!slug || !serviceVariantId || !month || !monthPattern.test(month)) {
-    return NextResponse.json(
-      { error: "slug, serviceVariantId y month (YYYY-MM-01) son requeridos" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "slug, serviceVariantId y month (YYYY-MM-01) son requeridos" }, { status: 400 });
   }
 
   const professional = await new GetProfessionalBySlugUseCase(new DrizzleProfessionalRepository()).execute(slug);
@@ -53,15 +52,26 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Variante no encontrada" }, { status: 404 });
   }
 
-  const useCase = new ListDaysWithSlotsUseCase(new DrizzleAvailabilityRepository(), new DrizzleBookingRepository());
-  const { days, fullDays } = await useCase.executeDetailed({
-    professionalId: professional.id,
-    timezone: professional.timezone,
-    bufferMinutes: professional.bufferMinutes,
-    month,
-    durationMinutes: variant.durationMinutes,
-    policy: professional.bookingPolicy,
-  });
+  const staff = await bookableStaff(
+    new DrizzleStaffRepository(),
+    professional,
+    variant.serviceId,
+    searchParams.get("staffId"),
+  );
+  const { days, fullDays } = await new TeamAvailabilityUseCase(
+    new DrizzleAvailabilityRepository(),
+    new DrizzleBookingRepository(),
+  ).days(
+    staff.map((s) => s.id),
+    {
+      professionalId: professional.id,
+      timezone: professional.timezone,
+      bufferMinutes: professional.bufferMinutes,
+      month,
+      durationMinutes: variant.durationMinutes,
+      policy: professional.bookingPolicy,
+    },
+  );
 
   return NextResponse.json({ days, fullDays });
 }

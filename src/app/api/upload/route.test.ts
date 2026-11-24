@@ -26,6 +26,7 @@ function completedBooking(overrides: Partial<Booking> = {}): Booking {
     id: "booking-1",
     professionalId: "prof-1",
     clientUserId: "client-1",
+    staffId: "staff-1",
     serviceVariantId: "variant-1",
     designId: null,
     startsAt: new Date(),

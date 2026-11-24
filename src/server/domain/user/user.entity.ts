@@ -1,4 +1,5 @@
-export type UserRole = "client" | "professional" | "admin";
+/** `staff`: integrante de un salón con acceso limitado a lo suyo (SPEC 22). */
+export type UserRole = "client" | "professional" | "admin" | "staff";
 
 export interface User {
   id: string;
