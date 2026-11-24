@@ -38,6 +38,8 @@ function completedBooking(overrides: Partial<Booking> = {}): Booking {
     cancelledAt: null,
     cancelledBy: null,
     googleEventId: null,
+    depositClp: null,
+    depositPaidAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

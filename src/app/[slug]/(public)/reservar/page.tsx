@@ -5,6 +5,8 @@ import { db } from "@/server/infrastructure/db/client";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { ReservarForm, type ServiceOption } from "@/app/[slug]/(public)/reservar/ReservarForm";
+import { depositInfoFor } from "@/app/[slug]/(public)/_deposit/deposit-info";
+import { isCompleteBankDetails } from "@/server/domain/professional/commerce";
 
 export default async function ReservarPage({
   params,
@@ -67,6 +69,8 @@ export default async function ReservarPage({
       vertical={professional.vertical}
       cancellationDeadlineHours={professional.bookingPolicy.cancellationDeadlineHours}
       autoConfirm={professional.bookingPolicy.autoConfirm}
+      depositClp={isCompleteBankDetails(professional.commerce.bankDetails) ? professional.commerce.depositClp : null}
+      depositInfo={depositInfoFor(professional)}
     />
   );
 }

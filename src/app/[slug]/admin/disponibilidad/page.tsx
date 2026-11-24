@@ -11,6 +11,7 @@ import { Chip } from "@/components/brand/chip";
 import { Panel } from "@/components/brand/surface";
 import { Body, Caption, Title } from "@/components/brand/typography";
 import { BookingPolicyPanel } from "@/app/[slug]/admin/disponibilidad/BookingPolicyPanel";
+import { CommercePanel } from "@/app/[slug]/admin/disponibilidad/CommercePanel";
 import { GoogleCalendarPanel } from "@/app/[slug]/admin/disponibilidad/GoogleCalendarPanel";
 import { cn } from "@/lib/utils";
 
@@ -619,6 +620,8 @@ export default function DisponibilidadPage() {
       {status && <p className="text-sm">{status}</p>}
 
       <BookingPolicyPanel />
+
+      <CommercePanel />
 
       <GoogleCalendarPanel />
     </div>

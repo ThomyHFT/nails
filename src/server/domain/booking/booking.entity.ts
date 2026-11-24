@@ -17,6 +17,9 @@ export interface Booking {
   cancelledAt: Date | null;
   cancelledBy: BookingActor | null;
   googleEventId: string | null;
+  /** Abono congelado al reservar (SPEC 21). `null` = sin abono. */
+  depositClp: number | null;
+  depositPaidAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

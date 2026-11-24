@@ -1,5 +1,6 @@
 import type { BookingPolicy } from "@/server/domain/professional/booking-policy";
 import type { Vertical } from "@/server/domain/tenant/vertical";
+import type { ProfessionalCommerce } from "@/server/domain/professional/commerce";
 
 export interface Professional {
   id: string;
@@ -23,6 +24,8 @@ export interface Professional {
   bufferMinutes: number;
   /** Reglas de reserva (SPEC 19). */
   bookingPolicy: BookingPolicy;
+  /** Abono, vuelve a reservar y gift cards (SPEC 21). */
+  commerce: ProfessionalCommerce;
   createdAt: Date;
   updatedAt: Date;
 }

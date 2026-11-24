@@ -93,7 +93,7 @@ export class SendBookingNotificationUseCase {
           input.type === "confirmation"
             ? buildConfirmationEmail(templateInput)
             : input.type === "pending"
-              ? buildPendingEmail(templateInput)
+              ? buildPendingEmail({ ...templateInput, bankDetails: professional.commerce.bankDetails })
               : buildCancellationEmail(templateInput);
 
         const result = await this.emailSender.send({

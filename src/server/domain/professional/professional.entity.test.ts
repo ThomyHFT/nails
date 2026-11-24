@@ -1,3 +1,4 @@
+import { DEFAULT_PROFESSIONAL_COMMERCE } from "@/server/domain/professional/commerce";
 import { DEFAULT_BOOKING_POLICY } from "@/server/domain/professional/booking-policy";
 import { describe, expect, it } from "vitest";
 import {
@@ -27,6 +28,7 @@ function professional(overrides: Partial<Professional> = {}): Professional {
     trialEndsAt: null,
     bufferMinutes: 0,
     bookingPolicy: DEFAULT_BOOKING_POLICY,
+    commerce: DEFAULT_PROFESSIONAL_COMMERCE,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

@@ -13,9 +13,13 @@ export function instagramLabel(handle: string): string {
   return handle.startsWith("@") ? handle : `@${handle}`;
 }
 
-/** wa.me solo acepta dígitos: cualquier `+`, espacio o guión rompe el enlace. */
-export function whatsAppUrl(phone: string): string {
-  return `https://wa.me/${phone.replace(/[^0-9]/g, "")}`;
+/**
+ * wa.me solo acepta dígitos: cualquier `+`, espacio o guión rompe el enlace.
+ * `text` deja el mensaje escrito (SPEC 21: pedir opinión, invitar a volver).
+ */
+export function whatsAppUrl(phone: string, text?: string): string {
+  const base = `https://wa.me/${phone.replace(/[^0-9]/g, "")}`;
+  return text ? `${base}?text=${encodeURIComponent(text)}` : base;
 }
 
 /**

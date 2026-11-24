@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DepositInstructions, type DepositInfo } from "@/app/[slug]/(public)/_deposit/DepositInstructions";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -145,6 +146,8 @@ export function ReservarForm({
   vertical,
   cancellationDeadlineHours = 0,
   autoConfirm = false,
+  depositClp = null,
+  depositInfo = null,
 }: {
   slug: string;
   services: ServiceOption[];
@@ -154,10 +157,15 @@ export function ReservarForm({
   /** Plazo de la profesional para cancelar o reagendar en línea (SPEC 19). */
   cancellationDeadlineHours?: number;
   autoConfirm?: boolean;
+  /** Abono configurado (SPEC 21); el de la reserva nunca supera su precio. */
+  depositClp?: number | null;
+  depositInfo?: DepositInfo | null;
 }) {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
   const [step, setStep] = useState<Step>("select");
+  // Lo que devolvió la API: con abono la reserva queda pendiente aunque haya confirmación automática.
+  const [created, setCreated] = useState<{ status: string; depositClp: number | null } | null>(null);
 
   const hasDesigner = verticalModules(vertical).designer;
   const variantAxisLabel = verticalCopy(vertical).variantAxisLabel;
@@ -323,6 +331,8 @@ export function ReservarForm({
       // más emocional del flujo (la cita quedó agendada) no tenía ninguna
       // pantalla propia. router.refresh() precarga /cuenta en segundo plano
       // para que, al salir de "confirmed", ya liste la reserva nueva.
+      const data = await response.json().catch(() => ({}));
+      setCreated(data.booking ? { status: data.booking.status, depositClp: data.booking.depositClp ?? null } : null);
       setStep("confirmed");
       router.refresh();
     } finally {
@@ -333,6 +343,13 @@ export function ReservarForm({
   const variant = service?.variants.find((v) => v.id === variantId) ?? null;
   const totalPriceClp = (variant?.priceClp ?? 0) + (design?.quote.extraPriceClp ?? 0);
   const totalMinutes = (variant?.durationMinutes ?? 0) + (design?.quote.extraMinutes ?? 0);
+  const expectedDeposit = depositClp && depositInfo ? Math.min(depositClp, totalPriceClp) : null;
+  const paymentRow = expectedDeposit
+    ? {
+        title: `Abono de $${expectedDeposit.toLocaleString("es-CL")} por transferencia`,
+        detail: "El resto se paga en el local al terminar el servicio.",
+      }
+    : { title: "Pago presencial", detail: "Se abona en el local al terminar el servicio." };
 
   if (step === "select") {
     return (
@@ -475,6 +492,8 @@ export function ReservarForm({
   }
 
   if (step === "confirmed" && selectedSlot) {
+    const isConfirmed = created?.status === "confirmed";
+    const createdDeposit = created?.depositClp ?? null;
     return (
       <Container size="md" className="flex flex-col gap-8 px-5 py-10">
         <div className="flex flex-col items-center gap-4 py-6 text-center">
@@ -483,7 +502,7 @@ export function ReservarForm({
           <span className="inline-flex size-16 items-center justify-center rounded-full bg-success-tint text-on-success-tint">
             <CheckCircle2 className="size-8" />
           </span>
-          <Display as="h1">¡Reserva confirmada!</Display>
+          <Display as="h1">{isConfirmed ? "¡Reserva confirmada!" : "¡Solicitud enviada!"}</Display>
           <Caption className="max-w-sm">
             Te esperamos el {new Date(`${date}T00:00:00`).toLocaleDateString("es-CL", { dateStyle: "long" })} a las{" "}
             {formatTime(selectedSlot.startsAt)}.
@@ -508,12 +527,10 @@ export function ReservarForm({
             title={`${new Date(`${date}T00:00:00`).toLocaleDateString("es-CL", { dateStyle: "long" })}, ${formatTime(selectedSlot.startsAt)}`}
             detail="America/Santiago"
           />
-          <SummaryRow
-            icon={<Banknote className="size-5" />}
-            title="Pago presencial"
-            detail="Se abona en el local al terminar el servicio."
-          />
+          <SummaryRow icon={<Banknote className="size-5" />} title={paymentRow.title} detail={paymentRow.detail} />
         </div>
+
+        {createdDeposit !== null && depositInfo && <DepositInstructions amountClp={createdDeposit} info={depositInfo} />}
 
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <BrandButton size="lg" href={`/${slug}/cuenta`}>
@@ -692,14 +709,16 @@ export function ReservarForm({
                 title={`${new Date(`${date}T00:00:00`).toLocaleDateString("es-CL", { dateStyle: "long" })}, ${formatTime(selectedSlot.startsAt)}`}
                 detail="America/Santiago"
               />
-              <SummaryRow
-                icon={<Banknote className="size-5" />}
-                title="Pago presencial"
-                detail="Se abona en el local al terminar el servicio."
-              />
+              <SummaryRow icon={<Banknote className="size-5" />} title={paymentRow.title} detail={paymentRow.detail} />
               <SummaryRow
                 icon={<CalendarClock className="size-5" />}
-                title={autoConfirm ? "Se confirma al instante" : "La profesional confirma tu hora"}
+                title={
+                  expectedDeposit
+                    ? "Se confirma al recibir el abono"
+                    : autoConfirm
+                      ? "Se confirma al instante"
+                      : "La profesional confirma tu hora"
+                }
                 detail={
                   cancellationDeadlineHours > 0
                     ? `Puedes cancelar o reagendar en línea hasta ${cancellationDeadlineHours} horas antes.`

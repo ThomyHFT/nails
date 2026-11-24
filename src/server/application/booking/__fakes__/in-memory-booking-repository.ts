@@ -31,6 +31,8 @@ export class InMemoryBookingRepository implements BookingRepository {
       cancelledAt: null,
       cancelledBy: null,
       googleEventId: null,
+      depositClp: booking.depositClp ?? null,
+      depositPaidAt: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -52,6 +54,7 @@ export class InMemoryBookingRepository implements BookingRepository {
       priceClp: booking.priceClp,
       durationMinutes: booking.durationMinutes,
       clientNote: booking.clientNote,
+      depositClp: booking.depositClp,
       status: booking.status,
     });
   }
@@ -111,6 +114,33 @@ export class InMemoryBookingRepository implements BookingRepository {
   async claimReminder(id: string): Promise<boolean> {
     if (this.remindedIds.has(id)) return false;
     this.remindedIds.add(id);
+    return true;
+  }
+
+  async markDepositPaid(id: string): Promise<Booking | null> {
+    const booking = this.bookings.find((b) => b.id === id);
+    if (!booking || booking.depositClp === null || booking.depositPaidAt !== null) return null;
+    if (booking.status !== "pending" && booking.status !== "confirmed") return null;
+    booking.depositPaidAt = new Date();
+    return booking;
+  }
+
+  /** Reservas con correo "vuelve a reservar" enviado. */
+  rebookedIds = new Set<string>();
+
+  async listCompletedAwaitingRebook(from: Date, to: Date): Promise<Booking[]> {
+    return this.bookings.filter(
+      (b) =>
+        b.status === "completed" &&
+        !this.rebookedIds.has(b.id) &&
+        b.startsAt.getTime() >= from.getTime() &&
+        b.startsAt.getTime() < to.getTime(),
+    );
+  }
+
+  async claimRebook(id: string): Promise<boolean> {
+    if (this.rebookedIds.has(id)) return false;
+    this.rebookedIds.add(id);
     return true;
   }
 

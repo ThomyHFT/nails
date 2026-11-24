@@ -215,6 +215,7 @@ export async function POST(request: Request) {
       designReferenceImageUrl: parsed.data.design?.referenceImageUrl ?? null,
       clientNote: parsed.data.clientNote,
       policy: professional.bookingPolicy,
+      commerce: professional.commerce,
     });
 
     try {

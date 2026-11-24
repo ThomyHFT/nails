@@ -1,6 +1,7 @@
 import type { Booking } from "@/server/domain/booking/booking.entity";
 import { escapeHtml, safeColor, safeUrl } from "@/server/domain/notification/html-escape";
 import type { TenantBranding } from "@/server/domain/branding/tenant-branding.entity";
+import type { BankDetails } from "@/server/domain/professional/commerce";
 
 export interface EmailTemplateInput {
   booking: Booking;
@@ -51,15 +52,40 @@ function renderShell(input: EmailTemplateInput, title: string, body: string): st
   `.trim();
 }
 
-export function buildPendingEmail(input: EmailTemplateInput): EmailTemplate {
+function renderDeposit(depositClp: number, details: BankDetails): string {
+  const rows: [string, string][] = [
+    ["Titular", details.holderName],
+    ["RUT", details.holderRut],
+    ["Banco", details.bank],
+    ["Cuenta", `${details.accountType} ${details.accountNumber}`],
+    ["Correo", details.email],
+  ];
+  return `
+    <div style="margin-top:24px;padding:16px;border:1px solid #e5e5e5;border-radius:8px;">
+      <p style="margin:0 0 8px;"><strong>Para confirmar tu hora, transfiere el abono de ${formatClp(depositClp)}</strong>
+      y manda el comprobante. Se descuenta del total.</p>
+      ${rows.map(([label, value]) => `<p style="margin:4px 0;">${label}: ${escapeHtml(value)}</p>`).join("")}
+    </div>
+  `;
+}
+
+export interface PendingEmailInput extends EmailTemplateInput {
+  /** Datos de transferencia de la profesional, si la reserva lleva abono (SPEC 21). */
+  bankDetails?: BankDetails | null;
+}
+
+export function buildPendingEmail(input: PendingEmailInput): EmailTemplate {
   const { booking, professionalName } = input;
   const subject = `Recibimos tu solicitud de reserva con ${professionalName}`;
+  const deposit =
+    booking.depositClp !== null && input.bankDetails ? renderDeposit(booking.depositClp, input.bankDetails) : "";
   const body = `
     <p>Hola, recibimos tu solicitud de reserva con <strong>${escapeHtml(professionalName)}</strong>. Está pendiente de
     confirmación — te vamos a avisar por correo apenas la profesional la confirme.</p>
     <p><strong>Fecha:</strong> ${formatDateTimeSantiago(booking.startsAt)}</p>
     <p><strong>Duración:</strong> ${booking.durationMinutes} minutos</p>
     <p><strong>Precio:</strong> ${formatClp(booking.priceClp)}</p>
+    ${deposit}
   `.trim();
   return { subject, html: renderShell(input, "Solicitud recibida", body) };
 }

@@ -1,3 +1,4 @@
+import { DEFAULT_PROFESSIONAL_COMMERCE } from "@/server/domain/professional/commerce";
 import { describe, expect, it } from "vitest";
 import { InMemoryAvailabilityRepository } from "@/server/application/booking/__fakes__/in-memory-availability-repository";
 import { InMemoryBookingRepository } from "@/server/application/booking/__fakes__/in-memory-booking-repository";
@@ -24,6 +25,7 @@ async function setup(deadlineHours = 0, slotIntervalMinutes: number | null = nul
       id: PROFESSIONAL_ID,
       timezone: "UTC",
       bookingPolicy: { ...DEFAULT_BOOKING_POLICY, cancellationDeadlineHours: deadlineHours, slotIntervalMinutes },
+      commerce: DEFAULT_PROFESSIONAL_COMMERCE,
     }),
   );
   await availability.createRule({ professionalId: PROFESSIONAL_ID, weekday: 1, startTime: "09:00", endTime: "12:00", effectiveMonth: null });

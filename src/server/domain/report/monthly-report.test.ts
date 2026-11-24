@@ -21,6 +21,8 @@ function booking(startsAt: string, status: BookingStatus, clientUserId: string, 
     cancelledAt: null,
     cancelledBy: status === "cancelled" ? "client" : null,
     googleEventId: null,
+    depositClp: null,
+    depositPaidAt: null,
     createdAt: start,
     updatedAt: start,
   };

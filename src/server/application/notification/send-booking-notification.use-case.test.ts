@@ -1,3 +1,4 @@
+import { DEFAULT_PROFESSIONAL_COMMERCE } from "@/server/domain/professional/commerce";
 import { DEFAULT_BOOKING_POLICY } from "@/server/domain/professional/booking-policy";
 import { describe, expect, it } from "vitest";
 import { InMemoryUserRepository } from "@/server/application/auth/__fakes__/in-memory-user-repository";
@@ -49,6 +50,7 @@ async function setup({ withEmailSender = true }: { withEmailSender?: boolean } =
     trialEndsAt: null,
     bufferMinutes: 15,
     bookingPolicy: DEFAULT_BOOKING_POLICY,
+    commerce: DEFAULT_PROFESSIONAL_COMMERCE,
     createdAt: new Date(),
     updatedAt: new Date(),
   });

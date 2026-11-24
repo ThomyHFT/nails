@@ -25,6 +25,8 @@ export interface NewBooking {
   priceClp: number;
   durationMinutes: number;
   clientNote?: string | null;
+  /** Abono congelado (SPEC 21). */
+  depositClp?: number | null;
   /** Por defecto `pending` (la clienta reserva y la profesional confirma). Una reserva manual nace `confirmed`. */
   status?: "pending" | "confirmed";
 }
@@ -38,6 +40,7 @@ export interface NewBookingWithDesign {
   priceClp: number;
   durationMinutes: number;
   clientNote?: string | null;
+  depositClp?: number | null;
   status?: "pending" | "confirmed";
   design: {
     payload: NailDesignPayload;
@@ -75,6 +78,15 @@ export interface BookingRepository {
   ): Promise<Booking | null>;
   /** Igual que `updateStatus`: `null` si la reserva ya no estaba en `fromStatuses`. */
   cancel(id: string, cancelledBy: BookingActor, fromStatuses: readonly BookingStatus[]): Promise<Booking | null>;
+  /**
+   * Marca el abono como recibido (SPEC 21) si la reserva lo tiene, no estaba
+   * marcado y sigue pendiente o confirmada. `null` si no correspondía.
+   */
+  markDepositPaid(id: string): Promise<Booking | null>;
+  /** Completadas que empezaron en [from, to) sin correo "vuelve a reservar" (SPEC 21). */
+  listCompletedAwaitingRebook(from: Date, to: Date): Promise<Booking[]>;
+  /** Igual que `claimReminder`, para el correo "vuelve a reservar". */
+  claimRebook(id: string): Promise<boolean>;
   setGoogleEventId(id: string, googleEventId: string | null): Promise<void>;
   /** Confirmadas que empiezan en [from, to) y todavía no tienen recordatorio (SPEC 19). */
   listAwaitingReminder(from: Date, to: Date): Promise<Booking[]>;

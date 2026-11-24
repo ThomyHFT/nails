@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { bookings } from "@/server/infrastructure/db/schema/bookings";
 import { designs } from "@/server/infrastructure/db/schema/designs";
@@ -51,6 +51,8 @@ function toDomain(row: typeof bookings.$inferSelect): Booking {
     cancelledAt: row.cancelledAt,
     cancelledBy: row.cancelledBy,
     googleEventId: row.googleEventId,
+    depositClp: row.depositClp,
+    depositPaidAt: row.depositPaidAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -81,6 +83,7 @@ export class DrizzleBookingRepository implements BookingRepository {
         priceClp: booking.priceClp,
         durationMinutes: booking.durationMinutes,
         clientNote: booking.clientNote ?? null,
+        depositClp: booking.depositClp ?? null,
       })
       .returning();
     return toDomain(row);
@@ -118,6 +121,7 @@ export class DrizzleBookingRepository implements BookingRepository {
           priceClp: booking.priceClp,
           durationMinutes: booking.durationMinutes,
           clientNote: booking.clientNote ?? null,
+          depositClp: booking.depositClp ?? null,
         })
         .returning(),
     ]);
@@ -178,6 +182,46 @@ export class DrizzleBookingRepository implements BookingRepository {
       .where(eq(bookings.clientUserId, clientUserId))
       .orderBy(desc(bookings.startsAt));
     return rows.map(toDomain);
+  }
+
+  async markDepositPaid(id: string): Promise<Booking | null> {
+    const [row] = await db
+      .update(bookings)
+      .set({ depositPaidAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(bookings.id, id),
+          isNotNull(bookings.depositClp),
+          isNull(bookings.depositPaidAt),
+          inArray(bookings.status, ["pending", "confirmed"]),
+        ),
+      )
+      .returning();
+    return row ? toDomain(row) : null;
+  }
+
+  async listCompletedAwaitingRebook(from: Date, to: Date): Promise<Booking[]> {
+    const rows = await db
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.status, "completed"),
+          isNull(bookings.rebookSentAt),
+          gte(bookings.startsAt, from),
+          lt(bookings.startsAt, to),
+        ),
+      );
+    return rows.map(toDomain);
+  }
+
+  async claimRebook(id: string): Promise<boolean> {
+    const rows = await db
+      .update(bookings)
+      .set({ rebookSentAt: new Date() })
+      .where(and(eq(bookings.id, id), isNull(bookings.rebookSentAt)))
+      .returning({ id: bookings.id });
+    return rows.length > 0;
   }
 
   async updateStatus(id: string, status: BookingStatus, fromStatuses: readonly BookingStatus[]): Promise<Booking | null> {

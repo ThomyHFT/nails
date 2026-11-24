@@ -29,6 +29,8 @@ import {
 } from "@/components/brand";
 import { CancelBookingButton } from "@/app/[slug]/(public)/cuenta/CancelBookingButton";
 import { SignOutButton } from "@/app/[slug]/(public)/cuenta/SignOutButton";
+import { DepositInstructions } from "@/app/[slug]/(public)/_deposit/DepositInstructions";
+import { depositInfoFor } from "@/app/[slug]/(public)/_deposit/deposit-info";
 
 const CANCELLABLE_STATUSES = new Set<BookingStatus>(["pending", "confirmed"]);
 
@@ -94,11 +96,19 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
   const professionalWhatsApp =
     professional && isPhoneVisible(professional) && professional.phone ? whatsAppLink(professional.phone) : null;
   const now = new Date();
+  const depositInfo = professional ? depositInfoFor(professional) : null;
 
   const variantIds = Array.from(new Set(bookings.map((b) => b.serviceVariantId)));
   const variantRows = variantIds.length
     ? await db
-        .select({ id: serviceVariants.id, label: serviceVariants.label, serviceName: services.name })
+        .select({
+          id: serviceVariants.id,
+          label: serviceVariants.label,
+          serviceName: services.name,
+          serviceId: services.id,
+          active: serviceVariants.active,
+          serviceActive: services.active,
+        })
         .from(serviceVariants)
         .innerJoin(services, eq(serviceVariants.serviceId, services.id))
         .where(inArray(serviceVariants.id, variantIds))
@@ -163,6 +173,14 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
                     <Price clp={booking.priceClp} size="sm" />
                   </div>
 
+                  {/* SPEC 21: abono sin recibir, con los datos para transferir. */}
+                  {active && booking.depositClp !== null && booking.depositPaidAt === null && depositInfo && (
+                    <DepositInstructions amountClp={booking.depositClp} info={depositInfo} compact />
+                  )}
+                  {booking.depositClp !== null && booking.depositPaidAt !== null && (
+                    <Caption>Abono de ${booking.depositClp.toLocaleString("es-CL")} recibido.</Caption>
+                  )}
+
                   {showActions && (
                     <div className="flex flex-wrap items-center justify-end gap-3 border-t border-outline-variant pt-3">
                       {canChange && (
@@ -190,6 +208,15 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
                             </>
                           )}
                         </Caption>
+                      )}
+                      {/* SPEC 21: "vuelve a reservar", mismo servicio y variante si siguen activos. */}
+                      {booking.status === "completed" && variant?.active && variant.serviceActive && (
+                        <BrandButton
+                          size="sm"
+                          href={`/${slug}/reservar?service=${variant.serviceId}&variant=${variant.id}`}
+                        >
+                          Reservar de nuevo
+                        </BrandButton>
                       )}
                       {booking.status === "completed" && (
                         <ReviewAction

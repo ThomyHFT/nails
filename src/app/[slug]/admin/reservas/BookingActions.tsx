@@ -4,13 +4,22 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandButton, FIELD_CLASSES } from "@/components/brand";
 
-type Action = "confirm" | "complete" | "no-show" | "reject";
+type Action = "confirm" | "complete" | "no-show" | "reject" | "deposit";
 
 async function postAction(bookingId: string, action: Action) {
   return fetch(`/api/bookings/${bookingId}/${action}`, { method: "POST" });
 }
 
-export function BookingActions({ bookingId, status }: { bookingId: string; status: string }) {
+export function BookingActions({
+  bookingId,
+  status,
+  depositPending = false,
+}: {
+  bookingId: string;
+  status: string;
+  /** Lleva abono sin marcar (SPEC 21). */
+  depositPending?: boolean;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,9 +70,19 @@ export function BookingActions({ bookingId, status }: { bookingId: string; statu
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex flex-wrap justify-end gap-2">
+        {depositPending && (status === "pending" || status === "confirmed") && (
+          <BrandButton size="sm" disabled={isSubmitting} onClick={() => run("deposit")}>
+            Abono recibido
+          </BrandButton>
+        )}
         {status === "pending" && (
-          <BrandButton size="sm" disabled={isSubmitting} onClick={() => run("confirm")}>
-            Confirmar
+          <BrandButton
+            size="sm"
+            variant={depositPending ? "outline" : undefined}
+            disabled={isSubmitting}
+            onClick={() => run("confirm")}
+          >
+            {depositPending ? "Confirmar sin abono" : "Confirmar"}
           </BrandButton>
         )}
         {(status === "pending" || status === "confirmed") && (

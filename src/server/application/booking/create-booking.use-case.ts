@@ -1,6 +1,7 @@
 import type { AvailabilityRepository } from "@/server/domain/availability/availability-repository.port";
 import { BookingSlotTakenError, type BookingRepository } from "@/server/domain/booking/booking-repository.port";
 import { DEFAULT_BOOKING_POLICY, type BookingPolicy } from "@/server/domain/professional/booking-policy";
+import { depositForPrice, type ProfessionalCommerce } from "@/server/domain/professional/commerce";
 import type { Booking } from "@/server/domain/booking/booking.entity";
 import { calculateDesignQuote } from "@/server/domain/design/calculate-design-quote";
 import type { DesignRepository } from "@/server/domain/design/design-repository.port";
@@ -42,6 +43,8 @@ export interface CreateBookingInput {
   now?: Date;
   /** Reglas de la profesional (SPEC 19): qué horarios valen y si la reserva nace confirmada. */
   policy?: BookingPolicy;
+  /** Abono por transferencia (SPEC 21): se congela en la reserva. */
+  commerce?: ProfessionalCommerce;
 }
 
 export class CreateBookingUseCase {
@@ -100,8 +103,12 @@ export class CreateBookingUseCase {
     extraPriceClp: number,
     extraMinutes: number,
   ): Promise<Booking> {
-    // SPEC 19: con confirmación automática la reserva nace confirmada.
-    const status = (input.policy ?? DEFAULT_BOOKING_POLICY).autoConfirm ? "confirmed" : "pending";
+    const totalPriceClp = input.priceClp + extraPriceClp;
+    const depositClp = input.commerce ? depositForPrice(input.commerce, totalPriceClp) : null;
+    // SPEC 19: con confirmación automática la reserva nace confirmada. SPEC 21:
+    // salvo que lleve abono, que la profesional confirma al recibirlo.
+    const autoConfirm = (input.policy ?? DEFAULT_BOOKING_POLICY).autoConfirm && depositClp === null;
+    const status = autoConfirm ? "confirmed" : "pending";
     if (input.designPayload) {
       return this.bookingRepository.createWithDesign({
         professionalId: input.professionalId,
@@ -109,9 +116,10 @@ export class CreateBookingUseCase {
         serviceVariantId: input.serviceVariantId,
         startsAt: new Date(matchingSlot.startsAt),
         endsAt: new Date(matchingSlot.endsAt),
-        priceClp: input.priceClp + extraPriceClp,
+        priceClp: totalPriceClp,
         durationMinutes: totalDurationMinutes,
         clientNote: input.clientNote ?? null,
+        depositClp,
         status,
         design: {
           payload: input.designPayload,
@@ -128,9 +136,10 @@ export class CreateBookingUseCase {
       serviceVariantId: input.serviceVariantId,
       startsAt: new Date(matchingSlot.startsAt),
       endsAt: new Date(matchingSlot.endsAt),
-      priceClp: input.priceClp + extraPriceClp,
+      priceClp: totalPriceClp,
       durationMinutes: totalDurationMinutes,
       clientNote: input.clientNote ?? null,
+      depositClp,
       status,
     });
   }

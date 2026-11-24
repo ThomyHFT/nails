@@ -7,6 +7,8 @@ import { db } from "@/server/infrastructure/db/client";
 import { designs } from "@/server/infrastructure/db/schema/designs";
 import { serviceVariants, services } from "@/server/infrastructure/db/schema/services";
 import { users } from "@/server/infrastructure/db/schema/users";
+import { reviews } from "@/server/infrastructure/db/schema/content";
+import { siteUrl } from "@/app/_lib/site-url";
 import type { Booking, BookingStatus } from "@/server/domain/booking/booking.entity";
 import { BookingActions } from "@/app/[slug]/admin/reservas/BookingActions";
 import { ManualBookingForm } from "@/app/[slug]/admin/reservas/ManualBookingForm";
@@ -73,8 +75,9 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
   const clientIds = Array.from(new Set(bookings.map((b) => b.clientUserId)));
   const variantIds = Array.from(new Set(bookings.map((b) => b.serviceVariantId)));
   const designIds = Array.from(new Set(bookings.map((b) => b.designId).filter((id): id is string => id !== null)));
+  const completedIds = bookings.filter((b) => b.status === "completed").map((b) => b.id);
 
-  const [clientRows, variantRows, designRows] = await Promise.all([
+  const [clientRows, variantRows, designRows, reviewRows] = await Promise.all([
     clientIds.length
       ? db.select({ id: users.id, name: users.name, email: users.email, phone: users.phone }).from(users).where(inArray(users.id, clientIds))
       : Promise.resolve([]),
@@ -88,7 +91,12 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
     designIds.length
       ? db.select({ id: designs.id, referenceImageUrl: designs.referenceImageUrl }).from(designs).where(inArray(designs.id, designIds))
       : Promise.resolve([]),
+    completedIds.length
+      ? db.select({ bookingId: reviews.bookingId }).from(reviews).where(inArray(reviews.bookingId, completedIds))
+      : Promise.resolve([]),
   ]);
+  const reviewedBookingIds = new Set(reviewRows.map((r) => r.bookingId));
+  const baseUrl = siteUrl();
 
   const clientById = new Map(clientRows.map((c) => [c.id, c]));
   const variantById = new Map(variantRows.map((v) => [v.id, v]));
@@ -164,6 +172,15 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                 const variant = variantById.get(booking.serviceVariantId);
                 const design = booking.designId ? designById.get(booking.designId) : undefined;
                 const strikes = strikesByClient.get(booking.clientUserId) ?? 0;
+                const depositPending = booking.depositClp !== null && booking.depositPaidAt === null;
+                // SPEC 21: pedir la opinión por WhatsApp con el enlace ya escrito.
+                const askReviewUrl =
+                  booking.status === "completed" && !reviewedBookingIds.has(booking.id) && client?.phone
+                    ? whatsAppUrl(
+                        client.phone,
+                        `¡Hola ${client.name.split(" ")[0]}! Gracias por venir a ${professional.businessName}. ¿Me dejas tu opinión? ${baseUrl}/${slug}/cuenta/opinar/${booking.id}`,
+                      )
+                    : null;
 
                 return (
                   // El id es el ancla que usa el correo "nueva solicitud" para
@@ -229,8 +246,27 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                         <Price clp={booking.priceClp} size="sm" />
                       </div>
 
-                      <div className="flex justify-end border-t border-outline-variant pt-3">
-                        <BookingActions bookingId={booking.id} status={booking.status} />
+                      {booking.depositClp !== null && (
+                        <Chip tone={depositPending ? "warning" : "success"}>
+                          {depositPending
+                            ? `Abono pendiente · $${booking.depositClp.toLocaleString("es-CL")}`
+                            : `Abono recibido · $${booking.depositClp.toLocaleString("es-CL")}`}
+                        </Chip>
+                      )}
+
+                      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-outline-variant pt-3">
+                        {askReviewUrl && (
+                          <a
+                            href={askReviewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-sm text-xs font-semibold text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <MessageCircle className="size-3.5" aria-hidden />
+                            Pedir opinión
+                          </a>
+                        )}
+                        <BookingActions bookingId={booking.id} status={booking.status} depositPending={depositPending} />
                       </div>
                     </Panel>
                   </div>

@@ -25,6 +25,8 @@ function booking(overrides: Partial<Booking> = {}): Booking {
     cancelledAt: null,
     cancelledBy: null,
     googleEventId: null,
+    depositClp: null,
+    depositPaidAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -77,6 +79,30 @@ describe("buildConfirmationEmail", () => {
 });
 
 describe("buildPendingEmail", () => {
+  it("shows the deposit and escaped bank details when the booking has one", () => {
+    const email = buildPendingEmail({
+      booking: booking({ status: "pending", depositClp: 5000 }),
+      branding: branding({ primaryColorHex: "#111111" }),
+      professionalName: "Fran Uñas",
+      bankDetails: {
+        bank: "BancoEstado",
+        accountType: "Cuenta RUT",
+        accountNumber: "123",
+        holderName: "<b>Fran</b>",
+        holderRut: "1-9",
+        email: "f@x.cl",
+      },
+    });
+    expect(email.html).toContain("$5.000");
+    expect(email.html).toContain("Cuenta RUT 123");
+    expect(email.html).not.toContain("<b>Fran</b>");
+  });
+
+  it("omits the deposit block without a deposit", () => {
+    const email = buildPendingEmail({ booking: booking(), branding: branding({}), professionalName: "Fran" });
+    expect(email.html).not.toContain("abono");
+  });
+
   it("includes the professional's name, the date and says it's pending confirmation", () => {
     const email = buildPendingEmail({
       booking: booking(),

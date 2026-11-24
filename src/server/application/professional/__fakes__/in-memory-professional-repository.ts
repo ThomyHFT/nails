@@ -1,3 +1,4 @@
+import type { ProfessionalCommerce } from "@/server/domain/professional/commerce";
 import type { BookingPolicy } from "@/server/domain/professional/booking-policy";
 import type { ContactInfoInput, ProfessionalRepository } from "@/server/domain/professional/professional-repository.port";
 import type { Professional } from "@/server/domain/professional/professional.entity";
@@ -21,6 +22,13 @@ export class InMemoryProfessionalRepository implements ProfessionalRepository {
     const professional = this.professionals.find((p) => p.id === professionalId);
     if (!professional) throw new Error(`Professional ${professionalId} not found`);
     professional.bookingPolicy = { ...policy };
+    return professional;
+  }
+
+  async updateCommerce(professionalId: string, commerce: ProfessionalCommerce): Promise<Professional> {
+    const professional = this.professionals.find((p) => p.id === professionalId);
+    if (!professional) throw new Error(`Professional ${professionalId} not found`);
+    professional.commerce = { ...commerce };
     return professional;
   }
 

@@ -1,3 +1,4 @@
+import { professionalRowToDomain } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/infrastructure/db/client";
 import { inviteCodes } from "@/server/infrastructure/db/schema/invites";
@@ -18,36 +19,6 @@ import type {
   TenantProvisioningRepository,
 } from "@/server/domain/tenant/tenant-provisioning-repository.port";
 
-function professionalToDomain(row: typeof professionals.$inferSelect): Professional {
-  return {
-    id: row.id,
-    slug: row.slug,
-    ownerUserId: row.ownerUserId,
-    businessName: row.businessName,
-    vertical: row.vertical,
-    bio: row.bio,
-    tagline: row.tagline,
-    phone: row.phone,
-    phoneVisible: row.phoneVisible,
-    address: row.address,
-    addressVisible: row.addressVisible,
-    instagramHandle: row.instagramHandle,
-    timezone: row.timezone,
-    active: row.active,
-    publishedAt: row.publishedAt,
-    trialEndsAt: row.trialEndsAt,
-    bufferMinutes: row.bufferMinutes,
-    bookingPolicy: {
-      autoConfirm: row.autoConfirm,
-      slotIntervalMinutes: row.slotIntervalMinutes,
-      minLeadMinutes: row.minLeadMinutes,
-      maxAdvanceDays: row.maxAdvanceDays,
-      cancellationDeadlineHours: row.cancellationDeadlineHours,
-    },
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  };
-}
 
 /**
  * Alta atómica de un tenant: usuario, professional, catálogo de diseño,
@@ -125,6 +96,6 @@ export class DrizzleTenantProvisioningRepository implements TenantProvisioningRe
         .where(eq(inviteCodes.id, input.inviteCodeId)),
     ]);
 
-    return { userId, professional: professionalToDomain(professionalRows[0]) };
+    return { userId, professional: professionalRowToDomain(professionalRows[0]) };
   }
 }

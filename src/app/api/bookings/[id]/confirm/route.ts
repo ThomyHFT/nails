@@ -2,21 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ConfirmBookingUseCase } from "@/server/application/booking/confirm-booking.use-case";
 import { BookingInvalidStateError, BookingNotFoundError, BookingNotOwnedError } from "@/server/application/booking/booking-guard-errors";
-import { SendBookingNotificationUseCase } from "@/server/application/notification/send-booking-notification.use-case";
-import { SyncBookingToCalendarUseCase } from "@/server/application/calendar/sync-booking-to-calendar.use-case";
-import { DrizzleUserRepository } from "@/server/infrastructure/repositories/drizzle-user.repository";
-import { DrizzleBrandingRepository } from "@/server/infrastructure/repositories/drizzle-branding.repository";
-import { DrizzleEmailNotificationRepository } from "@/server/infrastructure/repositories/drizzle-email-notification.repository";
-import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
-import { DrizzleGoogleCalendarConnectionRepository } from "@/server/infrastructure/repositories/drizzle-google-calendar-connection.repository";
-import { ResendEmailSender } from "@/server/infrastructure/email/resend-email-sender";
-import { GoogleCalendarGateway } from "@/server/infrastructure/calendar/google-calendar-gateway";
-import { AesTokenCipher } from "@/server/infrastructure/security/aes-token-cipher";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
-import { env } from "@/server/infrastructure/config/env";
+import { afterBookingConfirmed } from "@/app/api/bookings/_shared/after-confirm";
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
   if (!session || session.user.role !== "professional") {
@@ -28,43 +18,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const bookingRepository = new DrizzleBookingRepository();
-  const useCase = new ConfirmBookingUseCase(bookingRepository);
   try {
-    const booking = await useCase.execute(id, professional.id);
-
-    try {
-      const notificationUseCase = new SendBookingNotificationUseCase(
-        bookingRepository,
-        new DrizzleUserRepository(),
-        new DrizzleProfessionalRepository(),
-        new DrizzleBrandingRepository(),
-        env.RESEND_API_KEY
-          ? new ResendEmailSender(env.RESEND_API_KEY, env.EMAIL_FROM_ADDRESS ?? "onboarding@resend.dev")
-          : null,
-        new DrizzleEmailNotificationRepository(),
-      );
-      await notificationUseCase.execute({ bookingId: booking.id, type: "confirmation" });
-    } catch {
-      // Un fallo al notificar nunca debe cambiar la respuesta de confirmar la reserva.
-    }
-
-    try {
-      if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.CALENDAR_TOKEN_KEY) {
-        const cipher = new AesTokenCipher(Buffer.from(env.CALENDAR_TOKEN_KEY, "base64"));
-        const syncUseCase = new SyncBookingToCalendarUseCase(
-          bookingRepository,
-          new DrizzleGoogleCalendarConnectionRepository(cipher),
-          new GoogleCalendarGateway(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET),
-          new DrizzleUserRepository(),
-          new DrizzleServicesRepository(),
-        );
-        await syncUseCase.execute(booking.id);
-      }
-    } catch {
-      // Un fallo de Google Calendar nunca debe cambiar la respuesta de confirmar la reserva.
-    }
-
+    const booking = await new ConfirmBookingUseCase(new DrizzleBookingRepository()).execute(id, professional.id);
+    await afterBookingConfirmed(booking.id);
     return NextResponse.json({ booking });
   } catch (err) {
     if (err instanceof BookingNotFoundError) {
