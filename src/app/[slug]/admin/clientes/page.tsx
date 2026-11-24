@@ -9,6 +9,7 @@ import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositor
 import { ListClientStatsUseCase } from "@/server/application/booking/list-client-stats.use-case";
 import { AdminPageHeader, Caption, Chip, EmptyState, Overline, Panel, Price } from "@/components/brand";
 import { whatsAppUrl } from "@/app/[slug]/(public)/links";
+import { siteUrl } from "@/app/_lib/site-url";
 import { isPlaceholderEmail } from "@/server/domain/user/client-contact";
 
 function formatDate(date: Date) {
@@ -30,6 +31,8 @@ export default async function ClientesAdminPage({ params }: { params: Promise<{ 
     ? await db.select({ id: users.id, name: users.name, email: users.email, phone: users.phone }).from(users).where(inArray(users.id, clientIds))
     : [];
   const clientById = new Map(clientRows.map((c) => [c.id, c]));
+  const now = new Date();
+  const bookUrl = `${siteUrl()}/${slug}/reservar`;
 
   return (
     <div className="flex max-w-3xl flex-col gap-8">
@@ -100,6 +103,20 @@ export default async function ClientesAdminPage({ params }: { params: Promise<{ 
                         >
                           <MessageCircle className="size-3.5" aria-hidden />
                           {client.phone}
+                        </a>
+                      )}
+                      {/* SPEC 21: sin hora futura, invitarla a volver con el link ya escrito. */}
+                      {client?.phone && stat.completedBookings > 0 && stat.lastBookingAt < now && (
+                        <a
+                          href={whatsAppUrl(
+                            client.phone,
+                            `¡Hola ${client.name.split(" ")[0]}! ¿Agendamos tu próxima hora en ${professional.businessName}? Reserva acá: ${bookUrl}`,
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-fit rounded-sm text-xs font-semibold text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          Invitar a volver
                         </a>
                       )}
                     </td>

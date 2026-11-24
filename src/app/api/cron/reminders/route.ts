@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { SendRebookUseCase } from "@/server/application/notification/send-rebook.use-case";
 import { SendRemindersUseCase } from "@/server/application/notification/send-reminders.use-case";
 import { env } from "@/server/infrastructure/config/env";
 import { ResendEmailSender } from "@/server/infrastructure/email/resend-email-sender";
@@ -18,7 +19,10 @@ function authorized(header: string | null, secret: string): boolean {
   return received.length === expected.length && timingSafeEqual(received, expected);
 }
 
-/** Recordatorios del día antes (SPEC 19). Lo llama Vercel Cron una vez al día. */
+/**
+ * Tareas diarias: recordatorios del día antes (SPEC 19) e invitaciones a
+ * volver a reservar (SPEC 21). Lo llama Vercel Cron una vez al día.
+ */
 export async function GET(request: Request) {
   // Sin secreto configurado el endpoint queda cerrado, nunca abierto.
   if (!env.CRON_SECRET) return NextResponse.json({ error: "CRON_SECRET no configurada" }, { status: 503 });
@@ -27,7 +31,7 @@ export async function GET(request: Request) {
   }
   if (!env.RESEND_API_KEY) return NextResponse.json({ sent: 0, failed: 0, skipped: 0, reason: "sin RESEND_API_KEY" });
 
-  const result = await new SendRemindersUseCase(
+  const deps = [
     new DrizzleBookingRepository(),
     new DrizzleProfessionalRepository(),
     new DrizzleUserRepository(),
@@ -35,7 +39,12 @@ export async function GET(request: Request) {
     new DrizzleServicesRepository(),
     new ResendEmailSender(env.RESEND_API_KEY, env.EMAIL_FROM_ADDRESS ?? "onboarding@resend.dev"),
     new DrizzleEmailNotificationRepository(),
-  ).execute({ baseUrl: env.AUTH_URL.replace(/\/$/, "") });
+  ] as const;
+  const baseUrl = env.AUTH_URL.replace(/\/$/, "");
 
-  return NextResponse.json(result);
+  const reminders = await new SendRemindersUseCase(...deps).execute({ baseUrl });
+  // Un fallo de las invitaciones no tapa el resultado de los recordatorios.
+  const rebook = await new SendRebookUseCase(...deps).execute({ baseUrl }).catch(() => null);
+
+  return NextResponse.json({ ...reminders, rebook });
 }
