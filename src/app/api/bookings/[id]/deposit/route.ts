@@ -5,14 +5,14 @@ import {
   MarkDepositReceivedUseCase,
 } from "@/server/application/booking/mark-deposit-received.use-case";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
-import { getSessionProfessional } from "@/server/interface/session-professional";
+import { authorizeBookingAction } from "@/app/api/bookings/_shared/authorize";
 import { afterBookingConfirmed } from "@/app/api/bookings/_shared/after-confirm";
 
 /** "Abono recibido" (SPEC 21): marca el abono y confirma la reserva si estaba pendiente. */
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const professional = await getSessionProfessional();
-  if (!professional) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const { professional, response } = await authorizeBookingAction(id);
+  if (!professional) return response;
 
   try {
     const result = await new MarkDepositReceivedUseCase(new DrizzleBookingRepository()).execute(id, professional.id);

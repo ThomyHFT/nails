@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { authorizeBookingAction } from "@/app/api/bookings/_shared/authorize";
 import { notifyWaitlistOfFreedSlot } from "@/app/api/bookings/_shared/notify-waitlist";
-import { auth } from "@/auth";
 import { CancelBookingByProfessionalUseCase } from "@/server/application/booking/cancel-booking.use-case";
 import { BookingInvalidStateError, BookingNotFoundError, BookingNotOwnedError } from "@/server/application/booking/booking-guard-errors";
 import { SendBookingNotificationUseCase } from "@/server/application/notification/send-booking-notification.use-case";
@@ -18,15 +18,9 @@ import { env } from "@/server/infrastructure/config/env";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await auth();
-  if (!session || session.user.role !== "professional") {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
-
-  const professional = await new DrizzleProfessionalRepository().findByOwnerUserId(session.user.id);
-  if (!professional) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  // SPEC 22: la dueña o la integrante asignada.
+  const { professional, response } = await authorizeBookingAction(id);
+  if (!professional) return response;
 
   const bookingRepository = new DrizzleBookingRepository();
   const useCase = new CancelBookingByProfessionalUseCase(bookingRepository);

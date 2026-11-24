@@ -1,3 +1,4 @@
+import type { Plan } from "@/server/domain/staff/staff-member";
 import type { ProfessionalCommerce } from "@/server/domain/professional/commerce";
 import type { BookingPolicy } from "@/server/domain/professional/booking-policy";
 import type { ContactInfoInput, ProfessionalRepository } from "@/server/domain/professional/professional-repository.port";
@@ -68,6 +69,14 @@ export class InMemoryProfessionalRepository implements ProfessionalRepository {
     const professional = this.professionals.find((p) => p.id === professionalId);
     if (!professional) throw new Error("Profesional no encontrada");
     professional.active = active;
+    return professional;
+  }
+
+  async updatePlan(professionalId: string, plan: Plan, staffLimit: number): Promise<Professional> {
+    const professional = this.professionals.find((p) => p.id === professionalId);
+    if (!professional) throw new Error(`Professional ${professionalId} not found`);
+    professional.plan = plan;
+    professional.staffLimit = staffLimit;
     return professional;
   }
 

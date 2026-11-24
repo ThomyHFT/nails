@@ -21,8 +21,16 @@ interface ProfessionalRow {
   active: boolean;
   publishedAt: string | null;
   trialEndsAt: string | null;
+  plan: "solo" | "salon";
+  staffLimit: number;
   createdAt: string;
 }
+
+// SPEC 22: "solo" o "salon-N", N integrantes contando a la dueña.
+const PLAN_OPTIONS = [
+  { value: "solo", label: "Solo" },
+  ...[2, 3, 4, 5, 6].map((n) => ({ value: `salon-${n}`, label: `Salón · ${n}` })),
+];
 
 interface InviteCodeRow {
   id: string;
@@ -107,6 +115,25 @@ export function AdminDashboard({
     }
   }
 
+  async function changePlan(professional: ProfessionalRow, value: string) {
+    const [plan, limit] = value === "solo" ? ["solo", 1] : ["salon", Number(value.split("-")[1])];
+    setPendingId(professional.id);
+    try {
+      const response = await fetch(`/api/admin/professionals/${professional.id}/plan`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, staffLimit: limit }),
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      setProfessionals((prev) =>
+        prev.map((p) => (p.id === professional.id ? { ...p, plan: data.plan, staffLimit: data.staffLimit } : p)),
+      );
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   async function createInviteCode(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setCreateError(null);
@@ -157,6 +184,9 @@ export function AdminDashboard({
                   <Overline>Prueba</Overline>
                 </th>
                 <th className="p-2">
+                  <Overline>Plan</Overline>
+                </th>
+                <th className="p-2">
                   <Overline>Acciones</Overline>
                 </th>
               </tr>
@@ -186,6 +216,21 @@ export function AdminDashboard({
                     </td>
                     <td className="p-2">
                       <Chip tone={trial.tone}>{trial.label}</Chip>
+                    </td>
+                    <td className="p-2">
+                      <select
+                        aria-label={`Plan de ${professional.businessName}`}
+                        className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                        disabled={isPending}
+                        value={professional.plan === "solo" ? "solo" : `salon-${professional.staffLimit}`}
+                        onChange={(e) => changePlan(professional, e.target.value)}
+                      >
+                        {PLAN_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="p-2">
                       <div className="flex flex-wrap gap-2">

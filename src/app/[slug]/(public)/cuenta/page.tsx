@@ -84,6 +84,10 @@ export default async function CuentaPage({ params }: { params: Promise<{ slug: s
   if (!session) {
     redirect(`/${slug}/login`);
   }
+  // SPEC 22: una integrante no tiene reservas como clienta; su casa es el panel de equipo.
+  if (session.user.role === "staff") {
+    redirect(`/${slug}/equipo`);
+  }
 
   const professional = await new DrizzleProfessionalRepository().findBySlug(slug);
   const variantAxisLabel = verticalCopy(professional?.vertical ?? "nails").variantAxisLabel;

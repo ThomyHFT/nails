@@ -1,3 +1,4 @@
+import type { Plan } from "@/server/domain/staff/staff-member";
 import { parseBankDetails, type ProfessionalCommerce } from "@/server/domain/professional/commerce";
 import type { BookingPolicy } from "@/server/domain/professional/booking-policy";
 import { eq } from "drizzle-orm";
@@ -92,6 +93,15 @@ export class DrizzleProfessionalRepository implements ProfessionalRepository {
     const [row] = await db
       .update(professionals)
       .set({ ...commerce, updatedAt: new Date() })
+      .where(eq(professionals.id, professionalId))
+      .returning();
+    return professionalRowToDomain(row);
+  }
+
+  async updatePlan(professionalId: string, plan: Plan, staffLimit: number): Promise<Professional> {
+    const [row] = await db
+      .update(professionals)
+      .set({ plan, staffLimit, updatedAt: new Date() })
       .where(eq(professionals.id, professionalId))
       .returning();
     return professionalRowToDomain(row);

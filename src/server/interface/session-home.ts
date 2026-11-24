@@ -1,5 +1,6 @@
 import type { Session } from "next-auth";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
+import { getSessionStaff } from "@/server/interface/staff-context";
 
 /**
  * A dónde va alguien que inició sesión desde `/ingresar`, la puerta de entrada
@@ -15,6 +16,12 @@ export async function homePathForSession(session: Session): Promise<string> {
   if (session.user.role === "professional") {
     const professional = await new DrizzleProfessionalRepository().findByOwnerUserId(session.user.id);
     if (professional) return `/${professional.slug}/admin`;
+  }
+
+  // SPEC 22: la integrante va a su panel de equipo.
+  if (session.user.role === "staff") {
+    const staffSession = await getSessionStaff();
+    if (staffSession) return `/${staffSession.professional.slug}/equipo`;
   }
 
   return "/";

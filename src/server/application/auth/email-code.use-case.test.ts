@@ -70,6 +70,17 @@ describe("Entrar con código por correo (SPEC 20)", () => {
     expect(user.id).toBe(existing.id);
   });
 
+  it("signs a salon staff member into her existing account, never creating a client (SPEC 22)", async () => {
+    const { request, signIn, users, emailSender } = setup();
+    const staff = await users.create({ email: "ana@example.com", passwordHash: UNUSABLE_PASSWORD_HASH, name: "Ana", role: "staff" });
+
+    expect(await request.execute({ email: "ana@example.com", slug: "fran" })).toEqual({ status: "sent", isNewClient: false });
+    expect(emailSender.sent).toHaveLength(1);
+    const user = await signIn.execute({ email: "ana@example.com", code: "123456" });
+    expect(user.id).toBe(staff.id);
+    expect(user.role).toBe("staff");
+  });
+
   it("never sends a code to a professional", async () => {
     const { request, signIn, users, emailSender, codes } = setup();
     await users.create({ email: "fran@example.com", passwordHash: "h", name: "Fran", role: "professional" });

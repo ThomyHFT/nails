@@ -94,6 +94,12 @@ export interface RequestLoginCodeResult {
   isNewClient: boolean;
 }
 
+/**
+ * Quién entra con código: clientas y, desde el SPEC 22, integrantes de un
+ * salón (nacen sin contraseña). Dueñas y superadmin, solo con contraseña.
+ */
+const CODE_LOGIN_ROLES = new Set(["client", "staff"]);
+
 export class RequestLoginCodeUseCase {
   constructor(
     private readonly users: UserRepository,
@@ -103,7 +109,7 @@ export class RequestLoginCodeUseCase {
   async execute(input: { email: string; slug: string; now?: Date }): Promise<RequestLoginCodeResult> {
     const user = await this.users.findByEmail(normalizeEmail(input.email));
     // Profesionales y superadmin entran solo con contraseña: misma respuesta, sin correo.
-    if (user && user.role !== "client") return { status: "sent", isNewClient: false };
+    if (user && !CODE_LOGIN_ROLES.has(user.role)) return { status: "sent", isNewClient: false };
     const status = await issueEmailCode(this.deps, { email: input.email, purpose: "login", userId: null, slug: input.slug, now: input.now });
     return { status, isNewClient: !user };
   }
@@ -139,7 +145,7 @@ export class SignInWithEmailCodeUseCase {
   async execute(input: { email: string; code: string; name?: string; phone?: string; now?: Date }): Promise<User> {
     const email = normalizeEmail(input.email);
     const existing = await this.users.findByEmail(email);
-    if (existing && existing.role !== "client") throw new InvalidEmailCodeError();
+    if (existing && !CODE_LOGIN_ROLES.has(existing.role)) throw new InvalidEmailCodeError();
 
     const name = input.name?.trim() ?? "";
     if (!existing && (name.length < 2 || !input.phone || !isValidPhone(input.phone))) {

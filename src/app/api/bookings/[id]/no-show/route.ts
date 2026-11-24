@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { authorizeBookingAction } from "@/app/api/bookings/_shared/authorize";
 import { MarkNoShowUseCase } from "@/server/application/booking/mark-no-show.use-case";
 import {
   BookingInvalidStateError,
@@ -8,19 +8,12 @@ import {
   BookingTooEarlyError,
 } from "@/server/application/booking/booking-guard-errors";
 import { DrizzleBookingRepository } from "@/server/infrastructure/repositories/drizzle-booking.repository";
-import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await auth();
-  if (!session || session.user.role !== "professional") {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
-
-  const professional = await new DrizzleProfessionalRepository().findByOwnerUserId(session.user.id);
-  if (!professional) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  // SPEC 22: la dueña o la integrante asignada.
+  const { professional, response } = await authorizeBookingAction(id);
+  if (!professional) return response;
 
   const useCase = new MarkNoShowUseCase(new DrizzleBookingRepository());
   try {

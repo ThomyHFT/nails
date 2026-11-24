@@ -26,6 +26,8 @@ export default async function SuperadminPage() {
           active: p.active,
           publishedAt: p.publishedAt ? p.publishedAt.toISOString() : null,
           trialEndsAt: p.trialEndsAt ? p.trialEndsAt.toISOString() : null,
+          plan: p.plan,
+          staffLimit: p.staffLimit,
           createdAt: p.createdAt.toISOString(),
         }))}
         initialInviteCodes={inviteCodes.map((c) => ({
