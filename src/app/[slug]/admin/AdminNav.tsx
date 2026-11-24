@@ -11,11 +11,13 @@ export function AdminNav({
   vertical,
   pendingBookingsCount = 0,
   pendingReviewsCount = 0,
+  hasTeam = false,
 }: {
   slug: string;
   vertical: Vertical;
   pendingBookingsCount?: number;
   pendingReviewsCount?: number;
+  hasTeam?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
@@ -44,6 +46,7 @@ export function AdminNav({
         vertical={vertical}
         pendingBookingsCount={pendingBookingsCount}
         pendingReviewsCount={pendingReviewsCount}
+        hasTeam={hasTeam}
         onOpen={() => setIsOpen(true)}
       />
       <AdminSidebar
@@ -51,6 +54,7 @@ export function AdminNav({
         vertical={vertical}
         pendingBookingsCount={pendingBookingsCount}
         pendingReviewsCount={pendingReviewsCount}
+        hasTeam={hasTeam}
         open={isOpen}
         onClose={() => setIsOpen(false)}
       />

@@ -11,6 +11,8 @@ import { reviews } from "@/server/infrastructure/db/schema/content";
 import { siteUrl } from "@/app/_lib/site-url";
 import { DrizzleWaitlistRepository } from "@/server/infrastructure/repositories/drizzle-waitlist.repository";
 import { localDateIn } from "@/server/domain/waitlist/waitlist";
+import { DrizzleStaffRepository } from "@/server/infrastructure/repositories/drizzle-staff.repository";
+import { ReassignSelect } from "@/app/[slug]/admin/reservas/ReassignSelect";
 import type { Booking, BookingStatus } from "@/server/domain/booking/booking.entity";
 import { BookingActions } from "@/app/[slug]/admin/reservas/BookingActions";
 import { ManualBookingForm } from "@/app/[slug]/admin/reservas/ManualBookingForm";
@@ -63,8 +65,15 @@ function formatDateTime(date: Date) {
   return date.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Santiago" });
 }
 
-export default async function ReservasAdminPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ReservasAdminPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ integrante?: string }>;
+}) {
   const { slug } = await params;
+  const { integrante } = await searchParams;
 
   const professional = await new DrizzleProfessionalRepository().findBySlug(slug);
   if (!professional) {
@@ -72,10 +81,17 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
   }
 
   const bookingRepository = new DrizzleBookingRepository();
-  const [bookings, waitlist] = await Promise.all([
+  const [allBookings, waitlist, team] = await Promise.all([
     bookingRepository.listByProfessional(professional.id),
     new DrizzleWaitlistRepository().listByProfessional(professional.id, localDateIn(new Date(), professional.timezone)),
+    new DrizzleStaffRepository().listByProfessional(professional.id),
   ]);
+  // SPEC 22: con equipo, cada reserva dice quién atiende y se puede filtrar por integrante.
+  const hasTeam = professional.plan === "salon" && team.length > 1;
+  const staffName = new Map(team.map((s) => [s.id, s.name]));
+  const filterStaff = hasTeam && integrante && staffName.has(integrante) ? integrante : null;
+  const bookings = filterStaff ? allBookings.filter((b) => b.staffId === filterStaff) : allBookings;
+  const activeTeam = team.filter((s) => s.active).map((s) => ({ id: s.id, name: s.name }));
 
   const clientIds = Array.from(new Set([...bookings.map((b) => b.clientUserId), ...waitlist.map((w) => w.clientUserId)]));
   const variantIds = Array.from(
@@ -154,7 +170,29 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
         }
       />
 
-      <ManualBookingForm variants={variantOptions} clients={clientOptions} />
+      {hasTeam && (
+        <nav aria-label="Filtrar por integrante" className="flex flex-wrap gap-2">
+          <a
+            href={`/${slug}/admin/reservas`}
+            aria-current={filterStaff ? undefined : "page"}
+            className="rounded-pill border border-outline-variant px-3 py-1 text-sm aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
+          >
+            Todas
+          </a>
+          {team.map((member) => (
+            <a
+              key={member.id}
+              href={`/${slug}/admin/reservas?integrante=${member.id}`}
+              aria-current={filterStaff === member.id ? "page" : undefined}
+              className="rounded-pill border border-outline-variant px-3 py-1 text-sm aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
+            >
+              {member.name}
+            </a>
+          ))}
+        </nav>
+      )}
+
+      <ManualBookingForm variants={variantOptions} clients={clientOptions} staff={hasTeam ? activeTeam : []} />
 
       {waitlist.length > 0 && (
         <Panel padding="sm" className="flex flex-col gap-3">
@@ -279,7 +317,11 @@ export default async function ReservasAdminPage({ params }: { params: Promise<{ 
                         {variant
                           ? `${variant.serviceName} · ${variant.label ?? "—"}`
                           : booking.serviceVariantId}
+                        {hasTeam && ` · con ${staffName.get(booking.staffId) ?? "—"}`}
                       </Caption>
+                      {hasTeam && (booking.status === "pending" || booking.status === "confirmed") && (
+                        <ReassignSelect bookingId={booking.id} currentStaffId={booking.staffId} staff={activeTeam} />
+                      )}
 
                       {booking.clientNote && (
                         <blockquote className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-foreground">

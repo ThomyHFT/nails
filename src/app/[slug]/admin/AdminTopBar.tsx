@@ -10,16 +10,18 @@ export function AdminTopBar({
   vertical,
   pendingBookingsCount = 0,
   pendingReviewsCount = 0,
+  hasTeam = false,
   onOpen,
 }: {
   slug: string;
   vertical: Vertical;
   pendingBookingsCount?: number;
   pendingReviewsCount?: number;
+  hasTeam?: boolean;
   onOpen: () => void;
 }) {
   const pathname = usePathname();
-  const items = getAdminNavItems(slug, vertical, { pendingBookingsCount, pendingReviewsCount });
+  const items = getAdminNavItems(slug, vertical, { pendingBookingsCount, pendingReviewsCount, hasTeam });
   const current = items.find((item) => (item.exact ? pathname === item.href : (pathname?.startsWith(item.href) ?? false)));
 
   return (

@@ -13,6 +13,7 @@ import {
   Tag,
   UserRound,
   Users,
+  UsersRound,
 } from "lucide-react";
 import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 
@@ -27,12 +28,14 @@ export type AdminNavItem = {
 export interface AdminNavCounts {
   pendingBookingsCount?: number;
   pendingReviewsCount?: number;
+  /** Plan Salón (SPEC 22): muestra "Equipo". */
+  hasTeam?: boolean;
 }
 
 export function getAdminNavItems(
   slug: string,
   vertical: Vertical,
-  { pendingBookingsCount = 0, pendingReviewsCount = 0 }: AdminNavCounts = {},
+  { pendingBookingsCount = 0, pendingReviewsCount = 0, hasTeam = false }: AdminNavCounts = {},
 ): AdminNavItem[] {
   const base = `/${slug}/admin`;
 
@@ -47,6 +50,7 @@ export function getAdminNavItems(
       badge: pendingBookingsCount > 0 ? pendingBookingsCount : undefined,
     },
     { href: `${base}/clientes`, label: "Clientes", icon: <Users />, exact: false },
+    ...(hasTeam ? [{ href: `${base}/equipo`, label: "Equipo", icon: <UsersRound />, exact: false }] : []),
     { href: `${base}/reportes`, label: "Reportes", icon: <BarChart3 />, exact: false },
     { href: `${base}/disponibilidad`, label: "Disponibilidad", icon: <CalendarClock />, exact: false },
     { href: `${base}/servicios`, label: "Servicios", icon: <Tag />, exact: false },

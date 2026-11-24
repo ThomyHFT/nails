@@ -13,6 +13,7 @@ export function AdminSidebar({
   vertical,
   pendingBookingsCount = 0,
   pendingReviewsCount = 0,
+  hasTeam = false,
   open = false,
   onClose,
 }: {
@@ -20,11 +21,12 @@ export function AdminSidebar({
   vertical: Vertical;
   pendingBookingsCount?: number;
   pendingReviewsCount?: number;
+  hasTeam?: boolean;
   open?: boolean;
   onClose?: () => void;
 }) {
   const pathname = usePathname();
-  const items = getAdminNavItems(slug, vertical, { pendingBookingsCount, pendingReviewsCount });
+  const items = getAdminNavItems(slug, vertical, { pendingBookingsCount, pendingReviewsCount, hasTeam });
 
   const nav = (
     <nav className="flex h-full w-60 shrink-0 flex-col gap-1 px-3 py-6">

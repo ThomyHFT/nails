@@ -34,9 +34,12 @@ function todayISO(): string {
 export function ManualBookingForm({
   variants,
   clients,
+  staff = [],
 }: {
   variants: ManualBookingVariantOption[];
   clients: ManualBookingClientOption[];
+  /** Integrantes activas (SPEC 22). Con una sola no se muestra el selector. */
+  staff?: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -46,6 +49,7 @@ export function ManualBookingForm({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [variantId, setVariantId] = useState(variants[0]?.id ?? "");
+  const [staffId, setStaffId] = useState(staff[0]?.id ?? "");
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState("10:00");
   const [note, setNote] = useState("");
@@ -74,6 +78,7 @@ export function ManualBookingForm({
           date,
           time,
           clientNote: note.trim() || null,
+          staffId: staffId || null,
           client:
             clientMode === "existing"
               ? { kind: "existing", userId: clientId }
@@ -190,6 +195,18 @@ export function ManualBookingForm({
               ))}
             </select>
           </div>
+          {staff.length > 1 && (
+            <div className="flex flex-col gap-1.5 sm:col-span-3">
+              <Label htmlFor="manual-staff">Atiende</Label>
+              <select id="manual-staff" value={staffId} onChange={(e) => setStaffId(e.target.value)} className={SELECT_CLASSES}>
+                {staff.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="manual-date">Fecha</Label>
             <Input id="manual-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />

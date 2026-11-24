@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -142,7 +143,16 @@ const DAY_STATUS_STYLES: Record<DayStatus, string> = {
   closed: "bg-surface-2 text-muted-foreground",
 };
 
+type TeamMember = { id: string; name: string; active: boolean; isOwner: boolean };
+
 export default function DisponibilidadPage() {
+  // SPEC 22: con equipo, cada integrante tiene su horario. `?integrante=` elige de quién; sin él, la dueña.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const staffId = searchParams.get("integrante");
+  const staffQuery = staffId ? `&staff=${staffId}` : "";
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [month, setMonth] = useState(currentMonth());
   // Horario semanal: se repite todos los meses (SPEC 18). monthRows es una
   // excepción que reemplaza al semanal solo en el mes que se está viendo.
@@ -164,25 +174,36 @@ export default function DisponibilidadPage() {
   const [extraNote, setExtraNote] = useState("");
 
   const loadWeekly = useCallback(async () => {
-    const response = await fetch("/api/availability/rules?month=weekly");
+    const response = await fetch(`/api/availability/rules?month=weekly${staffQuery}`);
     const data = await response.json();
     setWeeklyRows(rowsFromRules(data.rules ?? []));
     setWeeklyLoaded(true);
-  }, []);
+  }, [staffQuery]);
 
   const loadMonth = useCallback(async () => {
-    const response = await fetch(`/api/availability/rules?month=${month}`);
+    const response = await fetch(`/api/availability/rules?month=${month}${staffQuery}`);
     const data = await response.json();
     const rules: AvailabilityRule[] = data.rules ?? [];
     setMonthHasOverride(rules.length > 0);
     setMonthRows(rowsFromRules(rules));
-  }, [month]);
+  }, [month, staffQuery]);
 
   const loadExceptions = useCallback(async () => {
-    const response = await fetch(`/api/availability/exceptions?month=${month}`);
+    const response = await fetch(`/api/availability/exceptions?month=${month}${staffQuery}`);
     const data = await response.json();
     setExceptions(data.exceptions ?? []);
-  }, [month]);
+  }, [month, staffQuery]);
+
+  useEffect(() => {
+    fetch("/api/team")
+      .then((res) => (res.ok ? res.json() : { staff: [] }))
+      .then((data: { staff?: TeamMember[] }) => setTeam(data.staff ?? []));
+  }, []);
+
+  function selectStaff(id: string) {
+    const owner = team.find((member) => member.isOwner);
+    router.replace(id && id !== owner?.id ? `${pathname}?integrante=${id}` : pathname);
+  }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga async del horario semanal al montar
@@ -213,7 +234,7 @@ export default function DisponibilidadPage() {
     const response = await fetch("/api/availability/rules", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ effectiveMonth, rules }),
+      body: JSON.stringify({ effectiveMonth, rules, staffId }),
     });
     return response.ok;
   }
@@ -272,7 +293,7 @@ export default function DisponibilidadPage() {
     const response = await fetch("/api/availability/exceptions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date, kind: "blocked", startTime: blockStart, endTime: blockEnd, note: null }),
+      body: JSON.stringify({ date, kind: "blocked", startTime: blockStart, endTime: blockEnd, note: null, staffId }),
     });
     if (!response.ok) {
       setStatus("No se pudo bloquear ese rango. Revisa que el inicio sea antes del término.");
@@ -306,7 +327,7 @@ export default function DisponibilidadPage() {
       await fetch("/api/availability/exceptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, kind: "blocked", startTime: null, endTime: null, note: null }),
+        body: JSON.stringify({ date, kind: "blocked", startTime: null, endTime: null, note: null, staffId }),
       });
     }
     loadExceptions();
@@ -318,6 +339,7 @@ export default function DisponibilidadPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        staffId,
         date,
         kind: "extra",
         startTime: extraStart,
@@ -386,6 +408,24 @@ export default function DisponibilidadPage() {
         title="Disponibilidad"
         description="Tu horario semanal se repite solo. Ajusta días u horas puntuales desde el calendario."
       />
+
+      {team.length > 1 && (
+        <label className="flex flex-col gap-1.5 sm:max-w-xs">
+          <span className="text-sm font-medium">Horario de</span>
+          <select
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            value={staffId ?? team.find((member) => member.isOwner)?.id ?? ""}
+            onChange={(e) => selectStaff(e.target.value)}
+          >
+            {team.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+                {member.active ? "" : " (inactiva)"}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {weeklyLoaded && !hasWeeklySchedule && (
         <InfoNote tone="warning">

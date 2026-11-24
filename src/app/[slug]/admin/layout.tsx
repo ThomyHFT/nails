@@ -60,6 +60,7 @@ export default async function AdminLayout({
         vertical={professional?.vertical ?? "nails"}
         pendingBookingsCount={pendingBookingsCount}
         pendingReviewsCount={pendingReviewsCount}
+        hasTeam={professional?.plan === "salon"}
       />
       <main className="flex min-w-0 flex-1 flex-col gap-6 px-6 py-8 lg:px-10">
         {professional && (
