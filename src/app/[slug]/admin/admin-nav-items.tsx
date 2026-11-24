@@ -1,5 +1,19 @@
 import type { ReactNode } from "react";
-import { BarChart3, CalendarClock, CalendarRange, Images, LayoutDashboard, Palette, Sparkles, Star, Tag, UserRound, Users } from "lucide-react";
+import {
+  BarChart3,
+  CalendarClock,
+  CalendarRange,
+  Gift,
+  Images,
+  LayoutDashboard,
+  Palette,
+  QrCode,
+  Sparkles,
+  Star,
+  Tag,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { verticalModules, type Vertical } from "@/server/domain/tenant/vertical";
 
 export type AdminNavItem = {
@@ -36,6 +50,7 @@ export function getAdminNavItems(
     { href: `${base}/reportes`, label: "Reportes", icon: <BarChart3 />, exact: false },
     { href: `${base}/disponibilidad`, label: "Disponibilidad", icon: <CalendarClock />, exact: false },
     { href: `${base}/servicios`, label: "Servicios", icon: <Tag />, exact: false },
+    { href: `${base}/paquetes`, label: "Paquetes y gift cards", icon: <Gift />, exact: false },
     // Esconder el link no alcanza como protección — la ruta /admin/diseno
     // también corta con notFound() para estos rubros (ver SPEC 13).
     ...(verticalModules(vertical).designer
@@ -50,6 +65,7 @@ export function getAdminNavItems(
       badge: pendingReviewsCount > 0 ? pendingReviewsCount : undefined,
     },
     { href: `${base}/marca`, label: "Marca", icon: <Palette />, exact: false },
+    { href: `${base}/compartir`, label: "Compartir", icon: <QrCode />, exact: false },
     { href: `${base}/cuenta`, label: "Mi cuenta", icon: <UserRound />, exact: false },
   ];
 }
