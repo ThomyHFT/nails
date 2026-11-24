@@ -84,6 +84,14 @@ export default async function OpinionesPage({ params }: { params: Promise<{ slug
                   date={formatDate(review.createdAt)}
                   authorName={clientName ? reviewerDisplayName(clientName) : null}
                   authorInstagram={review.authorInstagram}
+                  action={
+                    <a
+                      href={`/${slug}/opiniones/${review.id}`}
+                      className="text-xs font-semibold text-primary underline-offset-4 hover:underline"
+                    >
+                      Compartir
+                    </a>
+                  }
                 />
               );
             })}

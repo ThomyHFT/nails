@@ -68,6 +68,17 @@ export default async function OpinionesAdminPage({ params }: { params: Promise<{
         action={
           <div className="flex items-center gap-2">
             {review.status !== "pending" && <ReviewStatusChip status={review.status} />}
+            {/* SPEC 21: una aprobada tiene su página pública para compartir. */}
+            {review.status === "approved" && (
+              <a
+                href={`/${slug}/opiniones/${review.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-semibold text-primary underline-offset-4 hover:underline"
+              >
+                Compartir
+              </a>
+            )}
             <ReviewModerationActions reviewId={review.id} status={review.status} />
           </div>
         }
