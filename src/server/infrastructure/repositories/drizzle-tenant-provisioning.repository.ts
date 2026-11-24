@@ -12,7 +12,6 @@ import { defaultDesignElements, defaultServices } from "@/server/domain/tenant/d
 // sigue NOT NULL. La posición dentro del servicio alcanza — el catálogo por
 // defecto nunca siembra más de 4 variantes por servicio.
 const LEGACY_NAIL_LENGTHS = ["short", "medium", "long", "single"] as const;
-import type { Professional } from "@/server/domain/professional/professional.entity";
 import type {
   ProvisionTenantInput,
   ProvisionTenantResult,

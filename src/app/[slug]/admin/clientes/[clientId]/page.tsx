@@ -13,6 +13,9 @@ import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositor
 import { DrizzleUserRepository } from "@/server/infrastructure/repositories/drizzle-user.repository";
 import { whatsAppUrl } from "@/app/[slug]/(public)/links";
 import { ClientNoteEditor } from "@/app/[slug]/admin/clientes/[clientId]/ClientNoteEditor";
+import { PackageSessionActions, SellPackageForm } from "@/app/[slug]/admin/paquetes/CommerceForms";
+import { remainingSessions } from "@/server/domain/commerce/package";
+import { DrizzlePackageRepository } from "@/server/infrastructure/repositories/drizzle-commerce.repository";
 import { AdminPageHeader, Caption, Chip, Overline, Panel, Price, StatCard, StatusBadge } from "@/components/brand";
 
 const STATUS: Record<BookingStatus, { label: string; tone: "success" | "warning" | "danger" | "neutral" }> = {
@@ -39,6 +42,16 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
     if (err instanceof ClientNotFoundError) notFound();
     throw err;
   }
+
+  // SPEC 21: paquetes vendidos a esta clienta y los del catálogo que se le pueden vender.
+  const packageRepository = new DrizzlePackageRepository();
+  const [clientPackages, catalog] = await Promise.all([
+    packageRepository.listClientPackages(professional.id, clientId),
+    packageRepository.listPackages(professional.id),
+  ]);
+  const sellable = catalog
+    .filter((p) => p.active)
+    .map((p) => ({ id: p.id, label: `${p.name} · ${p.sessions} sesiones · $${p.priceClp.toLocaleString("es-CL")}` }));
 
   const variantIds = Array.from(new Set(profile.bookings.map((b) => b.serviceVariantId)));
   const variantRows = variantIds.length
@@ -107,6 +120,27 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
       <Panel padding="sm">
         <ClientNoteEditor clientId={client.id} initialBody={profile.note?.body ?? ""} />
       </Panel>
+
+      {(clientPackages.length > 0 || sellable.length > 0) && (
+        <Panel padding="sm" className="flex flex-col gap-3">
+          <Overline>Paquetes</Overline>
+          {clientPackages.map((pkg) => {
+            const left = remainingSessions(pkg);
+            return (
+              <div key={pkg.id} className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium">{pkg.name}</span>
+                  <Caption className="text-xs">
+                    Comprado {formatDate(pkg.soldAt)} · {left} de {pkg.sessionsTotal} sesiones disponibles
+                  </Caption>
+                </div>
+                <PackageSessionActions clientPackageId={pkg.id} canUse={left > 0} canUndo={pkg.sessionsUsed > 0} />
+              </div>
+            );
+          })}
+          <SellPackageForm clientUserId={client.id} packages={sellable} />
+        </Panel>
+      )}
 
       <section className="flex flex-col gap-3">
         <Overline>Historial</Overline>

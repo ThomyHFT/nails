@@ -5,6 +5,9 @@ import { ListServicesUseCase } from "@/server/application/service/list-services.
 import { priceFromClp } from "@/server/domain/service/price-from";
 import { DrizzleProfessionalRepository } from "@/server/infrastructure/repositories/drizzle-professional.repository";
 import { DrizzleServicesRepository } from "@/server/infrastructure/repositories/drizzle-services.repository";
+import { DrizzlePackageRepository } from "@/server/infrastructure/repositories/drizzle-commerce.repository";
+import { isPhoneVisible } from "@/server/domain/professional/professional.entity";
+import { PackagesAndGifts } from "@/app/[slug]/(public)/servicios/PackagesAndGifts";
 import {
   BrandButton,
   Caption,
@@ -27,7 +30,16 @@ export default async function ServiciosPage({ params }: { params: Promise<{ slug
     notFound();
   }
 
-  const allServices = await new ListServicesUseCase(new DrizzleServicesRepository()).execute(professional.id);
+  const [allServices, catalog] = await Promise.all([
+    new ListServicesUseCase(new DrizzleServicesRepository()).execute(professional.id),
+    new DrizzlePackageRepository().listPackages(professional.id),
+  ]);
+  const serviceName = new Map(allServices.map((s) => [s.id, s.name]));
+  // SPEC 21: solo paquetes activos de servicios activos.
+  const activeServiceIds = new Set(allServices.filter((s) => s.active).map((s) => s.id));
+  const publicPackages = catalog
+    .filter((p) => p.active && activeServiceIds.has(p.serviceId))
+    .map((p) => ({ id: p.id, name: p.name, sessions: p.sessions, priceClp: p.priceClp, serviceName: serviceName.get(p.serviceId) ?? null }));
 
   const publicServices = allServices
     .filter((s) => s.active)
@@ -100,6 +112,13 @@ export default async function ServiciosPage({ params }: { params: Promise<{ slug
             })}
           </div>
         )}
+
+        <PackagesAndGifts
+          packages={publicPackages}
+          giftCardsEnabled={professional.commerce.giftCardsEnabled}
+          phone={isPhoneVisible(professional) ? professional.phone : null}
+          businessName={professional.businessName}
+        />
       </Section>
     </Container>
   );
