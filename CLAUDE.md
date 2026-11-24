@@ -51,6 +51,7 @@ Dos reglas que no se deducen leyendo el CSS:
 - PK `uuid` con `gen_random_uuid()`. Timestamps `timestamptz` en UTC; la UI presenta en `America/Santiago`.
 - Dinero: enteros en CLP, nunca `numeric`. Duraciones: enteros en minutos.
 - Toda tabla de negocio lleva `professional_id`. Ese es el eje de aislamiento entre tenants.
+- Horario, bloqueos y reservas llevan además `staff_id` (SPEC 22): la agenda es por integrante. Todo negocio tiene una integrante dueña; un negocio Solo tiene solo esa.
 - `bookings.price_clp` y `duration_minutes` son fotografías congeladas al reservar, no cálculos en vivo.
 
 ## Specs
@@ -80,6 +81,7 @@ El desarrollo es spec-driven: cada feature se define en `specs/NN-slug.md` antes
 | [19](specs/19-reglas-recordatorios-agenda.md) | Reglas de reserva por profesional (confirmación automática, intervalo, anticipación, plazo de cancelación), recordatorio del día antes por cron, reagendar, vista de agenda semanal | Implemented |
 | [20](specs/20-acceso-ficha-reportes.md) | Entrar y reservar con código por correo, ficha de clienta con nota privada, cuenta (perfil, contraseña, correo), exportar CSV, reportes del mes, app instalable (PWA) del micrositio y del panel | Implemented |
 | [21](specs/21-abono-espera-paquetes.md) | Abono por transferencia, lista de espera, "vuelve a reservar" (correo y WhatsApp), opiniones compartibles con imagen OG, paquetes de sesiones, gift cards con saldo, link corto y QR | Implemented |
+| [22](specs/22-plan-salon.md) | Plan Salón: integrantes por negocio (`staff_members`), horario y reservas por integrante, "sin preferencia", panel `/[slug]/equipo` con rol `staff`, plan y tope desde el superadmin | Implemented |
 
 El esquema de las 11 tablas existe completo desde el SPEC 01. Que una tabla exista **no** significa que tenga lógica ni UI: `design_elements` solo tiene filas de seed; `designs` ya tiene escritor real desde el SPEC 07 (`reference_image_url`). `professionals.tagline` existe desde el SPEC 08.
 

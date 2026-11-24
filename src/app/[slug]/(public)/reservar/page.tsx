@@ -7,6 +7,7 @@ import { serviceVariants, services } from "@/server/infrastructure/db/schema/ser
 import { ReservarForm, type ServiceOption } from "@/app/[slug]/(public)/reservar/ReservarForm";
 import { depositInfoFor } from "@/app/[slug]/(public)/_deposit/deposit-info";
 import { isCompleteBankDetails } from "@/server/domain/professional/commerce";
+import { DrizzleStaffRepository } from "@/server/infrastructure/repositories/drizzle-staff.repository";
 
 export default async function ReservarPage({
   params,
@@ -54,6 +55,13 @@ export default async function ReservarPage({
   }
 
   const serviceOptions = Array.from(serviceMap.values());
+  // SPEC 22: con plan Salón, la clienta puede elegir con quién.
+  const staff =
+    professional.plan === "salon"
+      ? (await new DrizzleStaffRepository().listByProfessional(professional.id))
+          .filter((member) => member.active)
+          .map((member) => ({ id: member.id, name: member.name, serviceIds: member.allServices ? null : member.serviceIds }))
+      : [];
   const initialService = serviceOptions.find((s) => s.id === preselectedServiceId);
   // La variante solo se acepta si pertenece al servicio preseleccionado: un
   // `?variant=` de otro servicio dejaría el formulario en un estado imposible.
@@ -73,6 +81,7 @@ export default async function ReservarPage({
       depositClp={isCompleteBankDetails(professional.commerce.bankDetails) ? professional.commerce.depositClp : null}
       depositInfo={depositInfoFor(professional)}
       initialDate={initialDate}
+      staff={staff}
     />
   );
 }

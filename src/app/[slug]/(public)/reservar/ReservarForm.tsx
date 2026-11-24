@@ -149,6 +149,7 @@ export function ReservarForm({
   depositClp = null,
   depositInfo = null,
   initialDate,
+  staff = [],
 }: {
   slug: string;
   services: ServiceOption[];
@@ -163,6 +164,11 @@ export function ReservarForm({
   depositInfo?: DepositInfo | null;
   /** Día preelegido (`?fecha=`), p. ej. desde el aviso de lista de espera (SPEC 21). */
   initialDate?: string;
+  /**
+   * Equipo del salón (SPEC 22). `serviceIds: null` = hace todos. Con una sola
+   * integrante que haga el servicio no se pregunta con quién.
+   */
+  staff?: { id: string; name: string; serviceIds: string[] | null }[];
 }) {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
@@ -206,6 +212,12 @@ export function ReservarForm({
   const [calendarFullDays, setCalendarFullDays] = useState<string[]>([]);
   const [waitlistStatus, setWaitlistStatus] = useState<{ date: string; message: string; ok: boolean } | null>(null);
   const [isJoiningWaitlist, setIsJoiningWaitlist] = useState(false);
+  // "" = sin preferencia (SPEC 22).
+  const [staffChoice, setStaffChoice] = useState("");
+  const staffForService = staff.filter((member) => member.serviceIds === null || member.serviceIds.includes(serviceId));
+  // Si la elegida no hace el servicio nuevo, vuelve a "sin preferencia".
+  const activeStaffChoice = staffForService.some((member) => member.id === staffChoice) ? staffChoice : "";
+  const staffParam = activeStaffChoice ? `&staffId=${activeStaffChoice}` : "";
   // Empieza en `true`: el useEffect que carga el mes siempre dispara al
   // entrar al paso de horario, y arrancar en `false` dejaba una fracción de
   // segundo con el grid vacío mostrando "sin cupo" antes de que el fetch
@@ -265,7 +277,7 @@ export function ReservarForm({
     try {
       const extraMinutes = design?.quote.extraMinutes ?? 0;
       const response = await fetch(
-        `/api/bookings?slug=${slug}&serviceVariantId=${variantId}&date=${nextDate}&extraMinutes=${extraMinutes}`,
+        `/api/bookings?slug=${slug}&serviceVariantId=${variantId}&date=${nextDate}&extraMinutes=${extraMinutes}${staffParam}`,
       );
       const data = await response.json();
       setSlots(data.slots ?? []);
@@ -279,7 +291,7 @@ export function ReservarForm({
     setIsLoadingCalendarDays(true);
     try {
       const response = await fetch(
-        `/api/availability/days?slug=${slug}&serviceVariantId=${variantId}&month=${month}`,
+        `/api/availability/days?slug=${slug}&serviceVariantId=${variantId}&month=${month}${staffParam}`,
       );
       const data = await response.json();
       setCalendarDays(data.days ?? []);
@@ -299,7 +311,15 @@ export function ReservarForm({
     // Día que llegó preelegido: sus horarios se cargan al entrar al paso.
     if (date && slots.length === 0) void loadSlots(date);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, calendarMonth, variantId]);
+  }, [step, calendarMonth, variantId, staffChoice]);
+
+  function chooseStaff(id: string) {
+    // Otra integrante, otra agenda: el día y la hora elegidos ya no valen.
+    setStaffChoice(id);
+    setSelectedSlot(null);
+    setSlots([]);
+    setDate("");
+  }
 
   async function joinWaitlist() {
     if (!date || !variantId || isJoiningWaitlist) return;
@@ -338,6 +358,7 @@ export function ReservarForm({
         body: JSON.stringify({
           slug,
           serviceVariantId: variantId,
+          staffId: activeStaffChoice || null,
           date,
           startsAt: selectedSlot.startsAt,
           clientNote: clientNote.trim() || null,
@@ -596,6 +617,22 @@ export function ReservarForm({
           <Display as="h1">Casi listo, elige la hora.</Display>
           <StepIndicator current="schedule" steps={steps} />
         </div>
+
+        {staffForService.length > 1 && (
+          <div className="flex flex-col gap-3">
+            <Overline>¿Con quién?</Overline>
+            <div className="flex flex-wrap gap-2">
+              <SelectChip selected={activeStaffChoice === ""} onSelect={() => chooseStaff("")}>
+                Sin preferencia
+              </SelectChip>
+              {staffForService.map((member) => (
+                <SelectChip key={member.id} selected={activeStaffChoice === member.id} onSelect={() => chooseStaff(member.id)}>
+                  {member.name}
+                </SelectChip>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3">
           <Overline>Fecha</Overline>

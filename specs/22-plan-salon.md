@@ -1,6 +1,6 @@
 # SPEC 22 — Plan Salón: varias profesionales por negocio (fase 5)
 
-**Estado:** Approved
+**Estado:** Implemented
 **Alcance:** que un salón con 2 a 6 profesionales use una sola cuenta: un micrositio, un catálogo y una agenda por integrante, la clienta elige con quién atenderse (o "sin preferencia"), y cada integrante entra a ver y manejar solo lo suyo.
 
 Roadmap y contexto: [SPEC 18](18-agenda-confiable.md). Sin cobro de suscripción: el superadmin activa el plan a mano.
@@ -55,6 +55,18 @@ La dueña ve todo: Agenda y Reservas ganan un filtro por integrante y muestran q
 - **Reservas:** las suyas, con confirmar, completar, no asistió, reagendar y cancelar. Mismas rutas de API, que ahora aceptan a la integrante asignada además de la dueña.
 - **Mi cuenta:** nombre, teléfono, contraseña.
 - No ve clientes, reportes, ingresos, marca ni configuración.
+
+## Decisiones tomadas al implementar
+
+- El panel de la integrante vive en `/[slug]/equipo`, no dentro de `/admin`: el panel de la dueña queda intacto y no hay que revisar página por página qué puede ver una integrante. El corte está en el layout (el middleware solo cubre `/admin`).
+- Las acciones sobre una reserva responden 404 (no 403) a una integrante que pide una reserva ajena.
+- Con plan Solo solo atiende la dueña aunque queden integrantes de cuando era Salón, y una integrante pierde el panel si el negocio baja de plan.
+- "Sin preferencia" asigna por el orden del equipo (la dueña primero). Si dos reservas compiten por la misma integrante, la segunda pasa a la siguiente libre en vez de fallar.
+- Un día es "completo" para la lista de espera solo si nadie del equipo tiene cupo.
+- La lista de espera, el abono, los paquetes, las gift cards, los recordatorios y Google Calendar siguen siendo del negocio: las reservas de todas las integrantes van al calendario conectado por la dueña.
+- Reagendar mantiene a la misma integrante; para cambiarla está "Atiende" en Reservas.
+- Una integrante no reserva como clienta (la reserva pública exige rol `client`).
+- La migración agrega `staff_id` nulo, lo completa con la dueña y recién después lo marca no nulo; validada en PGlite con datos y con el constraint de solape por integrante.
 
 ## Criterios de aceptación
 
