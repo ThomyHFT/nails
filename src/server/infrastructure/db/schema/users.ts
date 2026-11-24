@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { userRoleEnum, verticalEnum } from "@/server/infrastructure/db/schema/enums";
 
 export const users = pgTable("users", {
@@ -85,6 +85,13 @@ export const professionals = pgTable("professionals", {
   maxAdvanceDays: integer("max_advance_days"),
   // 0 = la clienta puede cancelar o reagendar siempre.
   cancellationDeadlineHours: integer("cancellation_deadline_hours").notNull().default(0),
+  // Abono por transferencia (SPEC 21). NULL = sin abono.
+  depositClp: integer("deposit_clp"),
+  // { bank, accountType, accountNumber, holderName, holderRut, email }; lo valida el dominio.
+  bankDetails: jsonb("bank_details"),
+  // "Vuelve a reservar" a los N días de una completada (SPEC 21). NULL = apagado.
+  rebookAfterDays: integer("rebook_after_days"),
+  giftCardsEnabled: boolean("gift_cards_enabled").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

@@ -176,6 +176,13 @@
       "when": 1795397423606,
       "tag": "0024_client_notes_email_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795482653278,
+      "tag": "0025_deposit_waitlist_packages",
+      "breakpoints": true
     }
   ]
 }

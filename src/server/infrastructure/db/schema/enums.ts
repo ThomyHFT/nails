@@ -58,6 +58,9 @@ export const emailNotificationTypeEnum = pgEnum("email_notification_type", [
   // SPEC 19
   "reschedule",
   "reminder",
+  // SPEC 21
+  "waitlist",
+  "rebook",
 ]);
 
 export const emailNotificationStatusEnum = pgEnum("email_notification_status", ["sent", "failed"]);

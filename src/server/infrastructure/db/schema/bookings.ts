@@ -34,6 +34,11 @@ export const bookings = pgTable("bookings", {
   googleEventId: text("google_event_id"),
   // Recordatorio del día antes ya enviado (SPEC 19). Se limpia al reagendar.
   reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
+  // Abono congelado al reservar y cuándo lo recibió la profesional (SPEC 21).
+  depositClp: integer("deposit_clp"),
+  depositPaidAt: timestamp("deposit_paid_at", { withTimezone: true }),
+  // Correo "vuelve a reservar" ya enviado por esta reserva completada (SPEC 21).
+  rebookSentAt: timestamp("rebook_sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
